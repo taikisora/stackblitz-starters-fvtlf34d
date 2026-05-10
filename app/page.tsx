@@ -21,13 +21,14 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   // --- データ取得 ---
-  const fetchBooks = async (filter = {}) => {
+  // () の中に targetSubject を入れるのがポイントです！
+  const fetchBooks = async (targetSubject: string | null) => {
     setLoading(true);
     let query = supabase.from('books').select('*');
     
-    // ここで条件絞り込み（Supabaseの列名に合わせて調整が必要）
-    if (selectedCategory) {
-      query = query.eq('subject', selectedCategory);
+    // selectedCategory ではなく、送られてきた targetSubject を直接使う
+    if (targetSubject) {
+      query = query.eq('subject', targetSubject);
     }
     
     const { data } = await query;
