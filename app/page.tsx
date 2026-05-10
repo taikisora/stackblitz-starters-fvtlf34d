@@ -16,7 +16,7 @@ export default function App() {
   // --- 状態管理 ---
   const [activeTab, setActiveTab] = useState('home'); // 現在のタブ
   const [searchStep, setSearchStep] = useState('menu'); // 検索モード内の画面管理
-  const [selectedCategory, setSelectedCategory] = useState(null); // 選択された教科など
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
