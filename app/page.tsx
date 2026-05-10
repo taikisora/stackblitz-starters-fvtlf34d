@@ -142,7 +142,7 @@ export default function App() {
 }
 
 // サブコンポーネント：メニューカード
-function MenuCard({ icon, title, onClick }) {
+function MenuCard({ icon, title, onClick }: any) {
   return (
     <button 
       onClick={onClick}
