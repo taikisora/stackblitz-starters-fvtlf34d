@@ -31,6 +31,7 @@ export default function App() {
     }
     
     const { data } = await query;
+    alert("届いたデータの数: " + (data ? data.length : 0));
     setBooks(data || []);
     setLoading(false);
     setSearchStep('results'); // 結果表示へ
