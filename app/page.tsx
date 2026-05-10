@@ -22,20 +22,23 @@ export default function App() {
 
   // --- データ取得 ---
   // () の中に targetSubject を入れるのがポイントです！
-  const fetchBooks = async (targetSubject: string | null) => {
+  // () の中に targetSubject を入れる！
+  const fetchBooks = async (targetSubject: any) => {
     setLoading(true);
     let query = supabase.from('books').select('*');
     
-    // selectedCategory ではなく、送られてきた targetSubject を直接使う
+    // selectedCategory ではなく、この targetSubject を使う！
     if (targetSubject) {
       query = query.eq('subject', targetSubject);
     }
     
     const { data } = await query;
+    // ↓このアラートで確認しているはず
     alert("届いたデータの数: " + (data ? data.length : 0));
+    
     setBooks(data || []);
     setLoading(false);
-    setSearchStep('results'); // 結果表示へ
+    setSearchStep('results');
   };
 
   // --- UI部品：ナビゲーション ---
