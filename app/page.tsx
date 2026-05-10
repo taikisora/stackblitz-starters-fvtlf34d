@@ -9,7 +9,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_MbxXHpGc62c9GY8pZWWmcQ_L1OkZhkf';
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function BookSearch() {
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState<any[]>([]);
   const [filterApp, setFilterApp] = useState(false);
   const [loading, setLoading] = useState(true);
 
