@@ -89,7 +89,7 @@ export default function App() {
                 {['英語', '数学', '国語', '理科', '社会'].map(subject => (
                   <button 
                     key={subject}
-                    onClick={() => {setSelectedCategory(subject); fetchBooks();}}
+                    onClick={() => {setSelectedCategory(subject); fetchBooks(subject);}}
                     className="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center hover:bg-blue-50"
                   >
                     <span className="font-medium">{subject}</span>
