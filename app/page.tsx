@@ -38,9 +38,12 @@ const [books, setBooks] = useState<any[]>([]);
 
 const [loading, setLoading] = useState(false);
 
+// 出版社のリストをSupabaseから取得して保存する箱
+const [publishers, setPublishers] = useState<string[]>([]);
+
 // 教科と小カテゴリーのデータ定義
 const SUBJECT_DATA = {
-  '英語': ['英単語', '英文法', '長文', 'その他（英語）'],
+  '英語': ['英単語', '英熟語', '英文法', '長文', 'その他（英語）'],
   '数学': ['数IA', '数IIB', '数IIIC', 'その他（数学）'],
   '国語': ['現代文', '古文', '漢文', 'その他（国語）'],
   '理科': ['物理', '化学', '生物', '地学', 'その他（理科）'],
@@ -49,33 +52,55 @@ const SUBJECT_DATA = {
 
 const [expandedSubjects, setExpandedSubjects] = useState<string[]>([]); // 「詳細＞」が開いている教科のリスト
 
-// { type: 'subject', value: '英語' } または { type: 'category', value: '英単語' } のように保存します
+// --- 統合検索用の状態管理 ---
+const [filters, setFilters] = useState({
+  subject: null as string | null,
+  category: null as string | null,
+  publisher: null as string | null,
+});
+
+const [publisherSearchText, setPublisherSearchText] = useState('');
+
 const [selectedTarget, setSelectedTarget] = useState<{ type: string, value: string } | null>(null);
 
+const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+// --- 初期データの取得 ---
+useEffect(() => {
+  const fetchPublishers = async () => {
+    const { data } = await supabase.from('books').select('publisher');
+    if (data) {
+      const allPublishers = data.map(book => book.publisher);
+      const uniquePublishers = Array.from(new Set(allPublishers)).filter(Boolean);
+      uniquePublishers.sort((a, b) => a.localeCompare(b, 'ja'));
+      setPublishers(uniquePublishers);
+    }
+  };
+  fetchPublishers();
+}, []); 
 
 
-// --- データ取得 ---
-const fetchBooks = async (target: { type: string, value: string }) => {
+// --- データ取得（統合検索対応！） ---
+const fetchBooks = async (currentFilters: any) => {
   setLoading(true);
   let query = supabase.from('books').select('*');
 
-  // typeによって、検索する列を変える
-  if (target.type === 'subject') {
-    query = query.eq('subject', target.value);
-  } else if (target.type === 'category') {
-    query = query.eq('category', target.value);
-  }
+  // フィルターの条件を全部掛け合わせる
+  if (currentFilters.subject) query = query.eq('subject', currentFilters.subject);
+  if (currentFilters.category) query = query.eq('category', currentFilters.category);
+  if (currentFilters.publisher) query = query.eq('publisher', currentFilters.publisher);
 
   const { data } = await query;
   setBooks(data || []);
   setLoading(false);
   setSearchStep('results');
+  setIsFilterModalOpen(false); // 検索完了したらモーダルを自動で閉じる
 };
 
-
+// --- UI部品：ナビゲーション ---
 // --- UI部品：ナビゲーション ---
 const TabBar = () => (
-  <nav className="fixed z-50 bg-white border-gray-200 transition-all duration-300
+  <nav className="fixed z-[110] bg-white border-gray-200 transition-all duration-300
     /* スマホ用（下部固定） */
     bottom-0 left-0 right-0 border-t flex justify-around py-3 pb-6
     /* 横長画面用（左側固定） md: は横幅768px以上 */
@@ -140,7 +165,7 @@ return (
 
 <MenuCard icon={<Pencil className="text-orange-500" />} title="教科" onClick={() => setSearchStep('subject-select')} />
 
-<MenuCard icon={<Bookmark className="text-green-500" />} title="出版社" onClick={() => {}} />
+<MenuCard icon={<Bookmark className="text-green-500" />} title="出版社" onClick={() => setSearchStep('publisher-select')} />
 
 <MenuCard icon={<School className="text-blue-500" />} title="志望校" onClick={() => {}} />
 
@@ -225,11 +250,21 @@ return (
       );
     })}
 
-    {/* 検索ボタン */}
-    <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-30 md:left-20 md:bottom-0">
+ {/* 検索ボタン（教科選択用） */}
+ <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-30 md:left-20 md:bottom-0">
       <button
         onClick={() => {
-          if (selectedTarget) fetchBooks(selectedTarget);
+          if (selectedTarget) {
+            // 選んだ教科をフィルターにセットして検索！
+            const newFilters = { 
+              ...filters, 
+              subject: selectedTarget.type === 'subject' ? selectedTarget.value : null,
+              category: selectedTarget.type === 'category' ? selectedTarget.value : null,
+              publisher: null // 最初から検索し直す時は出版社をリセット
+            };
+            setFilters(newFilters);
+            fetchBooks(newFilters);
+          }
         }}
         disabled={!selectedTarget}
         className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all ${
@@ -244,76 +279,191 @@ return (
   </div>
 )}
 
+{/* 出版社選択画面 */}
+{searchStep === 'publisher-select' && (
+  <div className="space-y-4 pb-24 h-screen flex flex-col bg-gray-50 -mx-4 -mt-4 p-4">
+    <div className="flex items-center gap-2 mb-2">
+      <button onClick={() => setSearchStep('menu')} className="text-gray-500 p-2 -ml-2 rounded-full hover:bg-gray-100">
+        <ChevronRight size={24} className="rotate-180" />
+      </button>
+      <h3 className="font-bold text-lg">出版社から探す</h3>
+    </div>
+
+    {/* 検索窓 */}
+    <div className="relative">
+      <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <input
+        type="text"
+        placeholder="出版社名を入力"
+        value={publisherSearchText}
+        onChange={(e) => setPublisherSearchText(e.target.value)}
+        className="w-full bg-white py-3 pl-10 pr-4 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-sm"
+      />
+    </div>
+
+    <div className="flex items-center gap-1 text-sm text-gray-500 mt-2">
+      <Filter size={16} /> あいうえお順
+    </div>
+
+    {/* 出版社リスト */}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-2 flex-1 overflow-y-auto">
+      {publishers // ← ここに publishers が必要でした！
+        .filter(publisher => publisher.includes(publisherSearchText))
+        .map((publisher, index, array) => (
+          <button
+            key={publisher}
+            onClick={() => {
+              // 出版社をフィルターにセットして検索！
+              const newFilters = { 
+                ...filters, 
+                publisher: publisher,
+                subject: null, // 最初から検索し直す時は教科をリセット
+                category: null 
+              };
+              setFilters(newFilters);
+              fetchBooks(newFilters);
+            }}
+            className={`w-full text-left p-4 flex justify-between items-center hover:bg-gray-50 active:bg-gray-100 transition-colors ${
+              index !== array.length - 1 ? 'border-b border-gray-100' : ''
+            }`}
+          >
+            <span className="font-medium text-gray-800">{publisher}</span>
+            <ChevronRight size={20} className="text-gray-300" />
+          </button>
+        ))
+      }
+      {publishers.filter(p => p.includes(publisherSearchText)).length === 0 && (
+        <div className="p-8 text-center text-gray-400 text-sm">
+          見つかりませんでした
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
 
 {/* 検索結果画面 */}
-
 {searchStep === 'results' && (
-
-<div className="space-y-4">
-
-<div className="flex justify-between items-center mb-4">
-
-<button onClick={() => setSearchStep('subject-select')} className="text-sm text-blue-600">← 再検索</button>
-
-<button className="flex items-center gap-1 text-sm bg-white border px-3 py-1 rounded-full shadow-sm">
-
-<Filter size={16} /> 絞り込み
-
-</button>
-
-</div>
-
-{!loading && (
-    <div className="fixed bottom-24 right-4 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg font-bold text-sm z-40 opacity-90">
-      {books.length}件 該当
+  <div className="space-y-4 pb-24">
+    <div className="flex justify-between items-center mb-4">
+      <button onClick={() => setSearchStep('menu')} className="text-sm text-blue-600">← 再検索</button>
+      
+      {/* さらに絞り込むボタン */}
+      <button 
+        onClick={() => setIsFilterModalOpen(true)}
+        className="flex items-center gap-1 text-sm bg-white border border-gray-200 px-4 py-1.5 rounded-full shadow-sm hover:bg-gray-50 font-bold text-gray-700"
+      >
+        <Filter size={14} /> さらに絞り込む
+      </button>
     </div>
-  )}
 
-{loading ? <p className="text-center">読み込み中...</p> :
+    {!loading && (
+      <div className="fixed bottom-24 right-4 bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg font-bold text-sm z-40 opacity-90 md:bottom-6">
+        {books.length}件 該当
+      </div>
+    )}
 
-books.map(book => (
+    {loading ? <p className="text-center py-20 text-gray-500">読み込み中...</p> :
+      books.map(book => (
+        <div key={book.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-shadow">
+          <div className="w-24 h-32 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400 text-xs">画像</div>
+          <div className="flex-1 flex flex-col justify-between">
+            <div>
+              <p className="text-[10px] text-gray-500 font-bold mb-1">{book.publisher}</p>
+              <h3 className="font-bold text-base leading-tight mb-2 text-gray-800">{book.title}</h3>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-orange-600 mb-2">¥{book.price || '---'}</p>
+              <a href="https://amazon.co.jp" target="_blank" className="w-full bg-orange-400 text-white text-xs font-bold py-2 rounded-lg flex items-center justify-center gap-1 hover:bg-orange-500 transition-colors">
+                Amazonで見る <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
+        </div>
+      ))
+    }
 
-<div key={book.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4">
+    {/* 👇👇👇 ZOZOTOWN風 さらに絞り込むモーダル 👇👇👇 */}
+    {isFilterModalOpen && (
+  <div className="fixed inset-0 z-[100] h-[100dvh] flex flex-col justify-end pb-20 md:pb-0 md:pl-20 bg-black/50 backdrop-blur-sm md:items-center md:justify-center">
+       {/* モーダル本体（高さが画面外にはみ出さないように max-h-[85%] に修正！） */}
+       <div className="w-full max-h-[85%] bg-white rounded-t-3xl md:rounded-2xl md:w-[400px] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10">
+          
+          {/* ヘッダー（スクロールしても上に固定） */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-white flex-shrink-0">
+            <div className="w-8"></div>
+            <h3 className="font-bold text-lg text-gray-800">さらに絞り込む</h3>
+            <button onClick={() => setIsFilterModalOpen(false)} className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-gray-500 font-bold hover:bg-gray-200">
+              ✕
+            </button>
+          </div>
 
-<div className="w-24 h-32 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400">画像</div>
+          {/* フィルター項目エリア */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-6 bg-gray-50">
+            
+            {/* 教科セレクト */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <label className="block text-sm font-bold text-gray-700 mb-3">教科</label>
+              <select 
+                value={filters.subject || ''} 
+                onChange={(e) => setFilters({ ...filters, subject: e.target.value || null, category: null })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 font-medium focus:ring-2 focus:ring-[#1eb1e6] outline-none"
+              >
+                <option value="">すべて</option>
+                {Object.keys(SUBJECT_DATA).map(sub => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+            </div>
 
-<div className="flex-1">
+            {/* 分野セレクト（教科が選ばれている時だけ表示） */}
+            {filters.subject && (
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <label className="block text-sm font-bold text-gray-700 mb-3">カテゴリー</label>
+                <select 
+                  value={filters.category || ''} 
+                  onChange={(e) => setFilters({ ...filters, category: e.target.value || null })}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 font-medium focus:ring-2 focus:ring-[#1eb1e6] outline-none"
+                >
+                  <option value="">すべて</option>
+                  {SUBJECT_DATA[filters.subject as keyof typeof SUBJECT_DATA].map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-<p className="text-xs text-gray-500">{book.publisher}</p>
+            {/* 出版社セレクト */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <label className="block text-sm font-bold text-gray-700 mb-3">出版社</label>
+              <select 
+                value={filters.publisher || ''} 
+                onChange={(e) => setFilters({ ...filters, publisher: e.target.value || null })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-800 font-medium focus:ring-2 focus:ring-[#1eb1e6] outline-none"
+              >
+                <option value="">すべて</option>
+                {publishers.map(pub => (
+                  <option key={pub} value={pub}>{pub}</option>
+                ))}
+              </select>
+            </div>
 
-<h3 className="font-bold text-base leading-tight mb-1">{book.title}</h3>
+          </div>
 
-<p className="text-lg font-bold text-orange-600">¥{book.price || '---'}</p>
+          {/* ZOZOTOWN風の水色検索ボタン（iPhoneなどの下部バーに被らないように pb-8 を追加して底上げ） */}
+          <div className="p-4 pb-8 md:pb-4 bg-white border-t border-gray-100 flex-shrink-0">
+            <button
+              onClick={() => fetchBooks(filters)}
+              className="w-full bg-[#1eb1e6] hover:bg-[#189dc0] text-white font-bold text-lg py-4 rounded-xl transition-all shadow-md active:scale-95"
+            >
+              検索する
+            </button>
+          </div>
 
-<div className="mt-2 flex gap-2">
-
-<a
-
-href="https://amazon.co.jp" // 本来はbook.amazon_url
-
-target="_blank"
-
-className="flex-1 bg-orange-400 text-white text-xs font-bold py-2 rounded-full flex items-center justify-center gap-1"
-
->
-
-Amazon <ExternalLink size={12} />
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-))
-
-}
-
-</div>
-
+        </div>
+      </div>
+    )}
+  </div>
 )}
 
 </div>
