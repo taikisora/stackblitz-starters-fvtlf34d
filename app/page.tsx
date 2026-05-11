@@ -46,7 +46,7 @@ const [loading, setLoading] = useState(false);
 
 // () の中に targetSubject を入れるのがポイントです！
 
-// () の中に targetSubject を入れる！
+// () の中に targetSubject を入れる
 
 const fetchBooks = async (targetSubject: any) => {
 
