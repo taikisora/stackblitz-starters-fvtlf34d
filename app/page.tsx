@@ -73,46 +73,34 @@ const fetchBooks = async (target: { type: string, value: string }) => {
 };
 
 
-
 // --- UI部品：ナビゲーション ---
-
 const TabBar = () => (
-
-<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 pb-6 z-50">
-
-<button onClick={() => setActiveTab('home')} className={`flex flex-col items-center ${activeTab === 'home' ? 'text-blue-600' : 'text-gray-400'}`}>
-
-<Home size={24} /><span className="text-xs mt-1">ホーム</span>
-
-</button>
-
-<button onClick={() => {setActiveTab('search'); setSearchStep('menu');}} className={`flex flex-col items-center ${activeTab === 'search' ? 'text-blue-600' : 'text-gray-400'}`}>
-
-<Search size={24} /><span className="text-xs mt-1">検索</span>
-
-</button>
-
-<button onClick={() => setActiveTab('stats')} className={`flex flex-col items-center ${activeTab === 'stats' ? 'text-blue-600' : 'text-gray-400'}`}>
-
-<BarChart2 size={24} /><span className="text-xs mt-1">学習データ</span>
-
-</button>
-
-<button onClick={() => setActiveTab('mypage')} className={`flex flex-col items-center ${activeTab === 'mypage' ? 'text-blue-600' : 'text-gray-400'}`}>
-
-<User size={24} /><span className="text-xs mt-1">マイページ</span>
-
-</button>
-
-</div>
-
+  <nav className="fixed z-50 bg-white border-gray-200 transition-all duration-300
+    /* スマホ用（下部固定） */
+    bottom-0 left-0 right-0 border-t flex justify-around py-3 pb-6
+    /* 横長画面用（左側固定） md: は横幅768px以上 */
+    md:top-0 md:bottom-0 md:right-auto md:w-20 md:h-screen md:border-t-0 md:border-r md:flex-col md:justify-center md:gap-8 md:pb-0
+  ">
+    <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center w-full py-2 transition-colors ${activeTab === 'home' ? 'text-blue-600' : 'text-gray-400 hover:text-blue-400'}`}>
+      <Home size={24} /><span className="text-[10px] mt-1 font-bold">ホーム</span>
+    </button>
+    <button onClick={() => {setActiveTab('search'); setSearchStep('menu');}} className={`flex flex-col items-center w-full py-2 transition-colors ${activeTab === 'search' ? 'text-blue-600' : 'text-gray-400 hover:text-blue-400'}`}>
+      <Search size={24} /><span className="text-[10px] mt-1 font-bold">検索</span>
+    </button>
+    <button onClick={() => setActiveTab('stats')} className={`flex flex-col items-center w-full py-2 transition-colors ${activeTab === 'stats' ? 'text-blue-600' : 'text-gray-400 hover:text-blue-400'}`}>
+      <BarChart2 size={24} /><span className="text-[10px] mt-1 font-bold">データ</span>
+    </button>
+    <button onClick={() => setActiveTab('mypage')} className={`flex flex-col items-center w-full py-2 transition-colors ${activeTab === 'mypage' ? 'text-blue-600' : 'text-gray-400 hover:text-blue-400'}`}>
+      <User size={24} /><span className="text-[10px] mt-1 font-bold">マイページ</span>
+    </button>
+  </nav>
 );
 
 
 
 return (
 
-<div className="min-h-screen bg-gray-50 pb-24 text-gray-800">
+<div className="min-h-screen bg-gray-50 text-gray-800 transition-all pb-24 md:pb-0 md:pl-20">
 
 {/* ヘッダー */}
 
@@ -238,7 +226,7 @@ return (
     })}
 
     {/* 検索ボタン */}
-    <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-30">
+    <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-30 md:left-20 md:bottom-0">
       <button
         onClick={() => {
           if (selectedTarget) fetchBooks(selectedTarget);
