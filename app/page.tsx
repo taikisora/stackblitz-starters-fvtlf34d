@@ -57,11 +57,9 @@ let query = supabase.from('books').select('*');
 
 // selectedCategory ではなく、この targetSubject を使う！
 
-if (targetSubject) {
-
-query = query.eq('subject', targetSubject);
-
-}
+// if (targetSubject) {
+//   query = query.eq('subject', targetSubject);
+// }
 
 
 const { data } = await query;
