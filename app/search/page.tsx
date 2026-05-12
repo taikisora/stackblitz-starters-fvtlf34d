@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Pencil, Bookmark, School, Crown, Filter, ChevronRight } from 'lucide-react';
+import { Pencil, Bookmark, School, Crown, Filter, ChevronRight, Search } from 'lucide-react';
 
 const SUBJECT_DATA = {
   '英語': ['英単語', '英熟語', '英文法', '長文', 'その他（英語）'],
