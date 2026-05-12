@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-// 💡 エラーの原因になりやすい 'Edit2' を 'Pencil' に変更しました
-import { LogOut, Pencil, Check, X, Heart, BookOpen } from 'lucide-react';
+import { LogOut, Edit2, Check, X, Heart, BookOpen } from 'lucide-react';
 
 export default function MyPage() {
   const router = useRouter();
@@ -17,59 +16,52 @@ export default function MyPage() {
   const [favoriteBooks, setFavoriteBooks] = useState<any[]>([]);
   const [usedBooks, setUsedBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState(''); // 💡 エラー表示用の状態を追加
 
   useEffect(() => {
     const fetchUserData = async () => {
-      try {
-        // ① ログインセッションの確認
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) throw sessionError;
-        
-        if (!session) {
-          router.push('/login');
-          return;
-        }
-        
-        setUser(session.user);
-
-        // ② プロフィール（ユーザー名）の取得
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (profile?.username) {
-          setUsername(profile.username);
-          setNewUsername(profile.username);
-        }
-
-        // ③ お気に入り・使用中の参考書を取得
-        const { data: userBooks, error: booksError } = await supabase
-          .from('user_book_status')
-          .select('is_favorite, is_used, books(*)')
-          .eq('user_id', session.user.id);
-
-        if (booksError) throw booksError;
-
-        if (userBooks) {
-          const validBooks = userBooks.filter(item => item.books);
-          setFavoriteBooks(validBooks.filter(item => item.is_favorite).map(item => item.books));
-          setUsedBooks(validBooks.filter(item => item.is_used).map(item => item.books));
-        }
-      } catch (err: any) {
-        console.error("データ取得エラー:", err);
-        setErrorMsg('データの読み込みに失敗しました。');
-      } finally {
-        setLoading(false);
+      // ① ログインセッションの確認
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // ログインしていなければログイン画面へ強制移動！
+        router.push('/login');
+        return;
       }
+      
+      setUser(session.user);
+
+      // ② プロフィール（ユーザー名）の取得
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', session.user.id)
+        .single();
+        
+      if (profile?.username) {
+        setUsername(profile.username);
+        setNewUsername(profile.username);
+      }
+
+      // ③ お気に入り・使用中の参考書を取得（booksテーブルと結合して取得）
+      const { data: userBooks } = await supabase
+        .from('user_book_status')
+        .select('is_favorite, is_used, books(*)')
+        .eq('user_id', session.user.id);
+
+      if (userBooks) {
+        // booksデータが正しく取得できているものだけをフィルター
+        const validBooks = userBooks.filter(item => item.books);
+        setFavoriteBooks(validBooks.filter(item => item.is_favorite).map(item => item.books));
+        setUsedBooks(validBooks.filter(item => item.is_used).map(item => item.books));
+      }
+      
+      setLoading(false);
     };
 
     fetchUserData();
   }, [router]);
 
+  // ユーザー名の更新処理
   const handleUpdateUsername = async () => {
     if (!newUsername.trim() || !user) return;
     
@@ -82,13 +74,12 @@ export default function MyPage() {
     setIsEditing(false);
   };
 
+  // ログアウト処理
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
 
-  // 💡 エラーが起きた場合はメッセージを表示
-  if (errorMsg) return <p className="text-center py-20 font-bold text-red-500">{errorMsg}</p>;
   if (loading) return <p className="text-center py-20 font-bold text-gray-500">読み込み中...</p>;
 
   return (
@@ -113,8 +104,7 @@ export default function MyPage() {
           ) : (
             <div className="flex items-center gap-3">
               <h3 className="text-xl font-bold text-gray-900">{username}</h3>
-              {/* 💡 Edit2 から Pencil に変更 */}
-              <button onClick={() => setIsEditing(true)} className="text-gray-400 hover:text-blue-500"><Pencil size={16} /></button>
+              <button onClick={() => setIsEditing(true)} className="text-gray-400 hover:text-blue-500"><Edit2 size={16} /></button>
             </div>
           )}
           <p className="text-xs text-gray-400 mt-2">{user?.email}</p>
