@@ -17,18 +17,32 @@ export default function BooksPage() {
       setLoading(true);
       let query = supabase.from('books').select('*');
 
-      // URLから検索条件を受け取る
+      // 1. URLから検索条件を受け取る
+      const q = searchParams.get('q'); // ★キーワード追加
       const subject = searchParams.get('subject');
       const category = searchParams.get('category');
       const publisher = searchParams.get('publisher');
 
-      // 条件があればクエリに追加
+      // 2. 条件があればクエリに追加
+      
+      // ★フリーワード検索の追加（タイトルにキーワードが含まれるか）
+      if (q) {
+        // .or() を使うと、タイトルか出版社のどちらかにヒットさせる、といったことも可能です
+        // 今回はシンプルにタイトル(title)で曖昧検索します
+        query = query.ilike('title', `%${q}%`);
+      }
+
       if (subject) query = query.eq('subject', subject);
       if (category) query = query.eq('category', category);
       if (publisher) query = query.eq('publisher', publisher);
 
-      const { data } = await query;
-      setBooks(data || []);
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error("検索エラー:", error);
+      } else {
+        setBooks(data || []);
+      }
       setLoading(false);
     };
 
@@ -47,7 +61,11 @@ export default function BooksPage() {
         <p className="text-center py-20 text-gray-500 font-bold">読み込み中...</p>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500 font-bold pl-1">{books.length}件 該当</p>
+          <p className="text-sm text-gray-500 font-bold pl-1">
+            {/* ★検索ワードが表示されるように少し工夫 */}
+            {searchParams.get('q') && `「${searchParams.get('q')}」の検索結果：`}
+            {books.length}件 該当
+          </p>
           
           {books.map(book => (
             <Link href={`/books/${book.id}`} key={book.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-shadow block">
@@ -58,9 +76,6 @@ export default function BooksPage() {
                 <div>
                   <p className="text-[10px] text-gray-500 font-bold mb-1">{book.publisher}</p>
                   <h3 className="font-bold text-base leading-tight mb-2 text-gray-800 line-clamp-2">{book.title}</h3>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-orange-600">¥{book.price || '---'}</p>
                 </div>
               </div>
             </Link>

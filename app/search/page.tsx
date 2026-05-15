@@ -14,14 +14,16 @@ const SUBJECT_DATA = {
 };
 
 export default function SearchPage() {
-  const router = useRouter(); // Next.jsのページ遷移機能
+  const router = useRouter();
   const [searchStep, setSearchStep] = useState('menu');
   const [publishers, setPublishers] = useState<string[]>([]);
   const [expandedSubjects, setExpandedSubjects] = useState<string[]>([]);
   const [publisherSearchText, setPublisherSearchText] = useState('');
   const [selectedTarget, setSelectedTarget] = useState<{ type: string, value: string } | null>(null);
+  
+  // ★追加：フリーワード検索用の状態
+  const [keywordSearchText, setKeywordSearchText] = useState('');
 
-  // 出版社リストの取得
   useEffect(() => {
     const fetchPublishers = async () => {
       const { data } = await supabase.from('books').select('publisher');
@@ -35,26 +37,62 @@ export default function SearchPage() {
     fetchPublishers();
   }, []);
 
-  // 検索実行処理（URLパラメータをつけて /books に遷移する！）
-  const executeSearch = (filters: { subject?: string; category?: string; publisher?: string }) => {
+  // ★変更：引数に q (検索キーワード) を追加
+  const executeSearch = (filters: { subject?: string; category?: string; publisher?: string; q?: string }) => {
     const params = new URLSearchParams();
     if (filters.subject) params.append('subject', filters.subject);
     if (filters.category) params.append('category', filters.category);
     if (filters.publisher) params.append('publisher', filters.publisher);
+    if (filters.q) params.append('q', filters.q); // ★キーワードパラメータを追加
     
-    // /books?subject=英語 のようなURLで検索結果ページへ移動
     router.push(`/books?${params.toString()}`);
+  };
+
+  // キーワード検索を実行するヘルパー関数
+  const handleKeywordSearch = () => {
+    if (keywordSearchText.trim() !== '') {
+      executeSearch({ q: keywordSearchText.trim() });
+    }
   };
 
   return (
     <div>
       {/* 検索メニュー画面 */}
       {searchStep === 'menu' && (
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <MenuCard icon={<Pencil className="text-orange-500" />} title="教科" onClick={() => setSearchStep('subject-select')} />
-          <MenuCard icon={<Bookmark className="text-green-500" />} title="出版社" onClick={() => setSearchStep('publisher-select')} />
-          <MenuCard icon={<School className="text-blue-500" />} title="志望校" onClick={() => {}} />
-          <MenuCard icon={<Crown className="text-yellow-500" />} title="ランキング" onClick={() => {}} />
+        <div className="mt-4 space-y-6">
+          
+          {/* ★追加：フリーワード検索バー */}
+          <div className="relative shadow-sm rounded-2xl bg-white border border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="参考書名やキーワードで検索"
+              value={keywordSearchText}
+              onChange={(e) => setKeywordSearchText(e.target.value)}
+              onKeyDown={(e) => {
+                // Enterキーを押した時にも検索を実行
+                if (e.key === 'Enter') {
+                  handleKeywordSearch();
+                }
+              }}
+              className="w-full bg-transparent py-4 pl-12 pr-16 rounded-2xl focus:outline-none text-gray-800 placeholder-gray-400"
+            />
+            <button
+              onClick={handleKeywordSearch}
+              disabled={!keywordSearchText.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
+            >
+              <Search size={18} />
+            </button>
+          </div>
+
+          {/* 既存のカテゴリ検索メニュー */}
+          <div className="grid grid-cols-2 gap-4">
+            <MenuCard icon={<Pencil className="text-orange-500" />} title="教科" onClick={() => setSearchStep('subject-select')} />
+            <MenuCard icon={<Bookmark className="text-green-500" />} title="出版社" onClick={() => setSearchStep('publisher-select')} />
+            <MenuCard icon={<School className="text-blue-500" />} title="志望校" onClick={() => {}} />
+            <MenuCard icon={<Crown className="text-yellow-500" />} title="ランキング" onClick={() => {}} />
+          </div>
         </div>
       )}
 
@@ -116,7 +154,6 @@ export default function SearchPage() {
             );
           })}
 
-          {/* 検索実行ボタン */}
           <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 z-30 md:left-20 md:bottom-0">
             <button
               onClick={() => {
@@ -173,7 +210,6 @@ export default function SearchPage() {
   );
 }
 
-// サブコンポーネント：メニューカード
 function MenuCard({ icon, title, onClick }: { icon: React.ReactNode, title: string, onClick: () => void }) {
   return (
     <button

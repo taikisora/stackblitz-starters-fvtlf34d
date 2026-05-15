@@ -112,9 +112,8 @@ export default function BookDetailPage() {
           <div className="space-y-3 text-sm text-gray-700 bg-gray-50 p-4 rounded-xl mb-6">
             {book.author && <p className="flex justify-between"><span className="text-gray-500">著者</span> <span className="font-bold">{book.author}</span></p>}
             {book.published_date && <p className="flex justify-between"><span className="text-gray-500">出版日</span> <span className="font-bold">{book.published_date}</span></p>}
-            {book.price && <p className="flex justify-between items-center"><span className="text-gray-500">価格</span> <span className="text-lg font-bold text-orange-600">¥{book.price}</span></p>}
+            
           </div>
-
           {book.description && (
             <div className="mb-6">
               <h3 className="font-bold mb-2 text-gray-800">商品説明</h3>
