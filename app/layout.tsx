@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import TabBar from '../components/TabBar';
 
 export const metadata: Metadata = {
-  title: '参考書.com',
+  title: '参考書ドットコム',
   description: 'あなたにぴったりの参考書を見つけよう',
 };
 

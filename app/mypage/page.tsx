@@ -4,170 +4,408 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-import { LogOut, Edit2, Check, X, Heart, BookOpen } from 'lucide-react';
+import { LogOut, Edit2, Check, X, User, BookOpen, Bookmark, ChevronRight } from 'lucide-react';
+import { UNIVERSITY_LIST } from '../../lib/universities';
 
 export default function MyPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
-  const [username, setUsername] = useState('ユーザー');
-  const [isEditing, setIsEditing] = useState(false);
-  const [newUsername, setNewUsername] = useState('');
-  
-  const [favoriteBooks, setFavoriteBooks] = useState<any[]>([]);
-  const [usedBooks, setUsedBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // プロフィール表示用の状態（💡 第2・第3を追加）
+  const [profile, setProfile] = useState({
+    username: '',
+    status: '',
+    stream: '',
+    university: '',
+    university2: '',
+    university3: ''
+  });
+
+  // 編集モード用の状態（💡 第2・第3を追加）
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    username: '',
+    status: '',
+    stream: '',
+    university: '',
+    university2: '',
+    university3: ''
+  });
+  
+  const [isUniUndecided, setIsUniUndecided] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // 💡 いま3つのうち、どの大学入力欄を触っているかを管理する状態
+  const [activeField, setActiveField] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
-      // ① ログインセッションの確認
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (!session) {
-        // ログインしていなければログイン画面へ強制移動！
         router.push('/login');
         return;
       }
-      
       setUser(session.user);
 
-      // ② プロフィール（ユーザー名）の取得
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (profile?.username) {
-        setUsername(profile.username);
-        setNewUsername(profile.username);
+      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+      if (data) {
+        const loadedProfile = {
+          username: data.username || 'ユーザー',
+          status: data.status || '',
+          stream: data.stream || '',
+          university: data.university || '',
+          university2: data.university2 || '',
+          university3: data.university3 || ''
+        };
+        setProfile(loadedProfile);
+        setEditData(loadedProfile);
+        setIsUniUndecided(!data.university);
       }
-
-      // ③ お気に入り・使用中の参考書を取得（booksテーブルと結合して取得）
-      const { data: userBooks } = await supabase
-        .from('user_book_status')
-        .select('is_favorite, is_used, books(*)')
-        .eq('user_id', session.user.id);
-
-      if (userBooks) {
-        // booksデータが正しく取得できているものだけをフィルター
-        const validBooks = userBooks.filter(item => item.books);
-        setFavoriteBooks(validBooks.filter(item => item.is_favorite).map(item => item.books));
-        setUsedBooks(validBooks.filter(item => item.is_used).map(item => item.books));
-      }
-      
       setLoading(false);
     };
-
     fetchUserData();
   }, [router]);
 
-  // ユーザー名の更新処理
-  const handleUpdateUsername = async () => {
-    if (!newUsername.trim() || !user) return;
-    
-    await supabase
-      .from('profiles')
-      .update({ username: newUsername })
-      .eq('id', user.id);
-      
-    setUsername(newUsername);
-    setIsEditing(false);
+  // 💡 大学名入力時のサジェスト絞り込み（どの欄が変更されたかも受け取る）
+  const handleUniversityChange = (field: string, value: string) => {
+    setEditData({ ...editData, [field]: value });
+    setActiveField(field);
+    if (field === 'university') setIsUniUndecided(false);
+
+    if (value.trim() === '') {
+      setSuggestions([]);
+      return;
+    }
+    const filtered = UNIVERSITY_LIST.filter(uni => uni.includes(value)).slice(0, 50);
+    setSuggestions(filtered);
+    setShowSuggestions(true);
   };
 
-  // ログアウト処理
+  // 💡 保存処理
+  const handleSaveProfile = async () => {
+    setLoading(true);
+
+    const updateData: any = {
+      id: user.id,
+      username: editData.username || 'ユーザー',
+      status: editData.status,
+    };
+
+    if (editData.status === 'other') {
+      updateData.stream = null;
+      updateData.university = null;
+      updateData.university2 = null;
+      updateData.university3 = null;
+    } else {
+      updateData.stream = (!editData.stream || editData.stream === 'undecided') ? null : editData.stream;
+      updateData.university = isUniUndecided ? null : editData.university.trim();
+      // 💡 第2・第3は、空欄なら null として保存
+      updateData.university2 = editData.university2.trim() || null;
+      updateData.university3 = editData.university3.trim() || null;
+    }
+
+    const { error } = await supabase.from('profiles').upsert(updateData);
+
+    if (error) {
+      alert('保存に失敗しました: ' + error.message);
+    } else {
+      setProfile({
+        username: updateData.username,
+        status: updateData.status,
+        stream: updateData.stream || 'undecided',
+        university: updateData.university || '',
+        university2: updateData.university2 || '',
+        university3: updateData.university3 || ''
+      });
+      setIsEditing(false);
+    }
+    setLoading(false);
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
   };
 
-  if (loading) return <p className="text-center py-20 font-bold text-gray-500">読み込み中...</p>;
+  // 💡 各入力欄の大学名がリストに存在するかどうかのチェック判定
+  const isUni1Valid = isUniUndecided || UNIVERSITY_LIST.includes(editData.university.trim());
+  const isUni2Valid = editData.university2.trim() === '' || UNIVERSITY_LIST.includes(editData.university2.trim());
+  const isUni3Valid = editData.university3.trim() === '' || UNIVERSITY_LIST.includes(editData.university3.trim());
+
+  const getStatusText = (status: string) => {
+    if (status === 'studying') return '大学受験生';
+    if (status === 'experienced') return '大学受験 経験済み';
+    if (status === 'other') return 'その他（大人の学び直しなど）';
+    return '未設定';
+  };
+  const getStreamText = (stream: string) => {
+    if (stream === 'humanities') return '文系';
+    if (stream === 'sciences') return '理系';
+    return '未定';
+  };
+
+  if (loading && !profile.username) return <div className="p-10 text-center text-gray-500 font-medium animate-pulse">読み込み中...</div>;
 
   return (
-    <div className="pb-24 max-w-2xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 px-2">マイページ</h2>
+    <div className="max-w-md mx-auto my-6 px-4 space-y-6 pb-20">
+      <h1 className="text-2xl font-bold text-gray-800 ml-2">マイページ</h1>
 
-      {/* プロフィールセクション */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-xs text-gray-500 font-bold mb-1">ユーザー名</p>
-          {isEditing ? (
-            <div className="flex items-center gap-2">
+      {/* ── プロフィール情報カード ── */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <User className="w-5 h-5 text-blue-600" />
+            アカウント情報
+          </h2>
+          {!isEditing ? (
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="text-sm flex items-center gap-1 text-blue-600 font-bold bg-blue-50 px-3 py-1.5 rounded-full hover:bg-blue-100 transition-colors"
+            >
+              <Edit2 className="w-4 h-4" /> 編集
+            </button>
+          ) : (
+            <button 
+              onClick={() => {
+                setIsEditing(false);
+                setEditData(profile);
+              }}
+              className="text-sm flex items-center gap-1 text-gray-500 font-bold bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              <X className="w-4 h-4" /> キャンセル
+            </button>
+          )}
+        </div>
+
+        {/* 閲覧モード */}
+        {!isEditing && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs text-gray-400 font-medium mb-1">ユーザーネーム</p>
+              <p className="font-bold text-gray-800 text-lg">{profile.username}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium mb-1">現在のステータス</p>
+              <p className="font-semibold text-gray-800">{getStatusText(profile.status)}</p>
+            </div>
+            
+            {profile.status !== 'other' && profile.status !== '' && (
+              <div className="space-y-4 pt-2 border-t border-gray-50">
+                <div>
+                  <p className="text-xs text-gray-400 font-medium mb-1">文系 / 理系</p>
+                  <p className="font-semibold text-gray-800">{getStreamText(profile.stream)}</p>
+                </div>
+                {/* 💡 第1・第2・第3志望を綺麗に並べて表示 */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-400 font-medium mb-0.5">
+                      {profile.status === 'studying' ? '第一志望校' : '受験・在籍大学 (1)'}
+                    </p>
+                    <p className="font-bold text-gray-800">{profile.university || '未定'}</p>
+                  </div>
+                  {(profile.university2 || profile.status === 'studying') && (
+                    <div>
+                      <p className="text-xs text-gray-400 font-medium mb-0.5">
+                        {profile.status === 'studying' ? '第二志望校' : '受験・在籍大学 (2)'}
+                      </p>
+                      <p className="font-semibold text-gray-700">{profile.university2 || '未設定'}</p>
+                    </div>
+                  )}
+                  {(profile.university3 || profile.status === 'studying') && (
+                    <div>
+                      <p className="text-xs text-gray-400 font-medium mb-0.5">
+                        {profile.status === 'studying' ? '第三志望校' : '受験・在籍大学 (3)'}
+                      </p>
+                      <p className="font-semibold text-gray-700">{profile.university3 || '未設定'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 編集モード */}
+        {isEditing && (
+          <div className="space-y-5 animate-fade-in">
+            <div>
+              <label className="text-xs font-bold text-gray-600 mb-1 block">ユーザーネーム</label>
               <input
                 type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                className="border border-blue-300 rounded px-2 py-1 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-[200px]"
+                value={editData.username}
+                onChange={(e) => setEditData({ ...editData, username: e.target.value })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
               />
-              <button onClick={handleUpdateUsername} className="p-1.5 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"><Check size={18} /></button>
-              <button onClick={() => setIsEditing(false)} className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"><X size={18} /></button>
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-bold text-gray-900">{username}</h3>
-              <button onClick={() => setIsEditing(true)} className="text-gray-400 hover:text-blue-500"><Edit2 size={16} /></button>
-            </div>
-          )}
-          <p className="text-xs text-gray-400 mt-2">{user?.email}</p>
-        </div>
-      </div>
 
-      {/* お気に入り一覧セクション */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex items-center gap-2 mb-4">
-          <Heart className="text-pink-500 fill-current" size={20} />
-          <h3 className="font-bold text-lg text-gray-800">お気に入りした参考書</h3>
-        </div>
-        {favoriteBooks.length === 0 ? (
-          <p className="text-sm text-gray-500">お気に入りに登録された参考書はありません。</p>
-        ) : (
-          <div className="space-y-3">
-            {favoriteBooks.map(book => (
-              <Link href={`/books/${book?.id}`} key={book?.id} className="flex gap-3 p-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-colors">
-                <div className="w-12 h-16 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center text-[8px] text-gray-400 overflow-hidden">
-                   {book?.cover_url ? <img src={book?.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
+            <div>
+              <label className="text-xs font-bold text-gray-600 mb-1 block">現在の状況</label>
+              <select
+                value={editData.status}
+                onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
+              >
+                <option value="" disabled hidden>選択してください</option>
+                <option value="studying">これから大学受験に挑む</option>
+                <option value="experienced">大学受験を経験済み</option>
+                <option value="other">その他（大人の学び直しなど）</option>
+              </select>
+            </div>
+
+            {editData.status !== 'other' && editData.status !== '' && (
+              <>
+                <div>
+                  <label className="text-xs font-bold text-gray-600 mb-1 block">文系 / 理系</label>
+                  <select
+                    value={editData.stream}
+                    onChange={(e) => setEditData({ ...editData, stream: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
+                  >
+                    <option value="" disabled hidden>選択してください</option>
+                    <option value="humanities">文系</option>
+                    <option value="sciences">理系</option>
+                    <option value="undecided">まだ決めていない（未定）</option>
+                  </select>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-gray-800 line-clamp-2">{book?.title}</p>
-                  <p className="text-[10px] text-gray-500 mt-1">{book?.publisher}</p>
+
+                {/* 💡 大学名の入力フォーム（1〜3） */}
+                <div className="space-y-4 pt-2 border-t border-gray-100">
+                  
+                  {/* 第一志望 */}
+                  <div className="relative">
+                    <label className="text-xs font-bold text-gray-500 mb-1 block">
+                      {editData.status === 'studying' ? '第一志望校' : '大学名 (1)'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例: 東京大学"
+                      value={editData.university}
+                      disabled={isUniUndecided}
+                      onChange={(e) => handleUniversityChange('university', e.target.value)}
+                      onFocus={() => { setShowSuggestions(true); setActiveField('university'); }}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium disabled:opacity-50"
+                    />
+                    
+                    {/* 第一志望用の未定トグル */}
+                    <label className="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isUniUndecided}
+                        onChange={(e) => {
+                          setIsUniUndecided(e.target.checked);
+                          if (e.target.checked) setEditData({ ...editData, university: '' });
+                        }}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-xs font-medium text-gray-500">まだ決めていない（未定）</span>
+                    </label>
+                  </div>
+
+                  {/* 第二志望 */}
+                  <div className="relative">
+                    <label className="text-xs font-bold text-gray-500 mb-1 block">
+                      {editData.status === 'studying' ? '第二志望校 (任意)' : '大学名 (2) (任意)'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例: 早稲田大学"
+                      value={editData.university2}
+                      onChange={(e) => handleUniversityChange('university2', e.target.value)}
+                      onFocus={() => { setShowSuggestions(true); setActiveField('university2'); }}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
+                    />
+                  </div>
+
+                  {/* 第三志望 */}
+                  <div className="relative">
+                    <label className="text-xs font-bold text-gray-500 mb-1 block">
+                      {editData.status === 'studying' ? '第三志望校 (任意)' : '大学名 (3) (任意)'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="例: 明治大学"
+                      value={editData.university3}
+                      onChange={(e) => handleUniversityChange('university3', e.target.value)}
+                      onFocus={() => { setShowSuggestions(true); setActiveField('university3'); }}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
+                    />
+                  </div>
+
+                  {/* 💡 3つの入力欄で共通利用するサジェストドロップダウン */}
+                  {showSuggestions && suggestions.length > 0 && activeField && (
+                    <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100">
+                      {suggestions.map((uni) => (
+                        <li key={uni}>
+                          <button
+                            type="button"
+                            onMouseDown={() => {
+                              setEditData({ ...editData, [activeField]: uni });
+                              setShowSuggestions(false);
+                            }}
+                            className="w-full text-left px-4 py-3 hover:bg-blue-50 text-gray-700 font-medium transition-colors text-sm"
+                          >
+                            {uni}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-              </Link>
-            ))}
+              </>
+            )}
+
+            <button
+              onClick={handleSaveProfile}
+              // 💡 すべての入力中の大学名が有効（または空欄）な時だけボタンを活性化
+              disabled={loading || !editData.status || (editData.status !== 'other' && (!isUni1Valid || !isUni2Valid || !isUni3Valid))}
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4"
+            >
+              <Check className="w-5 h-5" />
+              {loading ? '保存中...' : '変更を保存する'}
+            </button>
           </div>
         )}
       </div>
 
-      {/* 使用中一覧セクション */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="text-blue-500 fill-current" size={20} />
-          <h3 className="font-bold text-lg text-gray-800">使用中の参考書</h3>
-        </div>
-        {usedBooks.length === 0 ? (
-          <p className="text-sm text-gray-500">使用中に登録された参考書はありません。</p>
-        ) : (
-          <div className="space-y-3">
-            {usedBooks.map(book => (
-              <Link href={`/books/${book?.id}`} key={book?.id} className="flex gap-3 p-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-colors">
-                 <div className="w-12 h-16 bg-gray-200 rounded flex-shrink-0 flex items-center justify-center text-[8px] text-gray-400 overflow-hidden">
-                   {book?.cover_url ? <img src={book?.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-gray-800 line-clamp-2">{book?.title}</p>
-                  <p className="text-[10px] text-gray-500 mt-1">{book?.publisher}</p>
-                </div>
-              </Link>
-            ))}
+      {/* 参考書管理メニュー */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <Link href="/mypage/saved" className="flex items-center justify-between p-5 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="bg-pink-50 p-2 rounded-lg">
+              <Bookmark className="w-5 h-5 text-pink-500 fill-current" />
+            </div>
+            <span className="font-bold text-gray-700">保存した参考書</span>
           </div>
-        )}
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </Link>
+        <Link href="/mypage/used" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-50 p-2 rounded-lg">
+              <BookOpen className="w-5 h-5 text-blue-500 fill-current" />
+            </div>
+            <span className="font-bold text-gray-700">使用中の参考書</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </Link>
       </div>
 
-      {/* ログアウトボタン */}
-      <button 
-        onClick={handleLogout}
-        className="w-full mt-8 py-4 flex items-center justify-center gap-2 text-red-500 font-bold bg-white rounded-xl shadow-sm border border-gray-100 hover:bg-red-50 transition-colors"
-      >
-        <LogOut size={18} /> ログアウト
-      </button>
+      {/* 各種設定・ログアウト */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors"
+        >
+          <div className="bg-red-50 p-2 rounded-lg">
+            <LogOut className="w-5 h-5 text-red-500" />
+          </div>
+          <span className="font-bold text-gray-700">ログアウト</span>
+        </button>
+      </div>
     </div>
   );
 }
