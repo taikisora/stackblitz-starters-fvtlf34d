@@ -94,7 +94,7 @@ export default function BookDetailPage() {
       [type === 'saved' ? 'is_saved' : 'is_used']: nextStatus
     }));
 
-    setBook(prev => ({
+    setBook((prev: any) => ({
       ...prev,
       [countColumn]: nextCount
     }));
