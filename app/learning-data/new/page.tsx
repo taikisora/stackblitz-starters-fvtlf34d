@@ -12,7 +12,7 @@ export default function NewRoutePage() {
 
   // ルートのメタ情報
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useSconst [subject, setSubject] = useState('英単語');tate('英語');
+  const [subject, setSubject] = useState('英単語');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
 
