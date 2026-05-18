@@ -202,7 +202,7 @@ export default function OnboardingPage() {
               onClick={() => setStream('undecided')}
               className={`w-full py-4 rounded-xl border font-bold transition-all ${stream === 'undecided' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-gray-200 hover:bg-gray-50 text-gray-700 border-dashed'}`}
             >
-              まだ決めていない（未定）
+              未定/どちらでもない
             </button>
           </div>
           <button

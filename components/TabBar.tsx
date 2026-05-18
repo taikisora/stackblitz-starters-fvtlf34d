@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, BarChart2, User } from 'lucide-react';
+// ★ 変更：BarChart2 を削除し、ルート一覧にぴったりな Route アイコンを追加
+import { Home, Search, Route, User } from 'lucide-react';
 
 export default function TabBar() {
   const pathname = usePathname();
@@ -15,10 +16,11 @@ export default function TabBar() {
       <Link href="/search" className={`flex flex-col items-center w-full py-2 ${pathname?.startsWith('/search') || pathname?.startsWith('/books') ? 'text-blue-600' : 'text-gray-400'}`}>
         <Search size={24} /><span className="text-[10px] mt-1 font-bold">検索</span>
       </Link>
-      <Link href="/stats" className="flex flex-col items-center w-full py-2 text-gray-400">
-        <BarChart2 size={24} /><span className="text-[10px] mt-1 font-bold">データ</span>
+      {/* ★ 変更：href を /learning-data に変更し、アクティブ時に青文字になる判定を追加 */}
+      <Link href="/learning-data" className={`flex flex-col items-center w-full py-2 ${pathname?.startsWith('/learning-data') ? 'text-blue-600' : 'text-gray-400'}`}>
+        <Route size={24} /><span className="text-[10px] mt-1 font-bold">学習データ</span>
       </Link>
-      <Link href="/mypage" className={`flex flex-col items-center w-full py-2 ${pathname === '/mypage' ? 'text-blue-600' : 'text-gray-400'}`}>
+      <Link href="/mypage" className={`flex flex-col items-center w-full py-2 ${pathname?.startsWith('/mypage') ? 'text-blue-600' : 'text-gray-400'}`}>
         <User size={24} /><span className="text-[10px] mt-1 font-bold">マイページ</span>
       </Link>
     </nav>

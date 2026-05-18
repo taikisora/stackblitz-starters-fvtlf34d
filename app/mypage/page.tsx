@@ -4,25 +4,41 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-import { LogOut, Edit2, Check, X, User, BookOpen, Bookmark, ChevronRight } from 'lucide-react';
+// ★ 変更：メールアイコン(Mail)とパレット(Palette)を追加
+import { LogOut, Edit2, Check, X, User, BookOpen, Bookmark, ChevronRight, Mail, Palette } from 'lucide-react';
 import { UNIVERSITY_LIST } from '../../lib/universities';
+
+// 🎨 ★ 追加：10種類のカラーパレット定義
+const COLOR_OPTIONS = [
+  { id: 'gray', name: 'グレー', bg: 'bg-gray-500', ring: 'ring-gray-300' },
+  { id: 'red', name: 'レッド', bg: 'bg-red-500', ring: 'ring-red-300' },
+  { id: 'orange', name: 'オレンジ', bg: 'bg-orange-500', ring: 'ring-orange-300' },
+  { id: 'amber', name: 'イエロー', bg: 'bg-amber-500', ring: 'ring-amber-300' },
+  { id: 'emerald', name: 'グリーン', bg: 'bg-emerald-500', ring: 'ring-emerald-300' },
+  { id: 'sky', name: 'ライトブルー', bg: 'bg-sky-500', ring: 'ring-sky-300' },
+  { id: 'blue', name: 'ブルー', bg: 'bg-blue-500', ring: 'ring-blue-300' },
+  { id: 'indigo', name: 'インディゴ', bg: 'bg-indigo-500', ring: 'ring-indigo-300' },
+  { id: 'purple', name: 'パープル', bg: 'bg-purple-500', ring: 'ring-purple-300' },
+  { id: 'pink', name: 'ピンク', bg: 'bg-pink-500', ring: 'ring-pink-300' },
+];
 
 export default function MyPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // プロフィール表示用の状態（💡 第2・第3を追加）
+  // プロフィール表示用の状態（★ avatar_color を追加）
   const [profile, setProfile] = useState({
     username: '',
     status: '',
     stream: '',
     university: '',
     university2: '',
-    university3: ''
+    university3: '',
+    avatar_color: 'gray' 
   });
 
-  // 編集モード用の状態（💡 第2・第3を追加）
+  // 編集モード用の状態（★ avatar_color を追加）
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     username: '',
@@ -30,14 +46,14 @@ export default function MyPage() {
     stream: '',
     university: '',
     university2: '',
-    university3: ''
+    university3: '',
+    avatar_color: 'gray'
   });
   
   const [isUniUndecided, setIsUniUndecided] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   
-  // 💡 いま3つのうち、どの大学入力欄を触っているかを管理する状態
   const [activeField, setActiveField] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,7 +73,8 @@ export default function MyPage() {
           stream: data.stream || '',
           university: data.university || '',
           university2: data.university2 || '',
-          university3: data.university3 || ''
+          university3: data.university3 || '',
+          avatar_color: data.avatar_color || 'gray' // ★ 追加：DBから色を読み込む
         };
         setProfile(loadedProfile);
         setEditData(loadedProfile);
@@ -68,7 +85,6 @@ export default function MyPage() {
     fetchUserData();
   }, [router]);
 
-  // 💡 大学名入力時のサジェスト絞り込み（どの欄が変更されたかも受け取る）
   const handleUniversityChange = (field: string, value: string) => {
     setEditData({ ...editData, [field]: value });
     setActiveField(field);
@@ -83,7 +99,6 @@ export default function MyPage() {
     setShowSuggestions(true);
   };
 
-  // 💡 保存処理
   const handleSaveProfile = async () => {
     setLoading(true);
 
@@ -91,6 +106,7 @@ export default function MyPage() {
       id: user.id,
       username: editData.username || 'ユーザー',
       status: editData.status,
+      avatar_color: editData.avatar_color // ★ 追加：選んだ色を保存対象に入れる
     };
 
     if (editData.status === 'other') {
@@ -101,7 +117,6 @@ export default function MyPage() {
     } else {
       updateData.stream = (!editData.stream || editData.stream === 'undecided') ? null : editData.stream;
       updateData.university = isUniUndecided ? null : editData.university.trim();
-      // 💡 第2・第3は、空欄なら null として保存
       updateData.university2 = editData.university2.trim() || null;
       updateData.university3 = editData.university3.trim() || null;
     }
@@ -117,7 +132,8 @@ export default function MyPage() {
         stream: updateData.stream || 'undecided',
         university: updateData.university || '',
         university2: updateData.university2 || '',
-        university3: updateData.university3 || ''
+        university3: updateData.university3 || '',
+        avatar_color: updateData.avatar_color // ★ 追加：画面上の表示色も確定させる
       });
       setIsEditing(false);
     }
@@ -129,7 +145,6 @@ export default function MyPage() {
     router.push('/login');
   };
 
-  // 💡 各入力欄の大学名がリストに存在するかどうかのチェック判定
   const isUni1Valid = isUniUndecided || UNIVERSITY_LIST.includes(editData.university.trim());
   const isUni2Valid = editData.university2.trim() === '' || UNIVERSITY_LIST.includes(editData.university2.trim());
   const isUni3Valid = editData.university3.trim() === '' || UNIVERSITY_LIST.includes(editData.university3.trim());
@@ -147,6 +162,10 @@ export default function MyPage() {
   };
 
   if (loading && !profile.username) return <div className="p-10 text-center text-gray-500 font-medium animate-pulse">読み込み中...</div>;
+
+  // ★ 追加：現在選ばれている色オブジェクトを見つける処理
+  const currentProfileColor = COLOR_OPTIONS.find(c => c.id === profile.avatar_color) || COLOR_OPTIONS[0];
+  const currentEditColor = COLOR_OPTIONS.find(c => c.id === editData.avatar_color) || COLOR_OPTIONS[0];
 
   return (
     <div className="max-w-md mx-auto my-6 px-4 space-y-6 pb-20">
@@ -179,13 +198,24 @@ export default function MyPage() {
           )}
         </div>
 
+        {/* ★ 変更：大きな丸アイコンエリア（編集中の場合はリアルタイムに色が連動） */}
+        <div className="text-center space-y-3 mb-6 pb-4 border-b border-gray-50">
+          <div className={`w-20 h-20 ${isEditing ? currentEditColor.bg : currentProfileColor.bg} text-white rounded-full flex items-center justify-center mx-auto border border-gray-100 shadow-sm transition-colors duration-300`}>
+            <User size={36} />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-gray-800 text-lg">{profile.username}</h3>
+            {/* ★ 追加：ログインユーザーのメールアドレスを表示 */}
+            <div className="flex items-center justify-center gap-1 text-gray-400 text-xs mt-1 font-medium">
+              <Mail size={12} />
+              <span>{user?.email}</span>
+            </div>
+          </div>
+        </div>
+
         {/* 閲覧モード */}
         {!isEditing && (
           <div className="space-y-4">
-            <div>
-              <p className="text-xs text-gray-400 font-medium mb-1">ユーザーネーム</p>
-              <p className="font-bold text-gray-800 text-lg">{profile.username}</p>
-            </div>
             <div>
               <p className="text-xs text-gray-400 font-medium mb-1">現在のステータス</p>
               <p className="font-semibold text-gray-800">{getStatusText(profile.status)}</p>
@@ -197,7 +227,6 @@ export default function MyPage() {
                   <p className="text-xs text-gray-400 font-medium mb-1">文系 / 理系</p>
                   <p className="font-semibold text-gray-800">{getStreamText(profile.stream)}</p>
                 </div>
-                {/* 💡 第1・第2・第3志望を綺麗に並べて表示 */}
                 <div className="space-y-3">
                   <div>
                     <p className="text-xs text-gray-400 font-medium mb-0.5">
@@ -230,6 +259,32 @@ export default function MyPage() {
         {/* 編集モード */}
         {isEditing && (
           <div className="space-y-5 animate-fade-in">
+            {/* ★ 追加：編集モード時のみ出現するカラーパレットセクション */}
+            <div className="bg-gray-50/50 p-3 rounded-2xl border border-gray-100 space-y-2">
+              <div className="flex items-center gap-1 text-gray-500 font-bold text-[11px] px-1">
+                <Palette size={12} className="text-blue-500" />
+                <span>アイコンのカラー変更</span>
+              </div>
+              <div className="grid grid-cols-5 gap-2 pt-0.5">
+                {COLOR_OPTIONS.map((color) => {
+                  const isSelected = editData.avatar_color === color.id;
+                  return (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() => setEditData({ ...editData, avatar_color: color.id })}
+                      className={`w-7 h-7 ${color.bg} rounded-full mx-auto transition-all transform hover:scale-110 active:scale-95 ${
+                        isSelected 
+                          ? `ring-4 ring-offset-1 ${color.ring} scale-105` 
+                          : 'opacity-70 hover:opacity-100'
+                      }`}
+                      title={color.name}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1 block">ユーザーネーム</label>
               <input
@@ -266,13 +321,11 @@ export default function MyPage() {
                     <option value="" disabled hidden>選択してください</option>
                     <option value="humanities">文系</option>
                     <option value="sciences">理系</option>
-                    <option value="undecided">まだ決めていない（未定）</option>
+                    <option value="undecided">未定/どちらでもない</option>
                   </select>
                 </div>
 
-                {/* 💡 大学名の入力フォーム（1〜3） */}
                 <div className="space-y-4 pt-2 border-t border-gray-100">
-                  
                   {/* 第一志望 */}
                   <div className="relative">
                     <label className="text-xs font-bold text-gray-500 mb-1 block">
@@ -289,7 +342,6 @@ export default function MyPage() {
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium disabled:opacity-50"
                     />
                     
-                    {/* 第一志望用の未定トグル */}
                     <label className="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
                       <input 
                         type="checkbox" 
@@ -336,7 +388,6 @@ export default function MyPage() {
                     />
                   </div>
 
-                  {/* 💡 3つの入力欄で共通利用するサジェストドロップダウン */}
                   {showSuggestions && suggestions.length > 0 && activeField && (
                     <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100">
                       {suggestions.map((uni) => (
@@ -361,7 +412,6 @@ export default function MyPage() {
 
             <button
               onClick={handleSaveProfile}
-              // 💡 すべての入力中の大学名が有効（または空欄）な時だけボタンを活性化
               disabled={loading || !editData.status || (editData.status !== 'other' && (!isUni1Valid || !isUni2Valid || !isUni3Valid))}
               className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4"
             >
@@ -389,6 +439,16 @@ export default function MyPage() {
               <BookOpen className="w-5 h-5 text-blue-500 fill-current" />
             </div>
             <span className="font-bold text-gray-700">使用中の参考書</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </Link>
+      </div>
+
+      {/* 運営へのリクエストメニュー */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <Link href="/request" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-gray-700">参考書リクエスト・ご意見</span>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400" />
         </Link>

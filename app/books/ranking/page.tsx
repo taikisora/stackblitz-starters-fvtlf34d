@@ -6,14 +6,16 @@ import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
 import { ChevronLeft, Trophy, Medal, BookOpen, Users } from 'lucide-react';
 
-// 💡 内部のメインコンポーネント
 function RankingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // URLから条件（大学名と文理）を取得
-  const university = searchParams.get('university') || '';
-  const stream = searchParams.get('stream') || '';
+  // ★ 変更：単一の'university'ではなく、複数対応の'universities'を取得する
+  const universitiesStr = searchParams.get('universities') || '';
+  const stream = searchParams.get('stream') || 'all';
+
+  // カンマ区切りの大学名を配列に変える（例: ["早稲田大学", "慶應義塾大学"])
+  const uniArray = universitiesStr ? universitiesStr.split(',') : [];
 
   const [rankingList, setRankingList] = useState<any[]>([]);
   const [targetUserCount, setTargetUserCount] = useState<number>(0);
@@ -21,18 +23,27 @@ function RankingContent() {
 
   useEffect(() => {
     const fetchRankingData = async () => {
-      if (!university || !stream) {
+      if (uniArray.length === 0) {
         setLoading(false);
         return;
       }
 
-      // ── ① 条件に合うユーザーのIDをすべて取得 ──
-      // 第1〜第3志望のいずれかが指定された大学、かつ文理が一致するユーザー
-      const { data: users, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('stream', stream)
-        .or(`university.eq."${university}",university2.eq."${university}",university3.eq."${university}"`);
+      // ── ① 条件に合うユーザーのIDを動的クエリで一括取得 ──
+      let userQuery = supabase.from('profiles').select('id');
+
+      // ★ 改善：文理が 'all'（指定なし）以外の時だけ、文理を条件に加える（allなら全件対象！）
+      if (stream !== 'all') {
+        userQuery = userQuery.eq('stream', stream);
+      }
+
+      // ★ 改善：選択されたすべての大学を「第一〜第三志望のいずれか」にひっかける巨大なOR文を動的に生成
+      const orConditions = uniArray.map(uni => 
+        `university.eq."${uni}",university2.eq."${uni}",university3.eq."${uni}"`
+      ).join(',');
+
+      userQuery = userQuery.or(orConditions);
+
+      const { data: users, error: userError } = await userQuery;
 
       if (userError || !users || users.length === 0) {
         setTargetUserCount(0);
@@ -44,7 +55,7 @@ function RankingContent() {
       setTargetUserCount(users.length);
       const userIds = users.map(u => u.id);
 
-      // ── ② そのユーザーたちが「保存」または「使用中」にしている参考書をすべて取得 ──
+      // ── ② そのユーザーたちの参考書ステータスを取得 ──
       const { data: statuses, error: statusError } = await supabase
         .from('user_book_status')
         .select(`
@@ -60,11 +71,11 @@ function RankingContent() {
         return;
       }
 
-      // ── ③ JavaScript側で集計（カウント）と並び替えを実行 ──
+      // ── ③ 集計（カウント）と並び替え ──
       const bookCounts: { [key: string]: { book: any; count: number } } = {};
 
       statuses.forEach((item: any) => {
-        if (!item.books) return; // 参考書詳細が取れなかった場合はスキップ
+        if (!item.books) return; 
         
         const bookId = item.book_id;
         if (!bookCounts[bookId]) {
@@ -73,10 +84,9 @@ function RankingContent() {
             count: 0
           };
         }
-        bookCounts[bookId].count += 1; // 使用者数をプラス1
+        bookCounts[bookId].count += 1; 
       });
 
-      // 配列に変換して、使用者数が多い順（降順）に並び替える
       const sortedRanking = Object.values(bookCounts).sort((a, b) => b.count - a.count);
 
       setRankingList(sortedRanking);
@@ -84,12 +94,15 @@ function RankingContent() {
     };
 
     fetchRankingData();
-  }, [university, stream]);
+  }, [universitiesStr, stream]);
 
-  // 文理のラベル変換用ヘルパー
-  const getStreamLabel = (s: string) => s === 'humanities' ? '文系' : '理系';
+  // ★ 変更：'all' のときは「指定なし」と表示する
+  const getStreamLabel = (s: string) => {
+    if (s === 'humanities') return '文系';
+    if (s === 'sciences') return '理系';
+    return '指定なし';
+  };
 
-  // 💡 順位に応じたバッジ（金・銀・銅・グレー）を表示するヘルパー
   const renderRankBadge = (index: number) => {
     const rank = index + 1;
     if (rank === 1) return <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white w-7 h-7 rounded-full flex items-center justify-center font-black shadow-sm text-sm"><Trophy size={14} /></div>;
@@ -110,10 +123,17 @@ function RankingContent() {
 
       {/* ── タイトルカード ── */}
       <div className="bg-gradient-to-br from-gray-800 to-slate-900 text-white p-6 rounded-3xl shadow-md space-y-2">
-        <span className="bg-blue-500/20 text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full border border-blue-500/30 inline-block">
+        <span className={`text-xs font-bold px-2.5 py-1 rounded-full border inline-block ${
+          stream === 'all' ? 'bg-gray-500/30 text-gray-300 border-gray-500/40' : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+        }`}>
           {getStreamLabel(stream)}
         </span>
-        <h1 className="text-xl font-black tracking-tight">{university}</h1>
+        
+        {/* ★ 変更：選択された大学群が複数あっても綺麗に並べて表示 */}
+        <h1 className="text-base font-black tracking-tight leading-snug text-slate-100">
+          {uniArray.join(' / ')}
+        </h1>
+
         <p className="text-sm text-slate-300 font-bold flex items-center gap-1.5 pt-1">
           <Users size={16} className="text-blue-400" />
           データ元: 志望者・受験生 計 <span className="text-blue-400 font-extrabold text-base">{targetUserCount}</span> 名
@@ -132,20 +152,16 @@ function RankingContent() {
           <div className="space-y-4 divide-y divide-gray-50">
             {rankingList.map((item, index) => {
               const book = item.book;
-              const isTop3 = index < 3;
-              
               return (
                 <Link 
                   href={`/books/${book.id}`} 
                   key={book.id} 
-                  className={`flex gap-4 pt-4 first:pt-0 items-center group transition-colors`}
+                  className="flex gap-4 pt-4 first:pt-0 items-center group transition-colors"
                 >
-                  {/* 順位バッジ */}
                   <div className="flex-shrink-0 w-8 flex justify-center">
                     {renderRankBadge(index)}
                   </div>
 
-                  {/* 参考書カバー画像 */}
                   <div className="w-14 h-18 bg-gray-50 rounded-xl flex-shrink-0 flex items-center justify-center text-[8px] text-gray-400 overflow-hidden shadow-sm border border-gray-100 group-hover:scale-105 transition-transform">
                      {book.cover_url ? (
                        <img src={book.cover_url} alt="cover" className="w-full h-full object-cover" />
@@ -154,14 +170,11 @@ function RankingContent() {
                      )}
                   </div>
 
-                  {/* 参考書テキスト情報 */}
                   <div className="flex-1 min-w-0 space-y-1">
                     <p className="text-xs text-gray-400 font-bold truncate">{book.publisher}</p>
                     <p className="text-sm font-bold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition-colors">
                       {book.title}
                     </p>
-                    
-                    {/* 使用者数バッジ */}
                     <p className="text-[11px] font-bold text-gray-500 flex items-center gap-1 pt-0.5">
                       <BookOpen size={12} className="text-gray-400" />
                       使用者: <span className="text-blue-600 font-extrabold">{item.count}</span>名
@@ -177,7 +190,6 @@ function RankingContent() {
   );
 }
 
-// 💡 Next.jsの仕様上、useSearchParamsを使う際はSuspenseで包む必要があります
 export default function RankingPage() {
   return (
     <Suspense fallback={<div className="p-10 text-center text-gray-500 font-medium">読み込み中...</div>}>

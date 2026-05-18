@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 // ★ 変更: SaveアイコンをBookmarkに変更
-import { ChevronLeft, Bookmark, BookOpen } from 'lucide-react';
+import { ChevronLeft, Bookmark, BookOpen, Star } from 'lucide-react';
 
 export default function BooksPage() {
   const searchParams = useSearchParams();
@@ -223,6 +223,17 @@ export default function BooksPage() {
                 <div className="flex-1 flex flex-col justify-start">
                   <p className="text-[10px] text-gray-500 font-bold mb-1">{book.publisher}</p>
                   <h3 className="font-bold text-sm leading-tight mb-2 text-gray-800 line-clamp-2">{book.title}</h3>
+                  <div className="flex items-center gap-1 mt-auto">
+                    <div className="flex text-amber-400">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={12} className={i < Math.round(book.average_rating || 0) ? 'fill-current' : 'text-gray-200'} />
+                      ))}
+                    </div>
+                    <span className="text-xs font-bold text-gray-700 ml-0.5">
+                      {Number(book.average_rating || 0).toFixed(1)}
+                    </span>
+                    <span className="text-[10px] text-gray-400">({book.review_count || 0})</span>
+                  </div>
                 </div>
               </div>
 
