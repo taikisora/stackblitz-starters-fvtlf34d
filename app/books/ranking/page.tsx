@@ -94,7 +94,7 @@ function RankingContent() {
     };
 
     fetchRankingData();
-  }, [universitiesStr, stream]);
+    }, [universitiesStr, stream, uniArray]);
 
   // ★ 変更：'all' のときは「指定なし」と表示する
   const getStreamLabel = (s: string) => {

@@ -5,7 +5,7 @@ import TabBar from '../components/TabBar';
 
 export const metadata: Metadata = {
   title: '参考書ドットコム',
-  description: 'あなたにぴったりの参考書を見つけよう',
+  description: '参考書を見つけよう',
 };
 
 export default function RootLayout({
