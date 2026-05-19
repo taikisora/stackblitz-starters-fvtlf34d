@@ -4,8 +4,8 @@ import Header from '../components/Header';
 import TabBar from '../components/TabBar';
 
 export const metadata: Metadata = {
-  title: '参考書ドットコム',
-  description: '参考書を見つけよう',
+  title: '参考書ドットコム｜大学受験用参考書のまとめサイト',
+  description: 'さまざまな参考書の検索・管理ができるWebアプリです。参考書ルートを作って公開することもできます。',
 };
 
 export default function RootLayout({
