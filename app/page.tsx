@@ -35,7 +35,7 @@ export default function HomePage() {
       <div className="bg-white px-4 pt-12 pb-8 border-b border-gray-200 mb-6 shadow-sm">
         <div className="max-w-md mx-auto text-center">
           <h2 className="text-2xl font-extrabold text-gray-800 mb-2 tracking-tight">Welcome!</h2>
-          <p className="text-sm text-gray-500 font-medium">あなたにぴったりの参考書を見つけよう</p>
+          <p className="text-sm text-gray-500 font-medium">参考書を見つけよう</p>
           
           <Link 
             href="/books" 
