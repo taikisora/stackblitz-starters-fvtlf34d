@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 // ★ 変更：メールアイコン(Mail)とパレット(Palette)を追加
-import { LogOut, Edit2, Check, X, User, BookOpen, Bookmark, ChevronRight, Mail, Palette } from 'lucide-react';
+import { LogOut, Edit2, Check, X, User, BookOpen, Bookmark, ChevronRight, Mail, Palette, Trash2, AlertTriangle } from 'lucide-react';
 import { UNIVERSITY_LIST } from '../../lib/universities';
 
 // 🎨 ★ 追加：10種類のカラーパレット定義
@@ -143,6 +143,26 @@ export default function MyPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  // アカウント削除ポップアップの開閉ステータス
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // アカウントの完全削除処理
+  const handleDeleteAccount = async () => {
+    // 💡 変更：Supabaseに仕込んだ完全削除用の関数（RPC）を呼び出す
+    const { error } = await supabase.rpc('delete_my_account');
+    
+    if (error) {
+      // 💡 もしブロックされたりエラーが起きたら、ログアウトさせずにここで止める
+      alert('アカウントの削除に失敗しました: ' + error.message);
+      setLoading(false);
+      setIsDeleteModalOpen(false);
+    } else {
+      // 💡 完全に削除が成功した場合のみ、強制ログアウトしてトップへ
+      await supabase.auth.signOut();
+      router.push('/login');
+    }
   };
 
   const isUni1Valid = isUniUndecided || UNIVERSITY_LIST.includes(editData.university.trim());
@@ -454,18 +474,63 @@ export default function MyPage() {
         </Link>
       </div>
 
-      {/* 各種設定・ログアウト */}
+      {/* ── 各種設定・ログアウト・退会 ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* ログアウトボタン */}
         <button 
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors border-b border-gray-50"
         >
-          <div className="bg-red-50 p-2 rounded-lg">
-            <LogOut className="w-5 h-5 text-red-500" />
+          <div className="bg-gray-100 p-2 rounded-lg">
+            <LogOut className="w-5 h-5 text-gray-600" />
           </div>
           <span className="font-bold text-gray-700">ログアウト</span>
         </button>
+
+        {/* アカウント削除ボタン */}
+        <button 
+          onClick={() => setIsDeleteModalOpen(true)}
+          className="w-full flex items-center gap-3 p-5 text-left hover:bg-red-50 transition-colors"
+        >
+          <div className="bg-red-50 p-2 rounded-lg">
+            <Trash2 className="w-5 h-5 text-red-500" />
+          </div>
+          <span className="font-bold text-red-600">アカウントを削除（退会）</span>
+        </button>
       </div>
+
+      {/* 💡 --- ここからポップアップUIを追加 --- 💡 */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <AlertTriangle className="text-red-600 w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-black text-center text-gray-800 mb-2">
+              本当にアカウントを削除しますか？
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6 font-medium">
+              この操作は取り消せません。<br/>プロフィールや登録した参考書データがすべて完全に削除されます。
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={handleDeleteAccount}
+                disabled={loading}
+                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-xl hover:bg-red-700 transition-colors disabled:bg-red-300"
+              >
+                {loading ? '削除中...' : '削除して退会する'}
+              </button>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={loading}
+                className="w-full bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -83,7 +83,7 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-      <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">参考書.com</h1>
+      <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">参考書ドットコム</h1>
       
       <form onSubmit={isResetMode ? handleResetPasswordEmail : handleLogin} className="space-y-4">
         <div>
