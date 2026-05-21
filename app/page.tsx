@@ -2,19 +2,49 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 import { Megaphone, Search, ChevronRight } from 'lucide-react';
 
 export default function HomePage() {
+  const router = useRouter();
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [authChecking, setAuthChecking] = useState(true); // 💡 新規ユーザーの仕分けが終わるまでのフラグ
 
   useEffect(() => {
-    const fetchAnnouncements = async () => {
-      // ★ 変更：直近の「3件」だけを取得するように制限
+    const initializeHome = async () => {
+      // ────────────────────────────────────────────────────────
+      // 👮‍♂️ 【検問】登録直後の新規ユーザーだけを一本釣りする
+      // ────────────────────────────────────────────────────────
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // ログインしている場合のみ、プロフィールがあるか確認
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', session.user.id)
+          .single();
+
+        // メール認証直後で、まだプロフィール（名前）が登録されていない場合
+        if (error || !profile || !profile.username) {
+          // オンボーディング画面へ誘導して処理を終了
+          router.push('/onboarding');
+          return;
+        }
+      }
+
+      // 💡 ログインしていない人（一般ゲスト）、または既に名前登録済みの人は、
+      // そのまま検問をスルーして以下のホーム画面を表示する
+      setAuthChecking(false);
+
+      // ────────────────────────────────────────────────────────
+      // 📢 お知らせデータの取得
+      // ────────────────────────────────────────────────────────
       const { data, error } = await supabase
         .from('announcements')
-        .select('id, title, created_at') // 💡 ホーム画面では本文(content)は取得しない
+        .select('id, title, created_at')
         .order('created_at', { ascending: false })
         .limit(3);
 
@@ -26,8 +56,17 @@ export default function HomePage() {
       setLoading(false);
     };
 
-    fetchAnnouncements();
-  }, []);
+    initializeHome();
+  }, [router]);
+
+  // 💡 仕分け中だけ一瞬ローディングを入れる（ログイン済みの新規ユーザーがホームを一瞬チラ見するのを防ぐため）
+  if (authChecking) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
+        <p className="text-sm font-bold text-gray-500">読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-24 bg-gray-50 min-h-screen">
@@ -71,7 +110,6 @@ export default function HomePage() {
           ) : (
             <div className="space-y-2">
               {announcements.map((announcement) => (
-                /* ★ 変更：クリックしたら詳細ページ（/announcements/ID）に飛ぶようにする */
                 <Link 
                   href={`/announcements/${announcement.id}`}
                   key={announcement.id} 
@@ -89,7 +127,6 @@ export default function HomePage() {
                 </Link>
               ))}
 
-              {/* ★ 追加：過去のお知らせ一覧ページへ飛ぶボタン */}
               <Link
                 href="/announcements"
                 className="block text-center text-xs font-bold text-blue-600 hover:text-blue-700 py-3 bg-white rounded-xl border border-dashed border-gray-200 shadow-2xs hover:bg-gray-50 transition-colors mt-2"
