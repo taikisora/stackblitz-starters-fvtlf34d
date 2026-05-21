@@ -100,6 +100,11 @@ export default function MyPage() {
   };
 
   const handleSaveProfile = async () => {
+        // 💡 【追加】ユーザーネームが空欄（またはスペースのみ）なら、ここで処理を絶対に止める
+      if (!editData.username || !editData.username.trim()) {
+        alert('ユーザーネームを入力してください。');
+        return;
+      }
     setLoading(true);
 
     const updateData: any = {
@@ -432,7 +437,14 @@ export default function MyPage() {
 
             <button
               onClick={handleSaveProfile}
-              disabled={loading || !editData.status || (editData.status !== 'other' && (!isUni1Valid || !isUni2Valid || !isUni3Valid))}
+              disabled={
+                loading || 
+                !editData.username ||          // 💡 ユーザーネームが空っぽ
+                !editData.username.trim() ||   // 💡 またはスペースだけの時「だけ」ボタンをロックする
+                
+                // 💡 大学名の判定は、ステータスが入力されていて、かつ「その他」じゃない時だけチェックする
+                (editData.status && editData.status !== 'other' && (!isUni1Valid || !isUni2Valid || !isUni3Valid))
+              }
               className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4"
             >
               <Check className="w-5 h-5" />

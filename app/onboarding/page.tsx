@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { UNIVERSITY_LIST } from '../../lib/universities'; // 💡 大学リストをインポート
+import { UNIVERSITY_LIST } from '../../lib/universities';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -13,12 +13,12 @@ export default function OnboardingPage() {
   // 入力データ
   const [username, setUsername] = useState('');
   const [status, setStatus] = useState('');         // 'studying' | 'experienced' | 'other'
-  const [stream, setStream] = useState('');         // 'humanities' | 'sciences' | 'undecided' (💡 未定を追加)
+  const [stream, setStream] = useState('');         // 'humanities' | 'sciences' | 'undecided'
   const [university, setUniversity] = useState('');
-  const [isUniUndecided, setIsUniUndecided] = useState(false); // 💡 大学名未定フラグ
+  const [isUniUndecided, setIsUniUndecided] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 💡 サジェスト表示用の状態
+  // サジェスト表示用の状態
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -36,7 +36,7 @@ export default function OnboardingPage() {
     checkUser();
   }, [router]);
 
-  // 💡 入力に合わせて候補を絞り込む関数
+  // 入力に合わせて候補を絞り込む関数
   const handleUniversityChange = (value: string) => {
     setUniversity(value);
     setIsUniUndecided(false);
@@ -46,7 +46,6 @@ export default function OnboardingPage() {
       return;
     }
 
-    // 💡 制限を50件に変更（多すぎると重くなるため）
     const filtered = UNIVERSITY_LIST.filter(uni => 
       uni.includes(value)
     ).slice(0, 50);
@@ -55,28 +54,30 @@ export default function OnboardingPage() {
     setShowSuggestions(true);
   };
 
-  // 💡 保存処理
-  const handleSave = async (isSkip = false) => {
+  // 💡 修正された保存処理（スキップ不可・デフォルト上書きバグを修正）
+  const handleSave = async () => {
+    // 🚨 最終チェック：万が一名前が空欄なら、絶対に保存させない
+    if (!username.trim()) {
+      alert('お名前を入力してください。');
+      setStep(1); // 名前入力画面に強制的に引き戻す
+      return;
+    }
+
     setLoading(true);
 
     const updateData: any = {
       id: user?.id,
-      // ❌ updated_at: new Date().toISOString(), ← この行を削除しました
+      username: username.trim(), // 👈 入力された名前を確実にそのまま保存（「ユーザー」で上書きさせない）
+      status: status,
     };
 
-    if (!isSkip) {
-      updateData.username = username || 'ユーザー';
-      updateData.status = status;
-      
-      // 💡 ステータスが「その他」なら文理・大学は強制的に null
-      if (status === 'other') {
-        updateData.stream = null;
-        updateData.university = null;
-      } else {
-        // 💡 「まだ決めていない」が選ばれていたら null を代入するロジック
-        updateData.stream = stream === 'undecided' ? null : stream;
-        updateData.university = isUniUndecided ? null : university.trim();
-      }
+    // ステータスが「その他」なら文理・大学は強制的に null
+    if (status === 'other') {
+      updateData.stream = null;
+      updateData.university = null;
+    } else {
+      updateData.stream = stream === 'undecided' ? null : stream;
+      updateData.university = isUniUndecided ? null : university.trim();
     }
 
     const { error } = await supabase.from('profiles').upsert(updateData);
@@ -85,11 +86,11 @@ export default function OnboardingPage() {
       alert('保存に失敗しました: ' + error.message);
       setLoading(false);
     } else {
+      // 保存が完了したら、気持ちよくホーム画面へリダイレクト！
       window.location.href = '/';
     }
   };
 
-  // 💡 大学名がリストに存在するかチェックする変数
   const isUniversityValid = UNIVERSITY_LIST.includes(university.trim());
 
   if (!user) return <p className="p-6 text-center text-gray-500">読み込み中...</p>;
@@ -97,13 +98,15 @@ export default function OnboardingPage() {
   return (
     <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 relative">
       
-      {/* 右上のスキップボタン */}
-      <button 
-        onClick={() => handleSave(true)} 
-        className="absolute top-6 right-6 text-sm text-gray-400 hover:text-gray-600 font-medium"
-      >
-        あとで設定する
-      </button>
+      {/* 💡 修正：STEP 1（名前入力）のときだけは、右上の「あとで設定する」を絶対に表示させない */}
+      {step > 1 && (
+        <button 
+          onClick={handleSave} // 👈 あとで設定する場合も、それまでに入力した名前を正しく保持して保存
+          className="absolute top-6 right-6 text-sm text-gray-400 hover:text-gray-600 font-medium"
+        >
+          あとで設定する
+        </button>
+      )}
 
       {/* 進捗バー */}
       <div className="w-full bg-gray-100 h-2 rounded-full mb-8 mt-8">
@@ -162,7 +165,7 @@ export default function OnboardingPage() {
           
           {status === 'other' ? (
             <button
-              onClick={() => handleSave(false)}
+              onClick={handleSave}
               disabled={loading}
               className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300"
             >
@@ -181,10 +184,10 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* ── STEP 3: 文理の選択（受験生・経験者のみ） ── */}
+      {/* ── STEP 3: 文理の選択 ── */}
       {step === 3 && (
         <div className="animate-fade-in">
-          <h2 className="text-xl font-bold mb-6 text-center text-gray-800">文系・理系どちらですか？</h2>
+          <h2 className="text-xl font-bold mb-6 text-center text-gray-800">文系·理系どちらですか？</h2>
           <div className="space-y-3 mb-6">
             <button
               onClick={() => setStream('humanities')}
@@ -216,16 +219,15 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* ── STEP 4: 大学名の入力（受験生・経験者のみ） ── */}
+      {/* ── STEP 4: 大学名の入力 ── */}
       {step === 4 && (
         <div className="animate-fade-in">
           <h2 className="text-xl font-bold mb-4 text-center text-gray-800">
-            {status === 'studying' ? '第一志望の大学名' : '受験した・在籍する大学名'}
+            {status === 'studying' ? '第一志望の大学名' : '受験した·在籍する大学名'}
           </h2>
           <p className="text-xs text-gray-400 text-center mb-4">※候補から選択してください</p>
           
           <div className="space-y-3 mb-6">
-            {/* 💡 サジェストリストと入力欄を一つのrelativeブロックでまとめる */}
             <div className="relative">
               <input
                 type="text"
@@ -238,7 +240,6 @@ export default function OnboardingPage() {
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 focus:outline-none focus:border-blue-500 text-gray-800 font-medium disabled:opacity-50"
               />
 
-              {/* サジェストリスト表示部分 */}
               {showSuggestions && suggestions.length > 0 && !isUniUndecided && (
                 <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-gray-100">
                   {suggestions.map((uni) => (
@@ -259,12 +260,11 @@ export default function OnboardingPage() {
               )}
             </div>
             
-            {/* 💡 大学名未定の切り替えトグルボタン */}
             <button
               type="button"
               onClick={() => {
                 setIsUniUndecided(!isUniUndecided);
-                if (!isUniUndecided) setUniversity(''); // 未定にしたら入力欄をクリア
+                if (!isUniUndecided) setUniversity('');
               }}
               className={`w-full py-3 rounded-xl border text-sm font-semibold transition-all ${isUniUndecided ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
             >
@@ -273,8 +273,7 @@ export default function OnboardingPage() {
           </div>
 
           <button
-            onClick={() => handleSave(false)}
-            // 💡 大学名がリストに存在するか、または未定フラグが立っていればボタンを活性化
+            onClick={handleSave} // 👈 修正：引数を排除してシンプルなセーブに変更
             disabled={loading || (!isUniUndecided && !isUniversityValid)}
             className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300"
           >
