@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-// ★ 変更: SaveアイコンをBookmarkに変更
-import { ChevronLeft, Bookmark, BookOpen, Star } from 'lucide-react';
+// ★ 変更: SaveアイコンをHeartに変更
+import { ChevronLeft, Heart, BookOpen, Star } from 'lucide-react';
 
 export default function BooksPage() {
   const searchParams = useSearchParams();
@@ -194,7 +194,7 @@ export default function BooksPage() {
               className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-500 font-bold shadow-sm"
             >
               <option value="published_date_desc">新着順</option>
-              <option value="saved_count_desc">保存数が多い順</option>
+              <option value="saved_count_desc">いいね数が多い順</option>
               <option value="used_count_desc">使用者が多い順</option>
               <option value="title_asc">五十音順</option>
             </select>
@@ -242,10 +242,10 @@ export default function BooksPage() {
                 <button 
                   onClick={(e) => handleToggle(e, book.id, 'saved')}
                   className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
-                    book.user_status?.is_saved ? 'text-blue-600' : 'text-gray-400 hover:text-blue-500'
+                    book.user_status?.is_saved ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'
                   }`}
                 >
-                  <Bookmark size={18} fill={book.user_status?.is_saved ? "currentColor" : "none"} />
+                  <Heart size={18} fill={book.user_status?.is_saved ? "currentColor" : "none"} />
                   {book.saved_count || 0}
                 </button>
                 

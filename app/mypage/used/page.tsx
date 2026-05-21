@@ -49,7 +49,7 @@ export default function UsedBooksPage() {
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex items-center gap-2 mb-6">
           <BookOpen className="text-blue-500 fill-current" size={24} />
-          <h1 className="font-bold text-xl text-gray-800">使用中の参考書</h1>
+          <h1 className="font-bold text-xl text-gray-800">使用した参考書</h1>
         </div>
 
         {usedBooks.length === 0 ? (

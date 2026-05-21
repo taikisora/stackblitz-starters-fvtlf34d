@@ -182,7 +182,7 @@ export default function NewRoutePage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="例: 早稲田大 英語逆転合格ルート"
+              placeholder="例: 早稲田大 英単語徹底ルート"
               className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-bold text-gray-700 shadow-2xs"
             />
           </div>
@@ -256,7 +256,7 @@ export default function NewRoutePage() {
             <label className="text-xs font-bold text-gray-400 mb-1.5 block uppercase tracking-wider">説明・備考</label>
             <textarea
               value={description}
-              placeholder="このルートを進める上でのアドバイスや注意点を書いてみよう！"
+              placeholder="詳細な説明や注意点、アドバイス等"
               rows={4}
               className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium text-gray-700 min-h-[110px] shadow-2xs"
             />
@@ -354,7 +354,7 @@ export default function NewRoutePage() {
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-lg disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none transition-all active:scale-[0.99] text-base"
           >
             <Save size={18} className="stroke-[2.5]" />
-            {loading ? 'ルートを保存中...' : 'この学習ルートを新規保存する'}
+            {loading ? 'ルートを保存中...' : 'この参考書を新規保存する'}
           </button>
         </div>
 

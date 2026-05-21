@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link'; 
 import { supabase } from '../../../lib/supabase';
-import { ChevronLeft, Bookmark, BookOpen, Star, Trash2, ThumbsUp, MessageCircle, User, Layers } from 'lucide-react'; // ★ Layersアイコンを追加
+import { ChevronLeft, Heart, BookOpen, Star, Trash2, ThumbsUp, MessageCircle, User, Layers } from 'lucide-react'; // ★ Layersアイコンを追加
 
 // 👑 ★あなたのSupabaseのユーザーID（UUID）をここに貼り付けてください！
 const ADMIN_USER_ID = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
@@ -365,8 +365,8 @@ export default function BookDetailPage() {
           <div className="text-xs text-gray-400 flex flex-col gap-1">
             <p>発売日: {book.published_date || '不明'}</p>
             <div className="flex gap-3 font-bold mt-1">
-              <span className="flex items-center gap-1 text-blue-600">
-                <Bookmark size={14} fill="currentColor" /> {book.saved_count || 0}
+              <span className="flex items-center gap-1 text-pink-500">
+                <Heart size={14} fill="currentColor" /> {book.saved_count || 0}
               </span>
               <span className="flex items-center gap-1 text-green-600">
                 <BookOpen size={14} fill="currentColor" /> {book.used_count || 0}
@@ -391,12 +391,12 @@ export default function BookDetailPage() {
           onClick={() => toggleStatus('saved')}
           className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm border transition-colors ${
             status.is_saved
-              ? 'bg-blue-50 border-blue-200 text-blue-600'
+              ? 'bg-blue-50 border-blue-200 text-pink-500'
               : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}
         >
-          <Bookmark size={18} fill={status.is_saved ? "currentColor" : "none"} />
-          {status.is_saved ? '保存済み' : '保存'}
+          <Heart size={18} fill={status.is_saved ? "currentColor" : "none"} />
+          {status.is_saved ? 'いいね済み' : 'いいね'}
         </button>
 
         <button
@@ -408,7 +408,7 @@ export default function BookDetailPage() {
           }`}
         >
           <BookOpen size={18} fill={status.is_used ? "currentColor" : "none"} />
-          {status.is_used ? '使用中ルート' : 'この本を使用'}
+          {status.is_used ? '使用中/使用済み' : 'この本を使用'}
         </button>
       </div>
 
@@ -500,7 +500,7 @@ export default function BookDetailPage() {
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder={activeTab === 'review' ? 'この参考書の良かった点や、おすすめの使い方は？' : 'この参考書について質問や議論したいことを書き込みましょう。'}
+              placeholder={activeTab === 'review' ? 'この参考書の感想・おすすめの使い方は？' : 'この参考書について質問や議論したいことを書き込みましょう。'}
               className="w-full text-sm border border-gray-200 rounded-lg p-3 bg-gray-50 focus:outline-none focus:border-blue-400 focus:bg-white transition-colors min-h-[80px] mb-2"
             />
             <button 

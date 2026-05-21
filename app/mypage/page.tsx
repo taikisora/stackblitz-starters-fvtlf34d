@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 // ★ 変更：メールアイコン(Mail)とパレット(Palette)を追加
-import { LogOut, Edit2, Check, X, User, BookOpen, Bookmark, ChevronRight, Mail, Palette, Trash2, AlertTriangle } from 'lucide-react';
+import { LogOut, Edit2, Check, X, User, BookOpen, Heart, ChevronRight, Mail, Palette, Trash2, AlertTriangle } from 'lucide-react';
 import { UNIVERSITY_LIST } from '../../lib/universities';
 
 // 🎨 ★ 追加：10種類のカラーパレット定義
@@ -461,9 +461,9 @@ export default function MyPage() {
         <Link href="/mypage/saved" className="flex items-center justify-between p-5 border-b border-gray-50 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
             <div className="bg-pink-50 p-2 rounded-lg">
-              <Bookmark className="w-5 h-5 text-pink-500 fill-current" />
+              <Heart className="w-5 h-5 text-pink-500 fill-current" />
             </div>
-            <span className="font-bold text-gray-700">保存した参考書</span>
+            <span className="font-bold text-gray-700">いいねした参考書</span>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400" />
         </Link>
@@ -472,7 +472,7 @@ export default function MyPage() {
             <div className="bg-blue-50 p-2 rounded-lg">
               <BookOpen className="w-5 h-5 text-blue-500 fill-current" />
             </div>
-            <span className="font-bold text-gray-700">使用中の参考書</span>
+            <span className="font-bold text-gray-700">使用した参考書</span>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400" />
         </Link>
