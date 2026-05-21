@@ -438,12 +438,14 @@ export default function MyPage() {
             <button
               onClick={handleSaveProfile}
               disabled={
-                loading || 
-                !editData.username ||          // 💡 ユーザーネームが空っぽ
-                !editData.username.trim() ||   // 💡 またはスペースだけの時「だけ」ボタンをロックする
-                
-                // 💡 大学名の判定は、ステータスが入力されていて、かつ「その他」じゃない時だけチェックする
-                (editData.status && editData.status !== 'other' && (!isUni1Valid || !isUni2Valid || !isUni3Valid))
+                Boolean(
+                  loading || 
+                  !editData.username ||          // ユーザーネームが空っぽ
+                  !editData.username.trim() ||   // またはスペースだけの時
+                  
+                  // 大学名のチェックは、ステータスが「空（""）」でも「other」でもない時だけ、かつどれかが不正な時にロックする
+                  (editData.status !== "" && editData.status !== "other" && (!isUni1Valid || !isUni2Valid || !isUni3Valid))
+                )
               }
               className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4"
             >
