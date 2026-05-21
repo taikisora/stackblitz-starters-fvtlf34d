@@ -18,7 +18,7 @@ export default function TabBar() {
       </Link>
       {/* ★ 変更：href を /learning-data に変更し、アクティブ時に青文字になる判定を追加 */}
       <Link href="/learning-data" className={`flex flex-col items-center w-full py-2 ${pathname?.startsWith('/learning-data') ? 'text-blue-600' : 'text-gray-400'}`}>
-        <Route size={24} /><span className="text-[10px] mt-1 font-bold">学習データ</span>
+        <Route size={24} /><span className="text-[10px] mt-1 font-bold">参考書ルート</span>
       </Link>
       <Link href="/mypage" className={`flex flex-col items-center w-full py-2 ${pathname?.startsWith('/mypage') ? 'text-blue-600' : 'text-gray-400'}`}>
         <User size={24} /><span className="text-[10px] mt-1 font-bold">マイページ</span>

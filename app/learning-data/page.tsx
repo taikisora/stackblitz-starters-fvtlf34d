@@ -13,7 +13,6 @@ export default function LearningDataPage() {
   const [routes, setRoutes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 最大保存可能数
   const MAX_ROUTES = 15;
 
   useEffect(() => {
@@ -25,7 +24,6 @@ export default function LearningDataPage() {
       }
       setUser(session.user);
 
-      // 自分のルートと、その中に入っている参考書の数（route_booksの数）を一緒に取得する
       const { data, error } = await supabase
         .from('study_routes')
         .select(`
@@ -46,7 +44,6 @@ export default function LearningDataPage() {
     fetchRoutes();
   }, [router]);
 
-  // ルートの削除処理
   const handleDelete = async (routeId: string, routeTitle: string) => {
     if (!confirm(`「${routeTitle}」を削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
 
@@ -68,97 +65,89 @@ export default function LearningDataPage() {
   const isLimitReached = routes.length >= MAX_ROUTES;
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-24">
+    <div className="p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4">
       {/* 🟢 ヘッダーセクション */}
-      <div className="bg-white px-4 pt-12 pb-6 border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-100 p-2 rounded-xl text-blue-600">
-              <Route size={20} />
-            </div>
-            <h1 className="text-xl font-extrabold text-gray-900">学習データ</h1>
+      <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+        <div className="flex items-center gap-2">
+          <div className="bg-blue-100 p-2.5 rounded-xl text-blue-600 shadow-2xs">
+            <Route size={20} />
           </div>
-          
-          {/* 保存枠のカウント表示 */}
-          <div className={`text-xs font-bold px-3 py-1.5 rounded-full border ${isLimitReached ? 'bg-red-50 text-red-600 border-red-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
-            保存枠: {routes.length} / {MAX_ROUTES}
-          </div>
+          <h1 className="text-xl font-black text-gray-900">参考書ルート</h1>
+        </div>
+        
+        <div className={`text-xs font-bold px-3 py-1.5 rounded-full border ${isLimitReached ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-gray-600 border-gray-200 shadow-2xs'}`}>
+          保存枠: {routes.length} / {MAX_ROUTES}
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 mt-6 space-y-4">
-        
+      <div className="space-y-6">
         {/* 🟢 新規作成ボタン */}
         {!isLimitReached ? (
           <Link
             href="/learning-data/new"
-            className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-sm hover:bg-blue-700 transition-all active:scale-95"
+            className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl shadow-md hover:bg-blue-700 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-base"
           >
-            <Plus size={20} />
+            <Plus size={20} className="stroke-[2.5]" />
             新しい参考書ルートを作成する
           </Link>
         ) : (
-          <div className="flex items-center gap-2 bg-red-50 text-red-600 text-xs font-bold p-3 rounded-xl border border-red-100">
+          <div className="flex items-center gap-2 bg-red-50 text-red-600 text-xs font-bold p-4 rounded-xl border border-red-100 shadow-2xs">
             <AlertCircle size={16} />
-            保存枠が上限（15個）に達しています。新しいルートを作るには不要なものを削除してください。
+            保存枠が上限に達しています。新しいルートを作るするには不要なものを削除してください。
           </div>
         )}
 
-        {/* 🟢 ルート一覧 */}
+        {/* 🟢 ルート一覧（PC表示の時は2列グリッドで綺麗に並べる！） */}
         {routes.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 border-dashed shadow-sm mt-4">
-            <Route size={48} className="mx-auto text-gray-200 mb-4" />
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed shadow-sm">
+            <Route size={54} className="mx-auto text-gray-200 mb-4" />
             <p className="text-gray-500 font-bold text-sm mb-1">まだ学習ルートがありません</p>
             <p className="text-gray-400 text-xs">上のボタンから最初のルートを作ってみましょう！</p>
           </div>
         ) : (
-          <div className="space-y-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {routes.map((route) => (
-              <div key={route.id} className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative group">
-                
-                {/* 状態バッジ（公開/非公開 と 教科） */}
-                <div className="flex items-center gap-2 mb-3">
-                  {route.is_public ? (
-                    <span className="flex items-center gap-1 text-[10px] font-extrabold bg-green-100 text-green-700 px-2 py-0.5 rounded-md">
-                      <Globe size={10} /> 公開中
+              <div key={route.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    {route.is_public ? (
+                      <span className="flex items-center gap-1 text-[10px] font-extrabold bg-green-50 text-green-700 px-2 py-0.5 rounded-md border border-green-100/50">
+                        <Globe size={10} /> 公開中
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[10px] font-extrabold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">
+                        <Lock size={10} /> 非公開
+                      </span>
+                    )}
+                    <span className="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-100/50">
+                      {route.subject}
                     </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-[10px] font-extrabold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">
-                      <Lock size={10} /> 非公開
-                    </span>
-                  )}
-                  <span className="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-100">
-                    {route.subject}
-                  </span>
+                  </div>
+
+                  <h2 className="font-extrabold text-gray-900 text-base leading-snug mb-1 group-hover:text-blue-600 transition-colors">{route.title}</h2>
+                  <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-4">
+                    {route.description || '説明は設定されていません。'}
+                  </p>
                 </div>
 
-                {/* タイトルと説明 */}
-                <h2 className="font-bold text-gray-900 text-lg leading-tight mb-1">{route.title}</h2>
-                <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed mb-4 min-h-[2.5rem]">
-                  {route.description || '説明は設定されていません。'}
-                </p>
-
-                {/* フッター（参考書の数 ＆ アクションボタン） */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                  <div className="flex items-center gap-1.5 text-gray-500 font-bold text-xs">
-                    <BookOpen size={14} />
+                <div className="flex items-center justify-between pt-3 border-t border-gray-50 mt-2">
+                  <div className="flex items-center gap-1 text-gray-500 font-bold text-xs">
+                    <BookOpen size={13} className="text-gray-400" />
                     <span>参考書 {route.route_books?.length || 0} 冊</span>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    {/* 編集ボタン */}
+                  <div className="flex items-center gap-1">
                     <Link 
                       href={`/learning-data/${route.id}/edit`}
                       className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     >
-                      <Edit2 size={16} />
+                      <Edit2 size={15} />
                     </Link>
-                    {/* 削除ボタン */}
                     <button 
                       onClick={() => handleDelete(route.id, route.title)}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
@@ -167,8 +156,6 @@ export default function LearningDataPage() {
           </div>
         )}
       </div>
-
-      {/* ボトムナビゲーション */}
       <TabBar />
     </div>
   );

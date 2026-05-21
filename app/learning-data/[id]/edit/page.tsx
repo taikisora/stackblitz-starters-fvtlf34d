@@ -8,14 +8,15 @@ import { ChevronLeft, ArrowDown, Trash2, Search, Plus, Save, Globe, Lock } from 
 export default function EditRoutePage() {
   const router = useRouter();
   const params = useParams();
-  const routeId = params.id as string; // URLからルートのIDを取得
+  const routeId = params.id as string; 
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   // ルートのメタ情報
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('英単語');  const [description, setDescription] = useState('');
+  const [subject, setSubject] = useState('英単語');  
+  const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
 
   // ルートに入れる参考書のリスト
@@ -30,7 +31,6 @@ export default function EditRoutePage() {
     const fetchRouteData = async () => {
       setLoading(true);
       
-      // ログインチェック
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');
@@ -38,7 +38,6 @@ export default function EditRoutePage() {
       }
       setUser(session.user);
 
-      // 1. ルートの基本情報を取得
       const { data: routeData } = await supabase
         .from('study_routes')
         .select('*')
@@ -46,7 +45,6 @@ export default function EditRoutePage() {
         .single();
 
       if (routeData) {
-        // 他人のルートを勝手に編集できないようにガード
         if (routeData.user_id !== session.user.id) {
           alert('他人のルートは編集できません。');
           router.push('/learning-data');
@@ -58,15 +56,13 @@ export default function EditRoutePage() {
         setIsPublic(routeData.is_public);
       }
 
-      // 2. ルートに紐づく参考書リストを順番通りに取得
       const { data: booksData } = await supabase
         .from('route_books')
-        .select('*, books(*)') // 紐づく参考書のマスター情報も一緒に引く
+        .select('*, books(*)') 
         .eq('route_id', routeId)
         .order('sort_order', { ascending: true });
 
       if (booksData) {
-        // 扱いやすいようにbooksの中身を取り出してセット
         const orderedBooks = booksData.map(rb => rb.books).filter(Boolean);
         setSelectedBooks(orderedBooks);
       }
@@ -77,7 +73,6 @@ export default function EditRoutePage() {
     if (routeId) fetchRouteData();
   }, [routeId, router]);
 
-  // 🔎 参考書のリアルタイム検索（※表示数を20件に拡大！）
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) {
@@ -90,12 +85,12 @@ export default function EditRoutePage() {
       .from('books')
       .select('*')
       .ilike('title', `%${query}%`)
-      .limit(20); // ★ 5件から20件に増やして見つけやすく変更
+      .limit(20); 
 
     if (!error && data) {
       setSearchResults(data);
     }
-    setIsSearching(false);
+    setSearching(false);
   };
 
   const handleAddBook = (book: any) => {
@@ -132,7 +127,6 @@ export default function EditRoutePage() {
     setSelectedBooks(nextList);
   };
 
-  // 💾 上書き保存処理
   const handleUpdateRoute = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -146,7 +140,6 @@ export default function EditRoutePage() {
 
     setLoading(true);
 
-    // 1. 基本情報の更新（UPDATE）
     const { error: routeError } = await supabase
       .from('study_routes')
       .update({
@@ -167,7 +160,6 @@ export default function EditRoutePage() {
       return;
     }
 
-    // 2. 中身の参考書の更新（一番バグらない「一旦全削除して、新しい並び順で再登録」作戦）
     await supabase.from('route_books').delete().eq('route_id', routeId);
 
     const routeBooksData = selectedBooks.map((book, index) => ({
@@ -186,7 +178,6 @@ export default function EditRoutePage() {
       return;
     }
 
-    // 3. 追加した本を「使用中」に一括登録
     const userBookStatusData = selectedBooks.map(book => ({
       user_id: user.id,
       book_id: book.id,
@@ -201,37 +192,41 @@ export default function EditRoutePage() {
   if (loading) return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">読み込み中...</div>;
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-24">
+    // 💡 max-w-md から max-w-3xl に広げ、他の管理ダッシュボードとサイズ・丸みを完全統一！
+    <div className="p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4 space-y-6">
+      
       {/* ヘッダー */}
-      <div className="bg-white px-4 py-4 border-b border-gray-200 shadow-sm sticky top-0 z-10 flex items-center justify-between">
-        <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold">
+      <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+        <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-2xs hover:bg-gray-50 transition-all">
           <ChevronLeft size={16} /> 戻る
         </button>
-        <h1 className="text-sm font-extrabold text-gray-800">ルート編集</h1>
-        <div className="w-10"></div>
+        <h1 className="text-base font-black text-gray-800">ルート編集</h1>
+        <div className="w-16"></div>
       </div>
 
-      <form onSubmit={handleUpdateRoute} className="max-w-md mx-auto px-4 mt-6 space-y-5">
+      {/* 💡 PC時は「入力フォーム」と「参考書のドラッグ＆追加」が左右綺麗な2カラムに分かれます！ */}
+      <form onSubmit={handleUpdateRoute} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         
-        {/* メタ情報入力 */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+        {/* 左カラム：基本のメタ情報入力エリア */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4 h-full">
           <div>
-            <label className="text-xs font-bold text-gray-600 mb-1.5 block">ルートの題名（必須）</label>
+            <label className="text-xs font-bold text-gray-400 mb-1.5 block uppercase tracking-wider">ルートの題名（必須）</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
+              placeholder="例: 早稲田大 英語逆転合格ルート"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-bold text-gray-700 shadow-2xs"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-          <div>
-              <label className="text-xs font-bold text-gray-600 mb-1.5 block">対象の教科</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-400 mb-1.5 block uppercase tracking-wider">対象の教科</label>
               <select
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-bold text-gray-700"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-bold text-gray-700 shadow-2xs cursor-pointer"
               >
                 <optgroup label="英語">
                   <option value="英単語">英単語</option>
@@ -274,36 +269,37 @@ export default function EditRoutePage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-600 mb-1.5 block">公開設定</label>
+              <label className="text-xs font-bold text-gray-400 mb-1.5 block uppercase tracking-wider">公開設定</label>
               <button
                 type="button"
                 onClick={() => setIsPublic(!isPublic)}
-                className={`w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-bold border transition-colors ${
+                className={`w-full flex items-center justify-center gap-1.5 py-3 rounded-xl text-sm font-black border transition-all active:scale-95 shadow-2xs ${
                   isPublic 
-                    ? 'bg-green-50 border-green-200 text-green-700' 
+                    ? 'bg-green-50 border-green-200 text-green-700 ring-4 ring-green-500/5' 
                     : 'bg-gray-50 border-gray-200 text-gray-600'
                 }`}
               >
                 {isPublic ? <Globe size={14} /> : <Lock size={14} />}
-                {isPublic ? '世界に公開する' : '非公開にする'}
+                {isPublic ? '世界に公開中' : '非公開にする'}
               </button>
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-bold text-gray-600 mb-1.5 block">説明・備考</label>
+            <label className="text-xs font-bold text-gray-400 mb-1.5 block uppercase tracking-wider">説明・備考</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-gray-50 focus:outline-none focus:border-blue-500 text-gray-700 min-h-[80px]"
+              placeholder="このルートを進める上でのアドバイスや注意点を書こう！"
+              rows={4}
+              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium text-gray-700 min-h-[110px] shadow-2xs"
             />
           </div>
         </div>
 
-        {/* ルート構築 */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-          <label className="text-xs font-bold text-gray-600 block">参考書を順番に繋げる</label>
+        {/* 右カラム：参考書追加 ＆ 順番フロー構築エリア */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+          <label className="text-xs font-bold text-gray-400 block uppercase tracking-wider border-b border-gray-50 pb-1">参考書を順番に繋げる</label>
 
           {/* 🔎 検索窓 */}
           <div className="relative">
@@ -315,29 +311,29 @@ export default function EditRoutePage() {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="参考書の名前で検索して追加..."
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:border-blue-500 text-xs font-medium"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 text-xs font-bold text-gray-700 shadow-2xs"
             />
 
-            {/* サジェスト窓（最大20件表示されるように最大高さをmax-h-64に拡大！） */}
+            {/* サジェスト窓（PCでも見やすく最大高さを拡張） */}
             {searchQuery && (
-              <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto divide-y divide-gray-100">
+              <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto divide-y divide-gray-100">
                 {isSearching ? (
-                  <li className="p-3 text-xs text-gray-400 text-center">検索中...</li>
+                  <li className="p-3 text-xs text-gray-400 text-center font-medium animate-pulse">参考書を検索中...</li>
                 ) : searchResults.length === 0 ? (
-                  <li className="p-3 text-xs text-gray-400 text-center">見つかりませんでした</li>
+                  <li className="p-3 text-xs text-gray-400 text-center font-bold">見つかりませんでした</li>
                 ) : (
                   searchResults.map((book) => (
                     <li key={book.id}>
                       <button
                         type="button"
                         onClick={() => handleAddBook(book)}
-                        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 text-left transition-colors"
+                        className="w-full flex items-center justify-between px-4 py-3 hover:bg-blue-50 text-left transition-colors"
                       >
                         <div className="min-w-0 pr-2">
-                          <p className="font-bold text-xs text-gray-800 truncate">{book.title}</p>
-                          <p className="text-[10px] text-gray-400 truncate">{book.author} / {book.publisher}</p>
+                          <p className="font-extrabold text-xs text-gray-800 truncate">{book.title}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{book.author}  /  {book.publisher}</p>
                         </div>
-                        <Plus size={14} className="text-blue-500 shrink-0" />
+                        <Plus size={16} className="text-blue-500 shrink-0 stroke-[2.5]" />
                       </button>
                     </li>
                   ))
@@ -346,29 +342,29 @@ export default function EditRoutePage() {
             )}
           </div>
 
-          {/* 追加された本のリスト */}
-          <div className="space-y-2 pt-2">
+          {/* フローチャート風の参考書リスト */}
+          <div className="space-y-2 pt-1 max-h-[300px] overflow-y-auto pr-1 content-start">
             {selectedBooks.map((book, index) => (
               <div key={book.id} className="flex flex-col items-center">
-                <div className="w-full bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-2 shadow-2xs">
+                <div className="w-full bg-gray-50/70 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3 shadow-2xs group hover:bg-white hover:border-gray-200 transition-all">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm">
                       {index + 1}
                     </span>
                     <div className="min-w-0">
-                      <p className="font-bold text-xs text-gray-800 truncate">{book.title}</p>
-                      <p className="text-[9px] text-gray-400 truncate">{book.publisher}</p>
+                      <p className="font-extrabold text-xs text-gray-800 truncate leading-tight">{book.title}</p>
+                      <p className="text-[9px] text-gray-400 truncate mt-0.5">{book.publisher}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20 text-[10px] font-bold">▲</button>
-                    <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-20 text-[10px] font-bold">▼</button>
-                    <button type="button" onClick={() => handleRemoveBook(index)} className="p-1.5 text-gray-400 hover:text-red-500 rounded ml-1"><Trash2 size={13} /></button>
+                  <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100/60 p-0.5 rounded-lg shadow-2xs">
+                    <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-gray-400 hover:text-gray-800 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
+                    <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-gray-400 hover:text-gray-800 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
+                    <button type="button" onClick={() => handleRemoveBook(index)} className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors ml-0.5"><Trash2 size={13} /></button>
                   </div>
                 </div>
                 {index < selectedBooks.length - 1 && (
-                  <div className="my-1 text-blue-400 animate-pulse">
-                    <ArrowDown size={14} />
+                  <div className="my-0.5 text-blue-400/70 animate-pulse">
+                    <ArrowDown size={14} className="stroke-[2.5]" />
                   </div>
                 )}
               </div>
@@ -376,14 +372,17 @@ export default function EditRoutePage() {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 shadow-md disabled:bg-blue-300"
-        >
-          <Save size={18} />
-          {loading ? '更新中...' : '変更を保存する'}
-        </button>
+        {/* 💡 送信ボタンは最下部に全幅（2カラムぶち抜き）で堂々と配置 */}
+        <div className="md:col-span-2 pt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-lg disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none transition-all active:scale-[0.99] text-base"
+          >
+            <Save size={18} className="stroke-[2.5]" />
+            {loading ? 'ルートを更新中...' : '参考書ルートの変更を保存する'}
+          </button>
+        </div>
 
       </form>
     </div>
