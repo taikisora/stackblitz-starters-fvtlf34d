@@ -241,7 +241,7 @@ export default function BooksPage() {
                 </div>
                 
                 {/* 💡 justify-start に変えて左側に寄せ、gap-6 で星のすぐ右隣に綺麗に並べました */}
-                  <div className="flex items-center justify-start gap-6">
+                  <div className="flex flex-wrap items-center justify-start gap-x-6 gap-y-2 mt-auto">
                   
                   {/* 左側：星評価エリア */}
                   <div className="flex items-center gap-1.5">
