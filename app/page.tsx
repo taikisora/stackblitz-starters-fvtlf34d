@@ -77,7 +77,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4 space-y-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4 space-y-6">
       
       {/* 🔮 ヒーローセクション（洗練されたモダンUI版） */}
       {/* 💡 変更点：青い箱をやめ、クリーンな白背景＋淡いブルーのアクセントで雑誌のように配置 */}

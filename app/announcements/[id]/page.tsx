@@ -37,7 +37,7 @@ export default function AnnouncementDetailPage() {
   if (!announcement) return <p className="text-center py-20 text-gray-500 font-bold">お知らせが見つかりませんでした。</p>;
 
   return (
-    <div className="p-4 max-w-md mx-auto bg-white min-h-screen pb-24">
+    <div className="max-w-6xl mx-auto my-6 px-4 space-y-6 pb-20 min-h-screen">
       {/* 戻るボタン */}
       <button 
         onClick={() => router.back()} 
