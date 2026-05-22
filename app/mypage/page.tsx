@@ -4,11 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-// ★ 変更：メールアイコン(Mail)とパレット(Palette)を追加
 import { LogOut, Edit2, Check, X, User, BookOpen, Heart, ChevronRight, Mail, Palette, Trash2, AlertTriangle } from 'lucide-react';
 import { UNIVERSITY_LIST } from '../../lib/universities';
 
-// 🎨 ★ 追加：10種類のカラーパレット定義
 const COLOR_OPTIONS = [
   { id: 'gray', name: 'グレー', bg: 'bg-gray-500', ring: 'ring-gray-300' },
   { id: 'red', name: 'レッド', bg: 'bg-red-500', ring: 'ring-red-300' },
@@ -27,7 +25,6 @@ export default function MyPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // プロフィール表示用の状態（★ avatar_color を追加）
   const [profile, setProfile] = useState({
     username: '',
     status: '',
@@ -38,7 +35,6 @@ export default function MyPage() {
     avatar_color: 'gray' 
   });
 
-  // 編集モード用の状態（★ avatar_color を追加）
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     username: '',
@@ -53,8 +49,8 @@ export default function MyPage() {
   const [isUniUndecided, setIsUniUndecided] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
   const [activeField, setActiveField] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -74,7 +70,7 @@ export default function MyPage() {
           university: data.university || '',
           university2: data.university2 || '',
           university3: data.university3 || '',
-          avatar_color: data.avatar_color || 'gray' // ★ 追加：DBから色を読み込む
+          avatar_color: data.avatar_color || 'gray'
         };
         setProfile(loadedProfile);
         setEditData(loadedProfile);
@@ -100,18 +96,17 @@ export default function MyPage() {
   };
 
   const handleSaveProfile = async () => {
-        // 💡 【追加】ユーザーネームが空欄（またはスペースのみ）なら、ここで処理を絶対に止める
-      if (!editData.username || !editData.username.trim()) {
-        alert('ユーザーネームを入力してください。');
-        return;
-      }
+    if (!editData.username || !editData.username.trim()) {
+      alert('ユーザーネームを入力してください。');
+      return;
+    }
     setLoading(true);
 
     const updateData: any = {
       id: user.id,
       username: editData.username || 'ユーザー',
       status: editData.status,
-      avatar_color: editData.avatar_color // ★ 追加：選んだ色を保存対象に入れる
+      avatar_color: editData.avatar_color
     };
 
     if (editData.status === 'other') {
@@ -138,7 +133,7 @@ export default function MyPage() {
         university: updateData.university || '',
         university2: updateData.university2 || '',
         university3: updateData.university3 || '',
-        avatar_color: updateData.avatar_color // ★ 追加：画面上の表示色も確定させる
+        avatar_color: updateData.avatar_color
       });
       setIsEditing(false);
     }
@@ -150,21 +145,12 @@ export default function MyPage() {
     router.push('/login');
   };
 
-  // アカウント削除ポップアップの開閉ステータス
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-  // アカウントの完全削除処理
   const handleDeleteAccount = async () => {
-    // 💡 変更：Supabaseに仕込んだ完全削除用の関数（RPC）を呼び出す
     const { error } = await supabase.rpc('delete_my_account');
-    
     if (error) {
-      // 💡 もしブロックされたりエラーが起きたら、ログアウトさせずにここで止める
       alert('アカウントの削除に失敗しました: ' + error.message);
-      setLoading(false);
       setIsDeleteModalOpen(false);
     } else {
-      // 💡 完全に削除が成功した場合のみ、強制ログアウトしてトップへ
       await supabase.auth.signOut();
       router.push('/login');
     }
@@ -188,15 +174,15 @@ export default function MyPage() {
 
   if (loading && !profile.username) return <div className="p-10 text-center text-gray-500 font-medium animate-pulse">読み込み中...</div>;
 
-  // ★ 追加：現在選ばれている色オブジェクトを見つける処理
   const currentProfileColor = COLOR_OPTIONS.find(c => c.id === profile.avatar_color) || COLOR_OPTIONS[0];
   const currentEditColor = COLOR_OPTIONS.find(c => c.id === editData.avatar_color) || COLOR_OPTIONS[0];
 
   return (
-    <div className="max-w-md mx-auto my-6 px-4 space-y-6 pb-20">
+    // 💡 修正点： max-w-2xl（中くらいの広さ）に設定し、1列のまま綺麗な縦配列に統一しました
+    <div className="max-w-2xl mx-auto my-6 px-4 space-y-6 pb-20">
       <h1 className="text-2xl font-bold text-gray-800 ml-2">マイページ</h1>
 
-      {/* ── プロフィール情報カード ── */}
+      {/* ── 1. アカウント情報カード ── */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -212,10 +198,7 @@ export default function MyPage() {
             </button>
           ) : (
             <button 
-              onClick={() => {
-                setIsEditing(false);
-                setEditData(profile);
-              }}
+              onClick={() => { setIsEditing(false); setEditData(profile); }}
               className="text-sm flex items-center gap-1 text-gray-500 font-bold bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors"
             >
               <X className="w-4 h-4" /> キャンセル
@@ -223,14 +206,12 @@ export default function MyPage() {
           )}
         </div>
 
-        {/* ★ 変更：大きな丸アイコンエリア（編集中の場合はリアルタイムに色が連動） */}
         <div className="text-center space-y-3 mb-6 pb-4 border-b border-gray-50">
           <div className={`w-20 h-20 ${isEditing ? currentEditColor.bg : currentProfileColor.bg} text-white rounded-full flex items-center justify-center mx-auto border border-gray-100 shadow-sm transition-colors duration-300`}>
             <User size={36} />
           </div>
           <div>
             <h3 className="font-extrabold text-gray-800 text-lg">{profile.username}</h3>
-            {/* ★ 追加：ログインユーザーのメールアドレスを表示 */}
             <div className="flex items-center justify-center gap-1 text-gray-400 text-xs mt-1 font-medium">
               <Mail size={12} />
               <span>{user?.email}</span>
@@ -284,13 +265,12 @@ export default function MyPage() {
         {/* 編集モード */}
         {isEditing && (
           <div className="space-y-5 animate-fade-in">
-            {/* ★ 追加：編集モード時のみ出現するカラーパレットセクション */}
             <div className="bg-gray-50/50 p-3 rounded-2xl border border-gray-100 space-y-2">
               <div className="flex items-center gap-1 text-gray-500 font-bold text-[11px] px-1">
                 <Palette size={12} className="text-blue-500" />
                 <span>アイコンのカラー変更</span>
               </div>
-              <div className="grid grid-cols-5 gap-2 pt-0.5">
+              <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 pt-0.5">
                 {COLOR_OPTIONS.map((color) => {
                   const isSelected = editData.avatar_color === color.id;
                   return (
@@ -298,11 +278,7 @@ export default function MyPage() {
                       key={color.id}
                       type="button"
                       onClick={() => setEditData({ ...editData, avatar_color: color.id })}
-                      className={`w-7 h-7 ${color.bg} rounded-full mx-auto transition-all transform hover:scale-110 active:scale-95 ${
-                        isSelected 
-                          ? `ring-4 ring-offset-1 ${color.ring} scale-105` 
-                          : 'opacity-70 hover:opacity-100'
-                      }`}
+                      className={`w-7 h-7 ${color.bg} rounded-full mx-auto transition-all transform hover:scale-110 active:scale-95 ${isSelected ? `ring-4 ring-offset-1 ${color.ring} scale-105` : 'opacity-70 hover:opacity-100'}`}
                       title={color.name}
                     />
                   );
@@ -312,21 +288,12 @@ export default function MyPage() {
 
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1 block">ユーザーネーム</label>
-              <input
-                type="text"
-                value={editData.username}
-                onChange={(e) => setEditData({ ...editData, username: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
-              />
+              <input type="text" value={editData.username} onChange={(e) => setEditData({ ...editData, username: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1 block">現在の状況</label>
-              <select
-                value={editData.status}
-                onChange={(e) => setEditData({ ...editData, status: e.target.value })}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
-              >
+              <select value={editData.status} onChange={(e) => setEditData({ ...editData, status: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" >
                 <option value="" disabled hidden>選択してください</option>
                 <option value="studying">これから大学受験に挑む</option>
                 <option value="experienced">大学受験を経験済み</option>
@@ -338,11 +305,7 @@ export default function MyPage() {
               <>
                 <div>
                   <label className="text-xs font-bold text-gray-600 mb-1 block">文系 / 理系</label>
-                  <select
-                    value={editData.stream}
-                    onChange={(e) => setEditData({ ...editData, stream: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
-                  >
+                  <select value={editData.stream} onChange={(e) => setEditData({ ...editData, stream: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" >
                     <option value="" disabled hidden>選択してください</option>
                     <option value="humanities">文系</option>
                     <option value="sciences">理系</option>
@@ -351,82 +314,30 @@ export default function MyPage() {
                 </div>
 
                 <div className="space-y-4 pt-2 border-t border-gray-100">
-                  {/* 第一志望 */}
                   <div className="relative">
-                    <label className="text-xs font-bold text-gray-500 mb-1 block">
-                      {editData.status === 'studying' ? '第一志望校' : '大学名 (1)'}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="例: 東京大学"
-                      value={editData.university}
-                      disabled={isUniUndecided}
-                      onChange={(e) => handleUniversityChange('university', e.target.value)}
-                      onFocus={() => { setShowSuggestions(true); setActiveField('university'); }}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium disabled:opacity-50"
-                    />
-                    
+                    <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第一志望校' : '大学名 (1)'}</label>
+                    <input type="text" placeholder="例: 東京大学" value={editData.university} disabled={isUniUndecided} onChange={(e) => handleUniversityChange('university', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium disabled:opacity-50" />
                     <label className="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={isUniUndecided}
-                        onChange={(e) => {
-                          setIsUniUndecided(e.target.checked);
-                          if (e.target.checked) setEditData({ ...editData, university: '' });
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                      />
+                      <input type="checkbox" checked={isUniUndecided} onChange={(e) => { setIsUniUndecided(e.target.checked); if (e.target.checked) setEditData({ ...editData, university: '' }); }} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
                       <span className="text-xs font-medium text-gray-500">まだ決めていない（未定）</span>
                     </label>
                   </div>
 
-                  {/* 第二志望 */}
                   <div className="relative">
-                    <label className="text-xs font-bold text-gray-500 mb-1 block">
-                      {editData.status === 'studying' ? '第二志望校 (任意)' : '大学名 (2) (任意)'}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="例: 早稲田大学"
-                      value={editData.university2}
-                      onChange={(e) => handleUniversityChange('university2', e.target.value)}
-                      onFocus={() => { setShowSuggestions(true); setActiveField('university2'); }}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
-                    />
+                    <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第二志望校 (任意)' : '大学名 (2) (任意)'}</label>
+                    <input type="text" placeholder="例: 早稲田大学" value={editData.university2} onChange={(e) => handleUniversityChange('university2', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university2'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" />
                   </div>
 
-                  {/* 第三志望 */}
                   <div className="relative">
-                    <label className="text-xs font-bold text-gray-500 mb-1 block">
-                      {editData.status === 'studying' ? '第三志望校 (任意)' : '大学名 (3) (任意)'}
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="例: 明治大学"
-                      value={editData.university3}
-                      onChange={(e) => handleUniversityChange('university3', e.target.value)}
-                      onFocus={() => { setShowSuggestions(true); setActiveField('university3'); }}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium"
-                    />
+                    <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第三志望校 (任意)' : '大学名 (3) (任意)'}</label>
+                    <input type="text" placeholder="例: 明治大学" value={editData.university3} onChange={(e) => handleUniversityChange('university3', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university3'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" />
                   </div>
 
                   {showSuggestions && suggestions.length > 0 && activeField && (
                     <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100">
                       {suggestions.map((uni) => (
                         <li key={uni}>
-                          <button
-                            type="button"
-                            onMouseDown={() => {
-                              setEditData({ ...editData, [activeField]: uni });
-                              setShowSuggestions(false);
-                            }}
-                            className="w-full text-left px-4 py-3 hover:bg-blue-50 text-gray-700 font-medium transition-colors text-sm"
-                          >
-                            {uni}
-                          </button>
+                          <button type="button" onMouseDown={() => { setEditData({ ...editData, [activeField]: uni }); setShowSuggestions(false); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-gray-700 font-medium transition-colors text-sm" >{uni}</button>
                         </li>
                       ))}
                     </ul>
@@ -435,20 +346,7 @@ export default function MyPage() {
               </>
             )}
 
-            <button
-              onClick={handleSaveProfile}
-              disabled={
-                Boolean(
-                  loading || 
-                  !editData.username ||          // ユーザーネームが空っぽ
-                  !editData.username.trim() ||   // またはスペースだけの時
-                  
-                  // 大学名のチェックは、ステータスが「空（""）」でも「other」でもない時だけ、かつどれかが不正な時にロックする
-                  (editData.status !== "" && editData.status !== "other" && (!isUni1Valid || !isUni2Valid || !isUni3Valid))
-                )
-              }
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4"
-            >
+            <button onClick={handleSaveProfile} disabled={Boolean(loading || !editData.username || !editData.username.trim() || (editData.status !== "" && editData.status !== "other" && (!isUni1Valid || !isUni2Valid || !isUni3Valid)))} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4" >
               <Check className="w-5 h-5" />
               {loading ? '保存中...' : '変更を保存する'}
             </button>
@@ -456,9 +354,9 @@ export default function MyPage() {
         )}
       </div>
 
-      {/* 参考書管理メニュー */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <Link href="/mypage/saved" className="flex items-center justify-between p-5 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+      {/* ── 2. 参考書管理メニュー ── */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+        <Link href="/mypage/saved" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
             <div className="bg-pink-50 p-2 rounded-lg">
               <Heart className="w-5 h-5 text-pink-500 fill-current" />
@@ -478,7 +376,7 @@ export default function MyPage() {
         </Link>
       </div>
 
-      {/* 運営へのリクエストメニュー */}
+      {/* ── 3. 運営へのリクエストメニュー ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <Link href="/request" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
@@ -488,24 +386,15 @@ export default function MyPage() {
         </Link>
       </div>
 
-      {/* ── 各種設定・ログアウト・退会 ── */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* ログアウトボタン */}
-        <button 
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors border-b border-gray-50"
-        >
+      {/* ── 4. 各種設定・ログアウト・退会 ── */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
+        <button onClick={handleLogout} className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors" >
           <div className="bg-gray-100 p-2 rounded-lg">
             <LogOut className="w-5 h-5 text-gray-600" />
           </div>
           <span className="font-bold text-gray-700">ログアウト</span>
         </button>
-
-        {/* アカウント削除ボタン */}
-        <button 
-          onClick={() => setIsDeleteModalOpen(true)}
-          className="w-full flex items-center gap-3 p-5 text-left hover:bg-red-50 transition-colors"
-        >
+        <button onClick={() => setIsDeleteModalOpen(true)} className="w-full flex items-center gap-3 p-5 text-left hover:bg-red-50 transition-colors" >
           <div className="bg-red-50 p-2 rounded-lg">
             <Trash2 className="w-5 h-5 text-red-500" />
           </div>
@@ -513,34 +402,18 @@ export default function MyPage() {
         </button>
       </div>
 
-      {/* 💡 --- ここからポップアップUIを追加 --- 💡 */}
+      {/* アカウント削除ポップアップ */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 mx-auto">
               <AlertTriangle className="text-red-600 w-6 h-6" />
             </div>
-            <h3 className="text-lg font-black text-center text-gray-800 mb-2">
-              本当にアカウントを削除しますか？
-            </h3>
-            <p className="text-sm text-gray-500 text-center mb-6 font-medium">
-              この操作は取り消せません。<br/>プロフィールや登録した参考書データがすべて完全に削除されます。
-            </p>
+            <h3 className="text-lg font-black text-center text-gray-800 mb-2">本当にアカウントを削除しますか？</h3>
+            <p className="text-sm text-gray-500 text-center mb-6 font-medium">この操作は取り消せません。<br/>プロフィールや登録した参考書データがすべて完全に削除されます。</p>
             <div className="space-y-3">
-              <button
-                onClick={handleDeleteAccount}
-                disabled={loading}
-                className="w-full bg-red-600 text-white font-bold py-3.5 rounded-xl hover:bg-red-700 transition-colors disabled:bg-red-300"
-              >
-                {loading ? '削除中...' : '削除して退会する'}
-              </button>
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={loading}
-                className="w-full bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors"
-              >
-                キャンセル
-              </button>
+              <button onClick={handleDeleteAccount} className="w-full bg-red-600 text-white font-bold py-3.5 rounded-xl hover:bg-red-700 transition-colors" >削除して退会する</button>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="w-full bg-gray-100 text-gray-700 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition-colors" >キャンセル</button>
             </div>
           </div>
         </div>

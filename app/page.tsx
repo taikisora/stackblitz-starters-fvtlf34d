@@ -93,7 +93,7 @@ export default function HomePage() {
             志望校合格への最短ルートを、<br className="hidden md:block" />みんなで見つけよう。
           </h2>
           <p className="text-xs md:text-sm text-slate-500 font-medium pb-2">
-            1,000冊以上の参考書データと、先輩たちのリアルな学習ルートから、今のあなたに最適な1冊が見つかります。
+            1,000冊以上の参考書データと、先輩たちのデータから、今のあなたに最適な1冊が見つかります。
           </p>
           
           {/* 💡 アイコンを廃止し、本物のサイトのような「検索バー型ボタン」を中央に配置 */}

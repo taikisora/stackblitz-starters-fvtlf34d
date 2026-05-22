@@ -15,6 +15,7 @@ export default function AnnouncementDetailPage() {
 
   useEffect(() => {
     const fetchDetail = async () => {
+      // URLにあるIDを使って、特定のお知らせ1件を狙い撃ちで取得
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
@@ -26,38 +27,39 @@ export default function AnnouncementDetailPage() {
       } else if (data) {
         setAnnouncement(data);
       }
-      setLoading(false);
+      loading && setLoading(false);
     };
 
     if (announcementId) fetchDetail();
   }, [announcementId]);
 
-  if (loading) return <div className="text-center py-20 text-gray-400 font-bold animate-pulse text-sm">お知らせを読み込み中...</div>;
-  if (!announcement) return <div className="text-center py-20 text-gray-500 font-bold text-sm">お知らせが見つかりませんでした。</div>;
+  if (loading) return <p className="text-center py-20 text-gray-500 font-bold animate-pulse">読み込み中...</p>;
+  if (!announcement) return <p className="text-center py-20 text-gray-500 font-bold">お知らせが見つかりませんでした。</p>;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-white min-h-screen pb-24 rounded-3xl shadow-md border border-gray-100 mt-4">
+    <div className="p-4 max-w-md mx-auto bg-white min-h-screen pb-24">
+      {/* 戻るボタン */}
       <button 
         onClick={() => router.back()} 
-        className="text-sm text-blue-600 flex items-center mb-6 font-bold bg-gray-50 border border-gray-100 shadow-2xs px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors w-max"
+        className="text-sm text-blue-600 flex items-center mb-5 font-bold hover:opacity-75"
       >
         <ChevronLeft size={16} /> 戻る
       </button>
 
       {/* お知らせヘッダーエリア */}
-      <div className="border-b border-gray-100 pb-5 mb-6 space-y-2">
-        <div className="flex items-center gap-1 text-gray-400 text-xs font-bold bg-gray-50 w-max px-2.5 py-1 rounded-md">
-          <Calendar size={13} className="text-gray-400" />
+      <div className="border-b border-gray-100 pb-4 mb-5">
+        <div className="flex items-center gap-1 text-gray-400 text-[11px] font-bold mb-2">
+          <Calendar size={12} />
           <span>{new Date(announcement.created_at).toLocaleString('ja-JP')}</span>
         </div>
-        <h1 className="font-black text-xl md:text-2xl text-gray-900 leading-snug">
+        <h1 className="font-extrabold text-lg text-gray-900 leading-snug">
           {announcement.title}
         </h1>
       </div>
 
       {/* お知らせ本文エリア */}
-      <div className="bg-gray-50/70 p-6 rounded-2xl border border-gray-100/70 shadow-2xs">
-        <p className="text-sm md:text-base text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">
+      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100/70">
+        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-medium">
           {announcement.content}
         </p>
       </div>

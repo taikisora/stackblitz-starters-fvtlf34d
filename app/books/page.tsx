@@ -11,8 +11,7 @@ export default function BooksPage() {
   const router = useRouter();
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('published_date_desc');
-  
+  const [sortBy, setSortBy] = useState('saved_count_desc');  
   // ★ 追加: ログインユーザー情報を保持
   const [user, setUser] = useState<any>(null);
 
@@ -52,8 +51,9 @@ export default function BooksPage() {
         if (publishers.length > 0) query = query.in('publisher', publishers);
       }
 
-      if (sortBy === 'published_date_desc') query = query.order('published_date', { ascending: false });
-      else if (sortBy === 'saved_count_desc') query = query.order('saved_count', { ascending: false });
+      // 💡 変更点：セレクトボックスの初期値に合わせて、いいね順（saved_count_desc）をデフォルト（一番最初）の判定にします
+      if (sortBy === 'saved_count_desc') query = query.order('saved_count', { ascending: false });
+      else if (sortBy === 'published_date_desc') query = query.order('published_date', { ascending: false });
       else if (sortBy === 'used_count_desc') query = query.order('used_count', { ascending: false });
       else if (sortBy === 'title_asc') query = query.order('title', { ascending: true });
 
@@ -174,12 +174,25 @@ export default function BooksPage() {
     <div className="pb-24 bg-gray-50 min-h-screen">
       {/* ★ 上部固定ヘッダー（再検索・検索条件・ソートを集約） */}
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3 shadow-sm flex flex-col gap-2 mb-4">
-        <button 
-          onClick={() => router.back()} // 💡 push('/search') から back() に変更して直前の状態に戻す
-          className="text-sm text-blue-600 flex items-center font-bold w-fit hover:opacity-70 transition-opacity"
-        >
-          <ChevronLeft size={18} /> 再検索
-        </button>
+      <button 
+        onClick={() => {
+          const target = searchParams.get('target');
+          if (target === 'regular') {
+            router.push(`/search?step=subject&${searchParams.toString()}`);
+          } else if (target === 'publisher') {
+            router.push(`/search?step=publisher&${searchParams.toString()}`);
+          } else if (target === 'textbook') {
+            router.push(`/search?step=textbook_subject&${searchParams.toString()}`);
+          } else if (target === 'exam') {
+            router.push(`/search?step=exam_filter&${searchParams.toString()}`);
+          } else {
+            router.push('/search');
+          }
+        }} 
+        className="text-sm text-blue-600 flex items-center font-bold w-fit hover:opacity-70 transition-opacity"
+      >
+        <ChevronLeft size={18} /> 条件を変更して再検索
+      </button>
         
         <div className="flex justify-between items-center gap-2">
           {/* 💡 何を検索しているかを左上に明示 */}
@@ -193,9 +206,9 @@ export default function BooksPage() {
               onChange={(e) => setSortBy(e.target.value)}
               className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-500 font-bold shadow-sm"
             >
-              <option value="published_date_desc">新着順</option>
               <option value="saved_count_desc">いいね数が多い順</option>
               <option value="used_count_desc">使用者が多い順</option>
+              <option value="published_date_desc">新着順</option>
               <option value="title_asc">五十音順</option>
             </select>
           </div>
@@ -209,55 +222,86 @@ export default function BooksPage() {
           {/* 💡 元の並び替えエリア（pl-1 mb-2）は上のヘッダーへ移動したため削除 */}
           
           {books.map(book => (
-            // ★ Linkをやめて、divにonClickを持たせる形に変更（ボタンと押し分けるため）
-            <div key={book.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-shadow">
+            // 💡 変更点①：最外枠のdivに cursor-pointer と onClick を配置。これで「どこを押しても詳細へ」になります
+            <div 
+              key={book.id} 
+              onClick={() => router.push(`/books/${book.id}`)}
+              className="group bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100/80 flex flex-col sm:flex-row gap-5 md:gap-6 hover:shadow-md hover:border-blue-100 transition-all cursor-pointer"
+            >
               
-              {/* 画像とタイトルのエリア（クリックで詳細へ） */}
-              <div 
-                className="flex-1 flex gap-4 cursor-pointer" 
-                onClick={() => router.push(`/books/${book.id}`)}
-              >
-                <div className="w-20 h-28 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400 text-xs overflow-hidden border border-gray-200">
-                  {book.cover_url ? <img src={book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
+              {/* 画像エリア（onClickは外側に統合したので削除） */}
+              <div className="w-28 h-40 md:w-32 md:h-44 bg-gray-50 rounded-xl flex-shrink-0 flex items-center justify-center text-gray-400 text-sm overflow-hidden border border-gray-200 shadow-sm relative">
+                {book.cover_url ? (
+                  <img src={book.cover_url} alt="cover" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                ) : (
+                  'NO IMAGE'
+                )}
+              </div>
+              
+              {/* 右側のコンテンツ全体 */}
+              <div className="flex-1 flex flex-col justify-start">
+                
+                {/* 上部：出版社とタイトル */}
+                <div>
+                  <div className="mb-2.5">
+                    <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-500 text-[11px] md:text-xs font-bold rounded-md tracking-wide">
+                      {book.publisher}
+                    </span>
+                  </div>
+                  
+                  {/* 💡 変更点②：onClickと不要なcursor-pointerを削除してすっきり */}
+                  <h3 className="font-black text-lg md:text-xl leading-snug text-slate-900 line-clamp-2 md:line-clamp-3 transition-colors group-hover:text-blue-600">
+                    {book.title}
+                  </h3>
                 </div>
-                <div className="flex-1 flex flex-col justify-start">
-                  <p className="text-[10px] text-gray-500 font-bold mb-1">{book.publisher}</p>
-                  <h3 className="font-bold text-sm leading-tight mb-2 text-gray-800 line-clamp-2">{book.title}</h3>
-                  <div className="flex items-center gap-1 mt-auto">
+                
+                {/* 下部エリア（星評価 ＋ アクションボタン） */}
+                <div className="mt-auto pt-4 flex flex-col gap-3">
+                  
+                  {/* 星評価エリア */}
+                  <div className="flex items-center gap-2">
                     <div className="flex text-amber-400">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={12} className={i < Math.round(book.average_rating || 0) ? 'fill-current' : 'text-gray-200'} />
+                        <Star key={i} size={24} className={i < Math.round(book.average_rating || 0) ? 'fill-current' : 'text-gray-200'} />
                       ))}
                     </div>
-                    <span className="text-xs font-bold text-gray-700 ml-0.5">
+                    <span className="text-lg md:text-xl font-extrabold text-slate-800 ml-1">
                       {Number(book.average_rating || 0).toFixed(1)}
                     </span>
-                    <span className="text-[10px] text-gray-400">({book.review_count || 0})</span>
+                    <span className="text-sm md:text-base font-bold text-gray-400">({book.review_count || 0})</span>
                   </div>
-                </div>
-              </div>
 
-              {/* ★ 追加: 検索画面用の保存・使用ボタン（右下に配置） */}
-              <div className="flex flex-col gap-3 justify-end items-end pb-1 border-l border-gray-100 pl-3">
-                <button 
-                  onClick={(e) => handleToggle(e, book.id, 'saved')}
-                  className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
-                    book.user_status?.is_saved ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'
-                  }`}
-                >
-                  <Heart size={18} fill={book.user_status?.is_saved ? "currentColor" : "none"} />
-                  {book.saved_count || 0}
-                </button>
-                
-                <button 
-                  onClick={(e) => handleToggle(e, book.id, 'used')}
-                  className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
-                    book.user_status?.is_used ? 'text-green-600' : 'text-gray-400 hover:text-green-500'
-                  }`}
-                >
-                  <BookOpen size={18} fill={book.user_status?.is_used ? "currentColor" : "none"} />
-                  {book.used_count || 0}
-                </button>
+                  {/* アクションボタンエリア */}
+                  {/* 💡 ここはクリックしても詳細画面に飛ばないよう、元から入っている e.stopPropagation() がガードしてくれます */}
+                  <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3">
+                    
+                    <button 
+                      onClick={(e) => handleToggle(e, book.id, 'saved')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                        book.user_status?.is_saved 
+                          ? 'bg-pink-50 text-pink-600 border border-pink-200 shadow-3xs' 
+                          : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-pink-500'
+                      }`}
+                    >
+                      <Heart size={20} fill={book.user_status?.is_saved ? "currentColor" : "none"} strokeWidth={2.5} />
+                      <span className="text-base">{book.saved_count || 0}</span>
+                    </button>
+                    
+                    <button 
+                      onClick={(e) => handleToggle(e, book.id, 'used')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                        book.user_status?.is_used 
+                          ? 'bg-green-50 text-green-700 border border-green-200 shadow-3xs' 
+                          : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-green-600'
+                      }`}
+                    >
+                      <BookOpen size={20} fill={book.user_status?.is_used ? "currentColor" : "none"} strokeWidth={2.5} />
+                      <span className="text-base">{book.used_count || 0}</span>
+                    </button>
+
+                  </div>
+
+                </div>
               </div>
 
             </div>

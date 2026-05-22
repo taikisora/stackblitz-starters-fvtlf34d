@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Route, Plus, Lock, Globe, BookOpen, Trash2, Edit2, AlertCircle } from 'lucide-react';
+import { Route, Plus, Lock, Globe, BookOpen, Trash2, Edit2, AlertCircle, ChevronRight } from 'lucide-react';
 import TabBar from '@/components/TabBar';
 
 export default function LearningDataPage() {
@@ -44,7 +44,8 @@ export default function LearningDataPage() {
     fetchRoutes();
   }, [router]);
 
-  const handleDelete = async (routeId: string, routeTitle: string) => {
+  const handleDelete = async (e: React.MouseEvent, routeId: string, routeTitle: string) => {
+    e.stopPropagation(); // 💡 枠全体のクリック（詳細への遷移）を発動させないガード
     if (!confirm(`「${routeTitle}」を削除してもよろしいですか？\n※この操作は取り消せません。`)) return;
 
     const { error } = await supabase
@@ -65,89 +66,107 @@ export default function LearningDataPage() {
   const isLimitReached = routes.length >= MAX_ROUTES;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4">
-      {/* 🟢 ヘッダーセクション */}
-      <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
-        <div className="flex items-center gap-2">
-          <div className="bg-blue-100 p-2.5 rounded-xl text-blue-600 shadow-2xs">
-            <Route size={20} />
+    // 💡 max-w-3xl から max-w-5xl に広げ、他のリッチ化画面と統一
+    <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen pb-24">
+      
+      {/* ヘッダーセクション */}
+      <div className="flex items-center justify-between border-b border-gray-200/60 pb-4 mb-6">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-sm">
+            <Route size={22} />
           </div>
-          <h1 className="text-xl font-black text-gray-900">参考書ルート</h1>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900">マイ参考書ルート</h1>
         </div>
         
-        <div className={`text-xs font-bold px-3 py-1.5 rounded-full border ${isLimitReached ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-gray-600 border-gray-200 shadow-2xs'}`}>
+        <div className={`text-xs md:text-sm font-black px-3 py-1.5 rounded-full border ${isLimitReached ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-slate-600 border-slate-200 shadow-3xs'}`}>
           保存枠: {routes.length} / {MAX_ROUTES}
         </div>
       </div>
 
       <div className="space-y-6">
-        {/* 🟢 新規作成ボタン */}
+        {/* 新規作成ボタン */}
         {!isLimitReached ? (
           <Link
             href="/learning-data/new"
-            className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-extrabold py-4 rounded-2xl shadow-md hover:bg-blue-700 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-base"
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-4 rounded-2xl shadow-md hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-base shadow-blue-500/10"
           >
             <Plus size={20} className="stroke-[2.5]" />
             新しい参考書ルートを作成する
           </Link>
         ) : (
-          <div className="flex items-center gap-2 bg-red-50 text-red-600 text-xs font-bold p-4 rounded-xl border border-red-100 shadow-2xs">
-            <AlertCircle size={16} />
-            保存枠が上限に達しています。新しいルートを作るするには不要なものを削除してください。
+          <div className="flex items-center gap-2 bg-red-50 text-red-600 text-sm font-bold p-4 rounded-xl border border-red-100 shadow-3xs">
+            <AlertCircle size={18} />
+            保存枠が上限に達しています。新しいルートを作るには不要なものを削除してください。
           </div>
         )}
 
-        {/* 🟢 ルート一覧（PC表示の時は2列グリッドで綺麗に並べる！） */}
+        {/* ルート一覧 */}
         {routes.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 border-dashed shadow-sm">
-            <Route size={54} className="mx-auto text-gray-200 mb-4" />
-            <p className="text-gray-500 font-bold text-sm mb-1">まだ学習ルートがありません</p>
-            <p className="text-gray-400 text-xs">上のボタンから最初のルートを作ってみましょう！</p>
+          <div className="text-center py-24 bg-white rounded-3xl border border-gray-100 border-dashed shadow-sm">
+            <Route size={64} className="mx-auto text-slate-200 mb-4" />
+            <p className="text-slate-500 font-black text-base mb-1">まだ参考書ルートがありません</p>
+            <p className="text-slate-400 text-sm font-bold">上のボタンから最初のルートを作ってみましょう！</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
             {routes.map((route) => (
-              <div key={route.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+              // 💡 変更点：外枠全体をクリックすると、編集ではなく「詳細画面」に飛ぶように onClick をセット！
+              <div 
+                key={route.id} 
+                onClick={() => router.push(`/learning-data/${route.id}`)}
+                className="bg-white rounded-2xl p-5 md:p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-100/70 transition-all flex flex-col justify-between group cursor-pointer relative"
+              >
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
+                  {/* バッジを大きく綺麗に調整 */}
+                  <div className="flex items-center gap-2 mb-3.5">
                     {route.is_public ? (
-                      <span className="flex items-center gap-1 text-[10px] font-extrabold bg-green-50 text-green-700 px-2 py-0.5 rounded-md border border-green-100/50">
-                        <Globe size={10} /> 公開中
+                      <span className="flex items-center gap-1 text-[11px] font-black bg-green-50 text-green-700 px-2.5 py-1 rounded-md border border-green-200/40">
+                        <Globe size={12} strokeWidth={2.5} /> 公開中
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-[10px] font-extrabold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md">
-                        <Lock size={10} /> 非公開
+                      <span className="flex items-center gap-1 text-[11px] font-black bg-slate-100 text-slate-500 px-2.5 py-1 rounded-md">
+                        <Lock size={12} strokeWidth={2.5} /> 非公開
                       </span>
                     )}
-                    <span className="text-[10px] font-extrabold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-100/50">
+                    <span className="text-[11px] font-black bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md border border-blue-200/40">
                       {route.subject}
                     </span>
                   </div>
 
-                  <h2 className="font-extrabold text-gray-900 text-base leading-snug mb-1 group-hover:text-blue-600 transition-colors">{route.title}</h2>
-                  <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-4">
-                    {route.description || '説明は設定されていません。'}
+                  {/* タイトルと説明文を一回り大きく、フォントを太く！ */}
+                  <h2 className="font-black text-slate-900 text-lg md:text-xl leading-snug mb-2 group-hover:text-blue-600 transition-colors flex items-center justify-between gap-2">
+                    <span className="truncate">{route.title}</span>
+                    <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 shrink-0 transition-colors" />
+                  </h2>
+                  <p className="text-sm text-slate-500 font-medium line-clamp-2 leading-relaxed mb-5">
+                    {route.description || '詳細な説明は設定されていません。'}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-gray-50 mt-2">
-                  <div className="flex items-center gap-1 text-gray-500 font-bold text-xs">
-                    <BookOpen size={13} className="text-gray-400" />
+                {/* 下部アクションエリア */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto">
+                  {/* 💡 テキストとアイコンを一回り大きく（text-sm / size={18}） */}
+                  <div className="flex items-center gap-2 text-slate-700 font-black text-sm">
+                    <BookOpen size={18} className="text-slate-400" strokeWidth={2.5} />
                     <span>参考書 {route.route_books?.length || 0} 冊</span>
                   </div>
                   
-                  <div className="flex items-center gap-1">
-                    <Link 
-                      href={`/learning-data/${route.id}/edit`}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <Edit2 size={15} />
-                    </Link>
+                  {/* 💡 編集・削除ボタンの当たり判定（p-2.5）とアイコンサイズ（size={20}）を拡大して超押しやすく */}
+                  <div className="flex items-center gap-2 relative z-10">
                     <button 
-                      onClick={() => handleDelete(route.id, route.title)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/learning-data/${route.id}/edit`);
+                      }}
+                      className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90 border border-transparent hover:border-blue-100 bg-slate-50 sm:bg-transparent"
                     >
-                      <Trash2 size={15} />
+                      <Edit2 size={20} strokeWidth={2.5} />
+                    </button>
+                    <button 
+                      onClick={(e) => handleDelete(e, route.id, route.title)}
+                      className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90 border border-transparent hover:border-red-100 bg-slate-50 sm:bg-transparent"
+                    >
+                      <Trash2 size={20} strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>

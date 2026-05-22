@@ -123,7 +123,6 @@ export default function OnboardingPage() {
           <p className="text-sm text-gray-500 text-center mb-6">アプリ内で表示されるニックネームです</p>
           <input
             type="text"
-            placeholder="例: タイキ"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 focus:outline-none focus:border-blue-500 mb-6 text-gray-800 font-medium"
