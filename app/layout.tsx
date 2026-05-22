@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import './globals.css';
+/* 💡 修正箇所：元の正しいファイル名である './globals.css' （s付き）に修正しました */
+import './globals.css'; 
 import Header from '../components/Header';
-import TabBar from '../components/TabBar';
 
 export const metadata: Metadata = {
   title: '参考書ドットコム｜大学受験用参考書のまとめサイト',
@@ -15,14 +15,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body>
-        <div className="min-h-screen bg-gray-50 text-gray-800 transition-all pb-24 md:pb-0 md:pl-20">
-          <Header />
-          <main className="p-4">
-            {children}
-          </main>
-          <TabBar />
-        </div>
+      <body className="antialiased text-slate-900">
+        {/* 画面上部に常についてくる新・高機能ヘッダー */}
+        <Header />
+        
+        {/* メインコンテンツエリア */}
+        <main className="w-full">
+          {children}
+        </main>
       </body>
     </html>
   );

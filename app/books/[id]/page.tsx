@@ -343,7 +343,6 @@ export default function BookDetailPage() {
     : book.description;
 
   return (
-    // 💡 変更点①：max-w-md を max-w-5xl に拡張し、PCでの極細レイアウトを解放
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen pb-24">
       
       {/* 戻るボタン */}
@@ -351,72 +350,68 @@ export default function BookDetailPage() {
         <ChevronLeft size={18} /> 戻る
       </button>
 
-      {/* 💡 変更点②：上部メインセクションを白背景の綺麗なカード化（検索結果画面のデザインと統一） */}
-      <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/80 mb-6 flex flex-col md:flex-row gap-6">
+      {/* メインセクション：スマホ横並び、PC2カラム */}
+      <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100/80 mb-6 flex flex-row md:flex-row gap-4 md:gap-6 items-start">
         
-        {/* 左側：大きなカバー画像 */}
-        <div className="w-32 h-44 md:w-36 md:h-52 bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 shadow-sm flex items-center justify-center text-gray-400 text-sm">
+        {/* 左側：カバー画像 */}
+        <div className="w-24 h-32 md:w-36 md:h-52 bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 shadow-sm flex items-center justify-center text-gray-400 text-xs md:text-sm">
           {book.cover_url ? <img src={book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
         </div>
         
-        {/* 右側：タイトル・評価・アクションを縦に整理 */}
-        <div className="flex-1 flex flex-col justify-between py-1">
+        {/* 右側：コンテンツエリア */}
+        <div className="flex-1 flex flex-col justify-between self-stretch py-0.5">
           <div>
-            {/* 出版社をバッジ風に */}
-            <div className="mb-2">
-              <span className="inline-block px-2.5 py-1 bg-slate-100 text-slate-500 text-[11px] md:text-xs font-bold rounded-md tracking-wide">
+            {/* 出版社バッジ */}
+            <div className="mb-1.5">
+              <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] md:text-xs font-bold rounded-md tracking-wide">
                 {book.publisher}
               </span>
             </div>
-            {/* タイトルを太く大きく */}
-            <h1 className="font-black text-xl md:text-2xl text-slate-900 leading-snug mb-1.5">{book.title}</h1>
-            <p className="text-sm md:text-base text-slate-600 font-medium mb-4">{book.author}</p>
+            {/* タイトルと著者 */}
+            <h1 className="font-black text-base md:text-2xl text-slate-900 leading-snug mb-1 line-clamp-2 md:line-clamp-none">{book.title}</h1>
+            <p className="text-xs md:text-base text-slate-600 font-medium mb-2 md:mb-4">{book.author}</p>
           </div>
           
-          {/* 下部に星評価とアクションボタンを密着配置 */}
-          <div className="mt-auto space-y-4 pt-3 border-t border-gray-50">
-            {/* 星評価エリア（特大サイズ化） */}
-            <div className="flex items-center gap-2">
+          {/* 下部：評価とアクションボタン */}
+          <div className="mt-auto space-y-3 md:space-y-4">
+            {/* 星評価 */}
+            <div className="flex items-center gap-1.5">
               <div className="flex text-amber-400">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={24} className={i < Math.round(averageRating) ? 'fill-current' : 'text-gray-200'} />
+                  <Star key={i} size={16} className={i < Math.round(averageRating) ? 'fill-current' : 'text-gray-200'} />
                 ))}
               </div>
-              <span className="text-lg md:text-xl font-black text-slate-800 ml-1">{averageRating.toFixed(1)}</span>
-              <span className="text-sm md:text-base font-bold text-gray-400">({reviewCount})</span>
+              <span className="text-sm md:text-xl font-black text-slate-800 ml-0.5">{averageRating.toFixed(1)}</span>
+              <span className="text-xs md:text-base font-bold text-gray-400">({reviewCount})</span>
             </div>
 
-            {/* いいね・使用中のカプセル型ボタン群 */}
-            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            {/* ボタン：2列横並び・スマホ最適化版 */}
+            <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-gray-100">
               
               <button
                 onClick={() => toggleStatus('saved')}
-                // 💡 w-[220px] で「いいね済み」が入っても余裕がある幅に完全固定します
-                className={`flex items-center justify-center gap-2 w-[220px] py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 border ${
+                className={`flex items-center justify-center gap-1 w-full py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border ${
                   status.is_saved
                     ? 'bg-pink-50 border-pink-200 text-pink-600 shadow-3xs'
                     : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                 }`}
               >
-                <Heart size={20} fill={status.is_saved ? "currentColor" : "none"} strokeWidth={2.5} />
-                {/* 💡 テキストは元の切り替わるロジックに戻しました */}
-                <span>{status.is_saved ? 'いいね済み' : 'いいね'}</span>
-                <span className="ml-0.5 px-1.5 py-0.5 text-xs rounded bg-black/5">{book.saved_count || 0}</span>
+                <Heart size={14} fill={status.is_saved ? "currentColor" : "none"} strokeWidth={2.5} />
+                <span className="truncate">{status.is_saved ? 'いいね済' : 'いいね'}</span>
+                <span className="px-1 py-0.2 text-[9px] rounded bg-black/5 shrink-0">{book.saved_count || 0}</span>
               </button>
 
               <button
                 onClick={() => toggleStatus('used')}
-                // 💡 w-[220px] で「使用中、使用済み」が入っても文字がはみ出さない幅に完全固定します
-                className={`flex items-center justify-center gap-2 w-[220px] py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 border ${
+                className={`flex items-center justify-center gap-1 w-full py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border ${
                   status.is_used
                     ? 'bg-green-50 border-green-200 text-green-700 shadow-3xs'
                     : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                 }`}
               >
-                <BookOpen size={20} fill={status.is_used ? "currentColor" : "none"} strokeWidth={2.5} />
-                {/* 💡 テキストは元の切り替わるロジックに戻しました */}
-                <span>{status.is_used ? '使用中、使用済み' : 'この本を使用'}</span>
-                <span className="ml-0.5 px-1.5 py-0.5 text-xs rounded bg-black/5">{book.used_count || 0}</span>
+                <BookOpen size={14} fill={status.is_used ? "currentColor" : "none"} strokeWidth={2.5} />
+                <span className="truncate">{status.is_used ? '使用中' : 'この本を使用'}</span>
+                <span className="px-1 py-0.2 text-[9px] rounded bg-black/5 shrink-0">{book.used_count || 0}</span>
               </button>
               
             </div>
@@ -471,7 +466,7 @@ export default function BookDetailPage() {
       {/* タブ ＆ 投稿・コメントフィードセクション */}
       <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100/80">
         
-        {/* クリーンなタブ切り替え */}
+        {/* タブ切り替え */}
         <div className="flex border-b border-gray-100 mb-5">
           <button
             onClick={() => setActiveTab('review')}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
-import { Megaphone, Search, Heart, Star, BookOpen, Crown, Twitter } from 'lucide-react';
+import { Megaphone, Heart, Star, BookOpen, Crown } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
@@ -19,35 +19,35 @@ export default function HomePage() {
     const fetchHomeData = async () => {
       setLoading(true);
       try {
-        // 💡 1. 運営お知らせ（最大3件）
+        // 1. 運営お知らせ（最大3件）
         const fetchAnnounce = supabase
           .from('announcements')
           .select('id, title, created_at')
           .order('created_at', { ascending: false })
           .limit(3);
 
-        // 💡 2. いいね（保存）数順ランキング（最大10件）
+        // 2. いいね（保存）数順ランキング（最大10件）
         const fetchSaved = supabase
           .from('books')
           .select('id, title, publisher, cover_url, saved_count')
           .order('saved_count', { ascending: false })
           .limit(10);
 
-        // 💡 3. 評価（星の平均点）順ランキング（最大10件）
+        // 3. 評価（星の平均点）順ランキング（最大10件）
         const fetchRating = supabase
           .from('books')
           .select('id, title, publisher, cover_url, average_rating, review_count')
           .order('average_rating', { ascending: false })
           .limit(10);
 
-        // 💡 4. 使用本棚に登録されている順ランキング（最大10件）
+        // 4. 使用本棚に登録されている順ランキング（最大10件）
         const fetchUsed = supabase
           .from('books')
           .select('id, title, publisher, cover_url, used_count')
           .order('used_count', { ascending: false })
           .limit(10);
 
-        // 🏎️ すべてのクエリを同時に並列実行して処理時間を超短縮！
+        // すべてのクエリを同時に並列実行
         const [announceRes, savedRes, ratingRes, usedRes] = await Promise.all([
           fetchAnnounce, fetchSaved, fetchRating, fetchUsed
         ]);
@@ -77,37 +77,26 @@ export default function HomePage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4 space-y-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4 space-y-4 md:space-y-6">
       
-      {/* 🔮 ヒーローセクション（洗練されたモダンUI版） */}
-      {/* 💡 変更点：青い箱をやめ、クリーンな白背景＋淡いブルーのアクセントで雑誌のように配置 */}
-      <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100/80 mb-8 relative overflow-hidden flex flex-col items-center text-center">
-        {/* 背景のさりげない装飾（右上に淡いブルーのグラデーション） */}
+      {/* 🔮 ヒーローセクション */}
+      <div className="bg-white rounded-3xl p-6 md:p-12 shadow-sm border border-gray-100/80 mb-4 md:mb-8 relative overflow-hidden flex flex-col items-center text-center">
+        {/* 背景のさりげない装飾 */}
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-blue-50 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 w-full max-w-2xl space-y-5">
-          <p className="text-[10px] md:text-xs font-bold text-blue-600 tracking-widest uppercase">
+        <div className="relative z-10 w-full max-w-3xl space-y-3 md:space-y-4">
+          <p className="text-[9px] md:text-xs font-bold text-blue-600 tracking-widest uppercase">
             参考書検索・管理アプリ
           </p>
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900 leading-tight">
-            志望校合格への最短ルートを、<br className="hidden md:block" />みんなで見つけよう。
-          </h2>
-          <p className="text-xs md:text-sm text-slate-500 font-medium pb-2">
-            1,000冊以上の参考書データと、先輩たちのデータから、今のあなたに最適な1冊が見つかります。
-          </p>
           
-          {/* 💡 アイコンを廃止し、本物のサイトのような「検索バー型ボタン」を中央に配置 */}
-          <div className="flex justify-center w-full max-w-md mx-auto pt-2">
-            <button 
-              onClick={() => router.push('/search')}
-              className="flex items-center justify-between w-full p-2 pl-6 bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md hover:border-blue-300 transition-all group active:scale-95"
-            >
-              <span className="text-sm font-medium text-gray-400">参考書やルートを検索...</span>
-              <div className="bg-slate-900 text-white p-3 rounded-full group-hover:bg-blue-600 transition-colors">
-                <Search size={18} />
-              </div>
-            </button>
-          </div>
+          <h2 className="text-lg md:text-3xl font-black tracking-tight text-slate-900 leading-snug max-w-3xl mx-auto break-keep">
+            志望校合格への最短ルートを、<br className="md:hidden" />みんなで見つけよう。
+          </h2>
+          
+          {/* 💡 ボタンを無くした代わりに下部の余白（pb-1 md:pb-2）を少し持たせてスッキリ着地 */}
+          <p className="text-[11px] md:text-sm text-slate-400 md:text-slate-500 font-medium max-w-md md:max-w-none mx-auto leading-normal pb-1 md:pb-2">
+            1,000冊以上の参考書データと、先輩たちのデータから、最適な1冊が見つかります。
+          </p>
         </div>
       </div>
 
@@ -153,17 +142,16 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* ─── 📊 ココからLIPS風横スクロール型 3大ランキング ─── */}
+      {/* ─── 📊 3大ランキング ─── */}
       <div className="space-y-6">
         
-        {/* ① いいね（保存）順ランキング */}
+        {/* ① いいね（保存）数順ランキング */}
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-3">
           <div className="flex items-center gap-1.5 border-b border-gray-50 pb-2">
             <Heart size={16} className="text-rose-500 fill-current" />
             <h3 className="font-black text-gray-800 text-sm tracking-wide">受験生が注目！いいね数ランキング</h3>
           </div>
           
-          {/* 横スワイプ用コンテナ：はみ出た部分は綺麗にスクロールします */}
           <div className="flex gap-3.5 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none snap-x snap-mandatory">
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="w-24 h-36 bg-gray-100 rounded-2xl animate-pulse shrink-0" />)
@@ -258,13 +246,12 @@ export default function HomePage() {
       </div>
 
       {/* ─── 📺 ＆ 🐦 クリエイター「あるた」公式SNS告知セクション ─── */}
-      {/* PC表示の時は2つのカードが綺麗に横並び（grid-cols-2）になります */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
         
         {/* 左側：YouTubeチャンネルプロモーション */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-950 text-white rounded-3xl p-5 border border-slate-800 flex flex-col justify-between gap-4">
           <div className="flex items-center gap-3.5 text-left">
-          <div className="bg-white p-2.5 w-11 h-11 rounded-xl shadow-inner shrink-0 flex items-center justify-center overflow-hidden border border-white/10">
+            <div className="bg-white p-2.5 w-11 h-11 rounded-xl shadow-inner shrink-0 flex items-center justify-center overflow-hidden border border-white/10">
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/960px-YouTube_full-color_icon_%282017%29.svg.png" 
                 alt="YouTube Logo" 
@@ -287,10 +274,9 @@ export default function HomePage() {
           </a>
         </div>
 
-        {/* 右側：公式X（旧Twitter）プロモーション */}
+        {/* 右側：公式Xアカウントプロモーション */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-950 text-white rounded-3xl p-5 border border-slate-800 flex flex-col justify-between gap-4">
           <div className="flex items-center gap-3.5 text-left">
-            {/* 指定してもらった画像URLを読み込むエリア */}
             <div className="bg-white p-2 w-11 h-11 rounded-xl shadow-inner shrink-0 flex items-center justify-center overflow-hidden border border-white/10">
               <img 
                 src="https://img.icons8.com/ios_filled/1200/twitterx.jpg" 
