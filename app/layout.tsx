@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-/* 💡 修正箇所：元の正しいファイル名である './globals.css' （s付き）に修正しました */
-import './globals.css'; 
+import './globals.css';
 import Header from '../components/Header';
 
 export const metadata: Metadata = {
@@ -15,12 +14,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className="antialiased text-slate-900">
-        {/* 画面上部に常についてくる新・高機能ヘッダー */}
+      {/* 💡 背景がドロドロ黒くならないクリーンな土台に変形 */}
+      <body className="antialiased bg-slate-50 min-h-screen flex flex-col">
+        {/* 上部固定のスタイリッシュヘッダー */}
         <Header />
         
         {/* メインコンテンツエリア */}
-        <main className="w-full">
+        <main className="w-full flex-1 bg-slate-50">
           {children}
         </main>
       </body>

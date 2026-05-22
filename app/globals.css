@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 15, 23, 42; /* 深いスレート色 */
+  --foreground-rgb: 15, 23, 42;
 }
 
-/* 💡 闇落ちグラデーションの記述を完全に撤去し、滑らかで綺麗な薄い背景に固定します */
+/* 💡 読み込み中や隙間ができても絶対に真っ黒にならないよう、明るい背景で包み込みます */
 body {
   color: rgb(var(--foreground-rgb));
-  background-color: #f8fafc; /* スタイリッシュな薄いグレー(slate-50) */
-  min-h-screen: 100vh;
+  background-color: #f8fafc !important; /* 洗練された明るい薄グレー(slate-50)に完全固定 */
+  min-height: 100vh;
 }
