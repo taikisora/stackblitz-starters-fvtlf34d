@@ -1,0 +1,78 @@
+"use client";
+import { useRouter } from 'next/navigation';
+import { ChevronLeft } from 'lucide-react';
+
+export default function TermsPage() {
+  const router = useRouter();
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-8 bg-gray-50 min-h-screen text-gray-800">
+      {/* 戻るボタン */}
+      <button 
+        onClick={() => router.back()} 
+        className="text-sm text-blue-600 flex items-center mb-6 font-bold hover:opacity-75 active:scale-95 transition-transform"
+      >
+        <ChevronLeft className="w-4 h-4 mr-1" /> 戻る
+      </button>
+
+      {/* 白いカード風のコンテナ（マイページなどのデザインと統一） */}
+      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
+        <h1 className="text-2xl font-bold mb-6 border-b pb-4 text-gray-900">利用規約</h1>
+        
+        <div className="space-y-6 text-sm leading-relaxed text-gray-700">
+          <p className="font-bold text-base text-gray-900">参考書ドットコム 利用規約</p>
+          <p>
+            本規約は、個人開発者（以下、「運営者」といいます）が提供するWebアプリケーション「参考書ドットコム」（以下、「本サービス」といいます）の利用条件を定めるものです。ユーザーの皆様は、本規約に同意の上、本サービスをご利用ください。
+          </p>
+          
+          <div>
+            <h2 className="font-bold text-gray-900 mb-1">第1条（著作権および掲載データについて）</h2>
+            <p>1. 本サービスに掲載されている参考書等のデータ（書名、出版社名、画像、概要など）は、受験生の利便性向上および書籍の紹介・研究を目的として適切に引用・管理を行っております。</p>
+            <p>2. 本サービスは、各出版社、著者、その他の権利元（以下、「権利関係者」といいます）の著作権や知的財産権を侵害する意図は一切ありません。</p>
+            <p>3. 万が一、掲載内容について権利関係者様から「不適切である」「データを削除してほしい」等の申し立てや削除依頼があった場合は、事実関係を確認の上、速やかに該当データの修正または削除の対応を行います。</p>
+          </div>
+
+          <div>
+            <h2 className="font-bold text-gray-900 mb-1">第2条（ユーザー投稿コンテンツの扱い）</h2>
+            <p>1. ユーザーが本サービス内に投稿したコンテンツ（レビュー、書き込み、参考書ルートなど）の著作権は、投稿したユーザー本人に帰属します。</p>
+            <p>2. ユーザーは、投稿したコンテンツが第三者の権利（著作権、名誉権、プライバシー権など）を侵害していないことを保証するものとします。</p>
+            <p>3. 運営者は、投稿されたコンテンツが第4条の禁止事項に該当する場合、または運営上必要と判断した場合は、ユーザーへの事前通知なしに、当該コンテンツの全部または一部を削除、あるいは非公開にできるものとします。</p>
+          </div>
+
+          <div>
+            <h2 className="font-bold text-gray-900 mb-1">第3条（ユーザーアカウントの管理）</h2>
+            <p>1. ユーザーは、本サービスの利用に際して登録した自己のアカウントおよびパスワードを、自らの責任において厳重に管理するものとします。</p>
+            <p>2. ユーザーは、理由の如何を問わず、アカウントを第三者に譲渡、貸与、または共有することはできません。</p>
+          </div>
+
+          <div>
+            <h2 className="font-bold text-gray-900 mb-1">第4条（禁止事項）</h2>
+            <p>ユーザーは、本サービスの利用にあたり、以下の行為を行ってはなりません。</p>
+            <ul className="list-disc pl-5 space-y-1 mt-1">
+              <li>法令または公序良俗に反する行為</li>
+              <li>運営者、他のユーザー、出版社、または第三者に対する誹謗中傷、暴言、嫌がらせ、名誉毀損行為</li>
+              <li>本サービスのサーバーやネットワークに過度な負荷をかける行為（スクレイピングや荒らし目的の連続投稿など）</li>
+              <li>他のユーザーになりすます行為</li>
+              <li>その他、運営者が不適切と判断する行為</li>
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="font-bold text-gray-900 mb-1">第5条（免責事項）</h2>
+            <p>1. 運営者は、本サービスに掲載される情報の正確性、確実性、有用性について、明示的にも黙示的にも一切の保証をしません。</p>
+            <p>2. 本サービスの利用、または仕様変更・停止・廃止・データ削除等によってユーザーまたは第三者に生じた損害（受験結果への影響、端末の不具合などを含む）について、運営者は一切の責任を負わないものとします。</p>
+          </div>
+
+          <div>
+            <h2 className="font-bold text-gray-900 mb-1">第6条（規約の変更）</h2>
+            <p>運営者は、必要と判断した場合には、ユーザーに事前通知することなくいつでも本規約を変更することができるものとします。変更後の規約は、本サービス上に表示された時点から効力を生じるものとします。</p>
+          </div>
+
+          <div className="pt-4 border-t text-right text-xs text-gray-500">
+            <p>附則：2026年5月22日 制定</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

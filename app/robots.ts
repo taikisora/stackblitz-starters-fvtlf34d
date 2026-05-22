@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://sanko-sho.com//sitemap.xml', // 💡 ここもご自身のURLに書き換えます
+    sitemap: 'https://sanko-sho.com/sitemap.xml', // 💡 ここもご自身のURLに書き換えます
   }
 }

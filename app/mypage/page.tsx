@@ -386,6 +386,16 @@ export default function MyPage() {
         </Link>
       </div>
 
+      {/* 💡 【修正点】リクエストのすぐ下に、全く同じ大きさ・仕様・デザインで「利用規約」を配置 */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mt-3">
+          <Link href="/terms" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-gray-700">利用規約を確認する</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </Link>
+        </div>
+
       {/* ── 4. 各種設定・ログアウト・退会 ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
         <button onClick={handleLogout} className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors" >
@@ -401,6 +411,8 @@ export default function MyPage() {
           <span className="font-bold text-red-600">アカウントを削除（退会）</span>
         </button>
       </div>
+
+      
 
       {/* アカウント削除ポップアップ */}
       {isDeleteModalOpen && (
