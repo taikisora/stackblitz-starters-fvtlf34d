@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [isResetMode, setIsResetMode] = useState(false); // 💡 パスワードリセット画面との切り替え用
+  const [isResetMode, setIsResetMode] = useState(false); // パスワードリセット画面との切り替え用
 
   // 新規登録
   const handleSignUp = async (e: React.FormEvent) => {
@@ -16,9 +16,13 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
     
+    // 💡 修正箇所：options を追加し、メールクリック後に直接マイページへ自動ログイン＆ジャンプさせる設定を仕込みました！
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: 'https://sanko-sho.com/mypage',
+      },
     });
 
     if (error) {
@@ -47,7 +51,7 @@ export default function LoginPage() {
     }
 
     if (data?.user) {
-      // 💡 ログイン成功時、プロフィール（status）が未設定ならオンボーディング画面へ、設定済ならホームへ
+      // ログイン成功時、プロフィール（status）が未設定ならオンボーディング画面へ、設定済ならホームへ
       const { data: profile } = await supabase
         .from('profiles')
         .select('status')
@@ -62,7 +66,7 @@ export default function LoginPage() {
     }
   };
 
-  // 🔥 パスワードリセットメールの送信
+  // パスワードリセットメールの送信
   const handleResetPasswordEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -97,7 +101,7 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* 💡 パスワードリセットモードの時は、パスワード入力欄を非表示にする */}
+        {/* パスワードリセットモードの時は、パスワード入力欄を非表示にする */}
         {!isResetMode && (
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">パスワード</label>
@@ -142,7 +146,7 @@ export default function LoginPage() {
         )}
       </form>
 
-      {/* 💡 モード切り替えボタン */}
+      {/* モード切り替えボタン */}
       <div className="text-center mt-4">
         <button
           type="button"
