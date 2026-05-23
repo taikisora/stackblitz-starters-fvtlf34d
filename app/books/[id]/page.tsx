@@ -470,19 +470,34 @@ export default function BookDetailPage() {
         <div className="flex border-b border-gray-100 mb-5">
           <button
             onClick={() => setActiveTab('review')}
-            className={`flex-1 py-3 text-center font-black text-sm md:text-base border-b-2 transition-colors ${
+            // 💡 flex items-center justify-center gap-1.5 にして、文字と数字を綺麗に横並びにしました
+            className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-center font-black text-sm md:text-base border-b-2 transition-colors cursor-pointer ${
               activeTab === 'review' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'
             }`}
           >
-            レビュー
+            <span>レビュー</span>
+            {/* 💡 レビューの総数を丸バッジで表示 */}
+            <span className={`text-[10px] md:text-xs px-1.5 py-0.5 rounded-full font-black tracking-tighter shadow-3xs ${
+              activeTab === 'review' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {comments.filter(c => c.type === 'review').length}
+            </span>
           </button>
+          
           <button
             onClick={() => setActiveTab('question')}
-            className={`flex-1 py-3 text-center font-black text-sm md:text-base border-b-2 transition-colors ${
+            // 💡 flex items-center justify-center gap-1.5 にして、文字と数字を綺麗に横並びにしました
+            className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-center font-black text-sm md:text-base border-b-2 transition-colors cursor-pointer ${
               activeTab === 'question' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400'
             }`}
           >
-            質問・議論
+            <span>質問・議論</span>
+            {/* 💡 質問の総数を丸バッジで表示 */}
+            <span className={`text-[10px] md:text-xs px-1.5 py-0.5 rounded-full font-black tracking-tighter shadow-3xs ${
+              activeTab === 'question' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {comments.filter(c => c.type === 'question').length}
+            </span>
           </button>
         </div>
 
@@ -682,18 +697,19 @@ export default function BookDetailPage() {
                           );
                         })}
 
-                      {replyingToId === comment.id && (
+{replyingToId === comment.id && (
                         <div className="flex gap-2 pt-1">
                           <input
                             type="text"
                             value={newReply}
                             onChange={(e) => setNewReply(e.target.value)}
                             placeholder="返信を入力..."
-                            className="flex-1 text-xs md:text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-400 transition-colors shadow-3xs"
+                            // 💡 修正：入力欄に text-slate-800 font-bold を追加して、打ち込んだ文字をクッキリ化
+                            className="flex-1 text-xs md:text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-400 transition-colors shadow-3xs text-slate-800 font-bold"
                           />
                           <button
                             onClick={() => handleSubmitReply(comment.id)}
-                            className="bg-blue-600 text-white font-black text-xs md:text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shrink-0 shadow-sm"
+                            className="bg-blue-600 text-white font-black text-xs md:text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shrink-0 shadow-sm cursor-pointer active:scale-95"
                           >
                             送信
                           </button>
