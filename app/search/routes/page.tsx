@@ -5,11 +5,11 @@ import { supabase } from '../../../lib/supabase';
 import { ChevronLeft, Search, User, Heart, MessageCircle, BookOpen, ArrowDown, ChevronRight } from 'lucide-react';
 
 const SUBJECT_DATA = { 
-  '英語': ['英単語', '英熟語', '英文法', '長文', 'リスニング', '英作文', 'その他（英語）'], 
-  '数学': ['数IA', '数IIB', '数IIIC', 'その他（数学）'], 
-  '国語': ['現代文', '古文', '漢文', 'その他（国語）'], 
-  '理科': ['物理', '化学', '生物', '地学', 'その他（理科）'], 
-  '社会': ['歴史総合', '日本史', '世界史', '地理', '公共', '倫理', '政治・経済', '社会のその他'] 
+  '英語': ['英語（総合）', '英単語', '英熟語', '英文法', '長文', 'リスニング', '英作文', 'その他（英語）'], 
+  '数学': ['数学（総合）', '数IA', '数IIB', '数IIIC', 'その他（数学）'], 
+  '国語': ['国語（総合）', '現代文', '古文', '漢文', 'その他（国語）'], 
+  '理科': ['理科（総合）', '物理', '化学', '生物', '地学', 'その他（理科）'], 
+  '社会': ['社会（総合）', '歴史総合', '日本史', '世界史', '地理', '公共', '倫理', '政治・経済', '社会のその他'] 
 };
 
 const ITEMS_PER_PAGE = 20;
@@ -201,13 +201,15 @@ export default function RouteSearchPage() {
           </div>
         </div>
 
+          {/* 検索窓 */}
         <div className="relative flex items-center">
           <input 
             type="text" 
             placeholder="題名、説明、本で検索" 
             value={routeSearchQuery}
             onChange={(e) => setRouteSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-2xl py-3.5 pl-11 pr-4 focus:outline-none focus:border-blue-500 shadow-xs text-sm font-medium"
+            // 💡 text-slate-800 font-bold を追加して、入力文字をハッキリ見えるように修正
+            className="w-full bg-white border border-gray-200 rounded-2xl py-3.5 pl-11 pr-4 focus:outline-none focus:border-blue-500 shadow-xs text-sm text-slate-800 font-bold"
           />
           <Search className="absolute left-4 text-gray-400" size={16} />
         </div>

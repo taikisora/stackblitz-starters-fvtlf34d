@@ -224,6 +224,7 @@ export default function EditRoutePage() {
                 className="w-full bg-slate-50/60 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs cursor-pointer transition-all"
               >
                 <optgroup label="英語">
+                  <option value="英語（総合）">英語（総合）</option>
                   <option value="英単語">英単語</option>
                   <option value="英熟語">英熟語</option>
                   <option value="英文法">英文法</option>
@@ -233,18 +234,21 @@ export default function EditRoutePage() {
                   <option value="その他（英語）">その他（英語）</option>
                 </optgroup>
                 <optgroup label="数学">
+                  <option value="数学（総合）">数学（総合）</option>
                   <option value="数IA">数IA</option>
                   <option value="数IIB">数IIB</option>
                   <option value="数IIIC">数IIIC</option>
                   <option value="その他（数学）">その他（数学）</option>
                 </optgroup>
                 <optgroup label="国語">
+                  <option value="国語（総合）">国語（総合）</option>
                   <option value="現代文">現代文</option>
                   <option value="古文">古文</option>
                   <option value="漢文">漢文</option>
                   <option value="その他（国語）">その他（国語）</option>
                 </optgroup>
                 <optgroup label="理科">
+                  <option value="理科（総合）">理科（総合）</option>
                   <option value="物理">物理</option>
                   <option value="化学">化学</option>
                   <option value="生物">生物</option>
@@ -252,6 +256,7 @@ export default function EditRoutePage() {
                   <option value="その他（理科）">その他（理科）</option>
                 </optgroup>
                 <optgroup label="社会">
+                  <option value="社会（総合）">社会（総合）</option>
                   <option value="歴史総合">歴史総合</option>
                   <option value="日本史">日本史</option>
                   <option value="世界史">世界史</option>

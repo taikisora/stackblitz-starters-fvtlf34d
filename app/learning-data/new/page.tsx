@@ -194,14 +194,17 @@ export default function NewRoutePage() {
                 className="w-full bg-slate-50/60 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs cursor-pointer transition-all"
               >
                 <optgroup label="英語">
+                  <option value="英語（総合）">英語（総合）</option>
                   <option value="英単語">英単語</option>
                   <option value="英熟語">英熟語</option>
                   <option value="英文法">英文法</option>
                   <option value="長文">長文</option>
                   <option value="リスニング">リスニング</option>
+                  <option value="英作文">英作文</option> {/* 💡 英作文を追加 */}
                   <option value="その他（英語）">その他（英語）</option>
                 </optgroup>
                 <optgroup label="数学">
+                  <option value="数学（総合）">数学（総合）</option>
                   <option value="数IA">数IA</option>
                   <option value="数IIB">数IIB</option>
                   <option value="数IIIC">数IIIC</option>
