@@ -229,6 +229,7 @@ export default function EditRoutePage() {
                   <option value="英文法">英文法</option>
                   <option value="長文">長文</option>
                   <option value="リスニング">リスニング</option>
+                  <option value="英作文">英作文</option> {/* 💡 英作文を追加 */}
                   <option value="その他（英語）">その他（英語）</option>
                 </optgroup>
                 <optgroup label="数学">

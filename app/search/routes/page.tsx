@@ -5,7 +5,7 @@ import { supabase } from '../../../lib/supabase';
 import { ChevronLeft, Search, User, Heart, MessageCircle, BookOpen, ArrowDown, ChevronRight } from 'lucide-react';
 
 const SUBJECT_DATA = { 
-  '英語': ['英単語', '英熟語', '英文法', '長文', 'リスニング', 'その他（英語）'], 
+  '英語': ['英単語', '英熟語', '英文法', '長文', 'リスニング', '英作文', 'その他（英語）'], 
   '数学': ['数IA', '数IIB', '数IIIC', 'その他（数学）'], 
   '国語': ['現代文', '古文', '漢文', 'その他（国語）'], 
   '理科': ['物理', '化学', '生物', '地学', 'その他（理科）'], 
