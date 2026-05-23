@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { ChevronLeft, Search, User, Heart, MessageCircle, BookOpen, ArrowDown, ChevronRight } from 'lucide-react';
 
@@ -12,8 +12,11 @@ const SUBJECT_DATA = {
   '社会': ['歴史総合', '日本史', '世界史', '地理', '公共', '倫理', '政治・経済', '社会のその他'] 
 };
 
+const ITEMS_PER_PAGE = 20;
+
 export default function RouteSearchPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [publicRoutes, setPublicRoutes] = useState<any[]>([]);
   const [routesLoading, setRoutesLoading] = useState(true);
   const [routeSearchQuery, setRouteSearchQuery] = useState('');
@@ -21,10 +24,22 @@ export default function RouteSearchPage() {
   const [activeRouteTab, setActiveRouteTab] = useState('all');
   const [user, setUser] = useState<any>(null);
 
+  // 💡 ページネーション用の状態
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
   useEffect(() => {
-    const fetchRoutesAndUser = async () => {
-      setRoutesLoading(true);
-      
+    setCurrentPage(1);
+  }, [searchParams, activeRouteTab, selectedRouteSubject, routeSearchQuery]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [currentPage]);
+
+  // 💡 データをロードする関数を独立化
+  const fetchRoutesData = useCallback(async (isSilent = false) => {
+    if (!isSilent) setRoutesLoading(true);
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       let currentUser = null;
       if (session) {
@@ -32,7 +47,8 @@ export default function RouteSearchPage() {
         currentUser = session.user;
       }
 
-      const { data: routesData, error } = await supabase
+      // 1. フィルタリングと総件数取得のためのベースクエリを構築
+      let query = supabase
         .from('study_routes')
         .select(`
           *,
@@ -41,21 +57,46 @@ export default function RouteSearchPage() {
             sort_order,
             books ( title, publisher )
           )
-        `)
-        .eq('is_public', true)
-        .order('created_at', { ascending: false });
+        `, { count: 'exact' })
+        .eq('is_public', true);
+
+      // タブと教科による絞り込みの適用
+      if (activeRouteTab !== 'all') {
+        if (selectedRouteSubject === '未選択') {
+          const allowedCategories = SUBJECT_DATA[activeRouteTab as keyof typeof SUBJECT_DATA] || [];
+          query = query.or(`subject.eq.${activeRouteTab},subject.in.(${allowedCategories.map(c => `"${c}"`).join(',')})`);
+        } else {
+          query = query.eq('subject', selectedRouteSubject);
+        }
+      }
+
+      // 文字列検索の適用
+      if (routeSearchQuery.trim() !== '') {
+        const q = routeSearchQuery.toLowerCase();
+        query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%,subject.ilike.%${q}%`);
+      }
+
+      query = query.order('created_at', { ascending: false });
+
+      // 💡 20件制限の範囲指定を適用
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+      query = query.range(from, to);
+
+      const { data: routesData, error, count } = await query;
 
       if (!error && routesData) {
+        if (count !== null) setTotalItems(count);
+
         if (currentUser) {
           const routeIds = routesData.map(r => r.id);
-          // 正しいテーブル「route_likes」から自分がいいねしたルートIDの一覧を取得
           const { data: userLikes } = await supabase
             .from('route_likes')
             .select('route_id')
             .eq('user_id', currentUser.id)
             .in('route_id', routeIds);
 
-          const savedRouteIds = new Set(userLikes?.map(s => s.route_id));
+          const savedRouteIds = new Set(userLikes?.map(l => l.route_id));
 
           const routesWithStatus = routesData.map(r => ({
             ...r,
@@ -66,33 +107,25 @@ export default function RouteSearchPage() {
           setPublicRoutes(routesData.map(r => ({ ...r, user_liked: false })));
         }
       }
-      setRoutesLoading(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      if (!isSilent) setRoutesLoading(false);
+    }
+  }, [currentPage, activeRouteTab, selectedRouteSubject, routeSearchQuery]);
+
+  // 💡 画面初回読み込み ＆ 戻り時フォーカス検知で完全同期
+  useEffect(() => {
+    fetchRoutesData();
+
+    const handleFocus = () => {
+      fetchRoutesData(true);
     };
-    fetchRoutesAndUser();
-  }, []);
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchRoutesData]);
 
-  const filteredRoutes = publicRoutes.filter(route => {
-    if (activeRouteTab !== 'all') {
-      if (selectedRouteSubject === '未選択') {
-        const allowedCategories = SUBJECT_DATA[activeRouteTab as keyof typeof SUBJECT_DATA] || [];
-        if (!allowedCategories.includes(route.subject) && route.subject !== activeRouteTab) {
-          return false;
-        }
-      } else {
-        if (route.subject !== selectedRouteSubject) return false;
-      }
-    }
-
-    if (routeSearchQuery.trim() !== '') {
-      const query = routeSearchQuery.toLowerCase();
-      const titleMatch = route.title?.toLowerCase().includes(query);
-      const subjectMatch = route.subject?.toLowerCase().includes(query);
-      const descMatch = route.description?.toLowerCase().includes(query);
-      const booksMatch = route.route_books?.some((rb: any) => rb.books?.title?.toLowerCase().includes(query));
-      return titleMatch || subjectMatch || descMatch || booksMatch;
-    }
-    return true;
-  });
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
 
   const handleRouteLike = async (routeId: string) => {
     if (!user) {
@@ -111,7 +144,6 @@ export default function RouteSearchPage() {
     const currentCount = targetRoute.likes_count || 0;
     const nextCount = nextStatus ? currentCount + 1 : Math.max(0, currentCount - 1);
 
-    // 見た目を即更新
     const newRoutes = [...publicRoutes];
     newRoutes[routeIndex] = {
       ...targetRoute,
@@ -121,33 +153,52 @@ export default function RouteSearchPage() {
     setPublicRoutes(newRoutes);
 
     try {
-      if (nextStatus) {
-        // いいねした時はデータを「追加（insert）」する
-        await supabase.from('route_likes').insert({
-          user_id: user.id,
-          route_id: routeId
-        });
-      } else {
-        // いいねを解除した時はデータを「削除（delete）」する
+      if (currentStatus) {
         await supabase.from('route_likes').delete().eq('user_id', user.id).eq('route_id', routeId);
+      } else {
+        await supabase.from('route_likes').insert({ user_id: user.id, route_id: routeId });
       }
-
       await supabase.from('study_routes').update({ likes_count: nextCount }).eq('id', routeId);
     } catch (err) {
-      console.error("いいねエラー:", err);
+      console.error("いいね同期エラー:", err);
     }
   };
   
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4">
+    <div className="p-4 md:p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 rounded-3xl shadow-sm border border-gray-100 mt-4 flex flex-col justify-between">
       <div className="space-y-4 animate-fade-in">
         
         <div className="flex items-center justify-between">
           <button onClick={() => router.push('/search')} className="flex items-center text-blue-600 font-bold active:scale-95 transition-transform text-sm">
             <ChevronLeft size={18} /> 検索メニューへ
           </button>
-          <h2 className="text-base font-extrabold text-gray-800">参考書ルートを探す</h2>
-          <div className="w-16"></div>
+          
+          {/* 💡 上部ミニページ遷移ボタン */}
+          {!routesLoading && totalPages > 1 && (
+            <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200/60">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform cursor-pointer"
+              >
+                <ChevronLeft size={14} strokeWidth={2.5} />
+              </button>
+              <span className="text-[10px] font-black text-slate-700 px-1.5 min-w-[36px] text-center">
+                {currentPage}/{totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform cursor-pointer"
+              >
+                <ChevronRight size={14} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            {!routesLoading && <span className="text-xs text-gray-400 font-bold">全 {totalItems} 件</span>}
+          </div>
         </div>
 
         <div className="relative flex items-center">
@@ -212,15 +263,16 @@ export default function RouteSearchPage() {
           </div>
         )}
 
-        <div className="space-y-4 md:space-y-5 pt-1">
+<div className="space-y-4 md:space-y-5 pt-1">
           {routesLoading ? (
             <div className="text-center py-20 text-gray-400 font-bold animate-pulse text-sm">ルートを読み込み中...</div>
-          ) : filteredRoutes.length === 0 ? (
+          ) : publicRoutes.length === 0 ? ( /* 💡 filteredRoutes ➔ publicRoutes に修正 */
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-2xs">
               <p className="text-gray-400 font-bold text-sm">条件に合う参考書ルートが見つかりませんでした。</p>
             </div>
           ) : (
-            filteredRoutes.map((route) => {
+            /* 💡 filteredRoutes ➔ publicRoutes に修正 */
+            publicRoutes.map((route) => {
                 const sortedBooks = [...(route.route_books || [])].sort((a, b) => a.sort_order - b.sort_order);
                 const isLiked = route.user_liked;
 
@@ -271,7 +323,7 @@ export default function RouteSearchPage() {
                       <BookOpen size={14} strokeWidth={2.5} /> ルートの構成（全 {sortedBooks.length} 冊）
                     </p>
                     {sortedBooks.slice(0, 3).map((rb: any, idx) => (
-                      <div key={rb.id} className="flex flex-col items-center">
+                      <div key={rb.id || idx} className="flex flex-col items-center">
                         <div className="w-full flex items-center gap-2.5 text-sm text-slate-700 min-w-0">
                           <span className="w-4.5 h-4.5 bg-slate-400 text-white font-black text-[10px] rounded-full flex items-center justify-center shrink-0 shadow-3xs">
                             {rb.sort_order}
@@ -312,6 +364,31 @@ export default function RouteSearchPage() {
           )}
         </div>
       </div>
+
+      {/* 💡 下部固定ではない、ページ最下部にひっそり配置する遷移ボタン */}
+      {!routesLoading && publicRoutes.length > 0 && (
+        <div className="mt-8 flex items-center justify-center gap-6 bg-white py-5 border-t border-gray-200 shadow-2xs w-full max-w-3xl mx-auto px-4 rounded-b-2xl">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-1 px-4 py-2 text-xs font-black rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-40 disabled:active:scale-100 disabled:bg-gray-50 cursor-pointer"
+          >
+            <ChevronLeft size={16} strokeWidth={2.5} /> 前へ
+          </button>
+          
+          <span className="text-sm font-black text-slate-800 tracking-wider">
+            {currentPage} / {totalPages} ページ
+          </span>
+
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-1 px-4 py-2 text-xs font-black rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-40 disabled:active:scale-100 disabled:bg-gray-50 cursor-pointer"
+          >
+            次へ <ChevronRight size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
