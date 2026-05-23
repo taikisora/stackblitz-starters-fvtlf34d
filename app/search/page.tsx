@@ -25,10 +25,12 @@ export default function SearchPage() {
             placeholder="参考書名やキーワードで検索" 
             value={keywordSearchText}
             onChange={(e) => setKeywordSearchText(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-2xl py-4 pl-12 pr-12 focus:outline-none focus:border-blue-500 shadow-sm"
+            // 💡 text-slate-800 font-bold を追加して、文字をハッキリと見やすくしました
+            className="w-full bg-white border border-gray-200 rounded-2xl py-4 pl-12 pr-12 focus:outline-none focus:border-blue-500 shadow-sm text-slate-800 font-bold"
           />
           <Search className="absolute left-4 text-gray-400" size={20} />
-          <button onClick={handleKeywordSearch} className="absolute right-3 bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200">
+          {/* 💡 エンターキーを押したときだけでなく、ボタンクリックでも確実に検索を走らせます */}
+          <button onClick={handleKeywordSearch} className="absolute right-3 bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition-colors">
             <Search size={18} />
           </button>
         </div>
