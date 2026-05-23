@@ -509,12 +509,13 @@ export default function BookDetailPage() {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder={activeTab === 'review' ? 'この参考書の感想・おすすめの使い方は？' : 'この参考書について質問や議論したいことを書き込みましょう。'}
-            className="w-full text-sm md:text-base border border-gray-200 rounded-lg p-3 bg-white focus:outline-none focus:border-blue-400 transition-colors min-h-[90px] mb-2.5 shadow-3xs"
+            // 💡 修正：text-slate-800 font-bold を追加し、入力文字の白化を防ぎました
+            className="w-full text-sm md:text-base border border-gray-200 rounded-lg p-3 bg-white focus:outline-none focus:border-blue-400 transition-colors min-h-[90px] mb-2.5 shadow-3xs text-slate-800 font-bold"
           />
           <button 
             onClick={handleSubmitComment}
             disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white font-black text-sm md:text-base py-2.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 shadow-sm"
+            className="w-full bg-blue-600 text-white font-black text-sm md:text-base py-2.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 shadow-sm cursor-pointer"
           >
             {isSubmitting ? '送信中...' : (
               activeTab === 'review' && comments.some(c => c.type === 'review' && c.user_id === user?.id)
@@ -527,7 +528,7 @@ export default function BookDetailPage() {
         {/* コメント一覧フィード */}
         <div className="space-y-4">
           {comments.filter(c => c.type === activeTab).length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-10 font-bold">
+            <p className="text-slate-400 text-sm text-center py-10 font-bold">
               まだ{activeTab === 'review' ? 'レビュー' : '質問'}はありません。<br/>最初の投稿をしてみましょう！
             </p>
           ) : (
@@ -571,7 +572,8 @@ export default function BookDetailPage() {
                     </div>
                   )}
                   {comment.content && (
-                    <p className="text-sm md:text-base text-slate-700 whitespace-pre-wrap leading-relaxed mt-1 font-medium">
+                    // 💡 修正：text-slate-700 ➔ text-slate-800 font-bold に変更し、くっきり表示に
+                    <p className="text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed mt-1 font-bold">
                       {comment.content}
                     </p>
                   )}
@@ -580,7 +582,7 @@ export default function BookDetailPage() {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => toggleLike(comment.id)}
-                        className={`text-xs flex items-center gap-1.5 font-bold transition-colors ${
+                        className={`text-xs flex items-center gap-1.5 font-bold transition-colors cursor-pointer ${
                           comment.comment_likes?.some((l: any) => l.user_id === user?.id)
                             ? 'text-blue-600'
                             : 'text-gray-400 hover:text-gray-600'
@@ -603,7 +605,7 @@ export default function BookDetailPage() {
                               setNewReply('');
                             }
                           }}
-                          className={`text-xs flex items-center gap-1 font-bold transition-colors border-l border-gray-200 pl-3 ${
+                          className={`text-xs flex items-center gap-1 font-bold transition-colors border-l border-gray-200 pl-3 cursor-pointer ${
                             replyingToId === comment.id ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
                           }`}
                         >
@@ -615,7 +617,7 @@ export default function BookDetailPage() {
                       {(isMyPost || isManager) && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}
-                          className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 font-bold transition-colors border-l border-gray-200 pl-3"
+                          className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 font-bold transition-colors border-l border-gray-200 pl-3 cursor-pointer"
                         >
                           <Trash2 size={13} />
                           {isManager && !isMyPost ? '【管理者】削除' : '削除'}

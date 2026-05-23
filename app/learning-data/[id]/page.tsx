@@ -247,13 +247,14 @@ export default function RouteDetailPage() {
       </div>
 
       <div className="bg-white rounded-3xl p-5 md:p-6 border border-gray-100 shadow-xs space-y-4">
-        <h3 className="font-black text-slate-800 text-sm tracking-wide border-b border-gray-50 pb-2.5">
+      <h3 className="font-black text-slate-800 text-sm tracking-wide border-b border-gray-50 pb-2.5">
           コメント欄（{comments.length}）
         </h3>
 
         <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
           {comments.length === 0 ? (
-            <p className="text-xs text-gray-400 font-bold text-center py-6">まだコメントはありません。</p>
+            // 💡 修正：text-gray-400 ➔ text-slate-400 font-bold にして見やすく
+            <p className="text-xs text-slate-400 font-bold text-center py-6">まだコメントはありません。</p>
           ) : (
             comments.map((comment) => {
               const isMyComment = user && user.id === comment.user_id;
@@ -262,12 +263,13 @@ export default function RouteDetailPage() {
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-slate-700">{comment.profiles?.username || '名無しユーザー'}</span>
-                      <span className="text-[9px] text-gray-400 font-bold">{new Date(comment.created_at).toLocaleDateString('ja-JP')}</span>
+                      <span className="text-[9px] text-slate-400 font-bold">{new Date(comment.created_at).toLocaleDateString('ja-JP')}</span>
                     </div>
-                    <p className="text-slate-600 font-medium leading-relaxed break-words">{comment.content}</p>
+                    {/* 💡 修正：他人のコメント文も text-slate-700 font-bold でクッキリ化 */}
+                    <p className="text-slate-700 font-bold leading-relaxed break-words">{comment.content}</p>
                   </div>
                   {isMyComment && (
-                    <button onClick={() => handleCommentDelete(comment.id)} className="text-gray-300 hover:text-red-500 p-1">
+                    <button onClick={() => handleCommentDelete(comment.id)} className="text-slate-300 hover:text-red-500 p-1">
                       <Trash2 size={13} />
                     </button>
                   )}
@@ -284,9 +286,10 @@ export default function RouteDetailPage() {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             disabled={!user || isSubmitting}
-            className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:border-blue-500"
+            // 💡 修正：text-slate-800 font-bold を追加して、入力文字が白化するのを完全に防ぎました！
+            className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 disabled:opacity-50"
           />
-          <button type="submit" disabled={!user || !newComment.trim() || isSubmitting} className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 disabled:bg-slate-200 shrink-0">
+          <button type="submit" disabled={!user || !newComment.trim() || isSubmitting} className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 disabled:bg-slate-200 shrink-0 cursor-pointer transition-colors active:scale-95">
             <Send size={14} strokeWidth={2.5} />
           </button>
         </form>
