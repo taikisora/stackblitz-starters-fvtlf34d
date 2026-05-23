@@ -16,6 +16,7 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
     
+    // 💡 修正箇所：options を追加し、メールクリック後に直接マイページへ自動ログイン＆ジャンプさせる設定を仕込みました！
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -50,6 +51,7 @@ export default function LoginPage() {
     }
 
     if (data?.user) {
+      // ログイン成功時、プロフィール（status）が未設定ならオンボーディング画面へ、設定済ならホームへ
       const { data: profile } = await supabase
         .from('profiles')
         .select('status')
@@ -70,6 +72,7 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
     
+    // メールのリンクをクリックしたときに戻ってくるURLを指定
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
@@ -84,11 +87,11 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
-      <h1 className="text-2xl font-black text-center mb-6 text-blue-600 tracking-tight">参考書ドットコム</h1>
+      <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">参考書ドットコム</h1>
       
       <form onSubmit={isResetMode ? handleResetPasswordEmail : handleLogin} className="space-y-4">
         <div>
-          <label className="block text-xs font-black text-slate-400 mb-1.5 uppercase tracking-wider">メールアドレス</label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">メールアドレス</label>
           <input
             type="email"
             value={email}
@@ -102,7 +105,7 @@ export default function LoginPage() {
         {/* パスワードリセットモードの時は、パスワード入力欄を非表示にする */}
         {!isResetMode && (
           <div>
-            <label className="block text-xs font-black text-slate-400 mb-1.5 uppercase tracking-wider">パスワード</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">パスワード</label>
             <input
               type="password"
               value={password}
@@ -114,22 +117,22 @@ export default function LoginPage() {
           </div>
         )}
 
-        {message && <p className="text-sm text-center text-blue-600 font-black">{message}</p>}
+        {message && <p className="text-sm text-center text-blue-600 font-semibold">{message}</p>}
 
         {isResetMode ? (
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 active:scale-[0.99] shadow-sm"
+            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300"
           >
             再設定メールを送信
           </button>
         ) : (
-          <div className="space-y-2.5 pt-2">
+          <div className="space-y-2">
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 active:scale-[0.99] shadow-sm"
+              className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300"
             >
               ログイン
             </button>
@@ -137,7 +140,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleSignUp}
               disabled={loading}
-              className="w-full bg-white text-blue-600 border border-blue-600 font-black py-3 rounded-xl hover:bg-blue-50/50 transition-colors disabled:border-blue-300 disabled:text-blue-300 active:scale-[0.99]"
+              className="w-full bg-white text-blue-600 border border-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition-colors disabled:border-blue-300 disabled:text-blue-300"
             >
               新規登録
             </button>
@@ -146,7 +149,7 @@ export default function LoginPage() {
       </form>
 
       {/* モード切り替えボタン */}
-      <div className="text-center mt-5 border-t border-slate-100 pt-4">
+      <div className="text-center mt-4">
         <button
           type="button"
           onClick={() => { setIsResetMode(!isResetMode); setMessage(''); }}
