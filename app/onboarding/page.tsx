@@ -69,6 +69,7 @@ export default function OnboardingPage() {
       id: user?.id,
       username: username.trim(), // 👈 入力された名前を確実にそのまま保存（「ユーザー」で上書きさせない）
       status: status,
+      is_onboarded: true,
     };
 
     // ステータスが「その他」なら文理・大学は強制的に null
