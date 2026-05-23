@@ -288,12 +288,14 @@ export default function MyPage() {
 
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1 block">ユーザーネーム</label>
-              <input type="text" value={editData.username} onChange={(e) => setEditData({ ...editData, username: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" />
+              {/* 💡 修正：text-slate-800 font-bold を追加 */}
+              <input type="text" value={editData.username} onChange={(e) => setEditData({ ...editData, username: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold" />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1 block">現在の状況</label>
-              <select value={editData.status} onChange={(e) => setEditData({ ...editData, status: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" >
+              {/* 💡 修正：text-slate-800 font-bold を追加 */}
+              <select value={editData.status} onChange={(e) => setEditData({ ...editData, status: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold cursor-pointer" >
                 <option value="" disabled hidden>選択してください</option>
                 <option value="studying">これから大学受験に挑む</option>
                 <option value="experienced">大学受験を経験済み</option>
@@ -305,7 +307,8 @@ export default function MyPage() {
               <>
                 <div>
                   <label className="text-xs font-bold text-gray-600 mb-1 block">文系 / 理系</label>
-                  <select value={editData.stream} onChange={(e) => setEditData({ ...editData, stream: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" >
+                  {/* 💡 修正：text-slate-800 font-bold を追加 */}
+                  <select value={editData.stream} onChange={(e) => setEditData({ ...editData, stream: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold cursor-pointer" >
                     <option value="" disabled hidden>選択してください</option>
                     <option value="humanities">文系</option>
                     <option value="sciences">理系</option>
@@ -316,7 +319,8 @@ export default function MyPage() {
                 <div className="space-y-4 pt-2 border-t border-gray-100">
                   <div className="relative">
                     <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第一志望校' : '大学名 (1)'}</label>
-                    <input type="text" placeholder="例: 東京大学" value={editData.university} disabled={isUniUndecided} onChange={(e) => handleUniversityChange('university', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium disabled:opacity-50" />
+                    {/* 💡 修正：text-slate-800 font-bold を追加 */}
+                    <input type="text" placeholder="例: 東京大学" value={editData.university} disabled={isUniUndecided} onChange={(e) => handleUniversityChange('university', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold disabled:opacity-50" />
                     <label className="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
                       <input type="checkbox" checked={isUniUndecided} onChange={(e) => { setIsUniUndecided(e.target.checked); if (e.target.checked) setEditData({ ...editData, university: '' }); }} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
                       <span className="text-xs font-medium text-gray-500">まだ決めていない（未定）</span>
@@ -325,19 +329,21 @@ export default function MyPage() {
 
                   <div className="relative">
                     <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第二志望校 (任意)' : '大学名 (2) (任意)'}</label>
-                    <input type="text" placeholder="例: 早稲田大学" value={editData.university2} onChange={(e) => handleUniversityChange('university2', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university2'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" />
+                    {/* 💡 修正：text-slate-800 font-bold を追加 */}
+                    <input type="text" placeholder="例: 早稲田大学" value={editData.university2} onChange={(e) => handleUniversityChange('university2', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university2'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold" />
                   </div>
 
                   <div className="relative">
                     <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第三志望校 (任意)' : '大学名 (3) (任意)'}</label>
-                    <input type="text" placeholder="例: 明治大学" value={editData.university3} onChange={(e) => handleUniversityChange('university3', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university3'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium" />
+                    {/* 💡 修正：text-slate-800 font-bold を追加 */}
+                    <input type="text" placeholder="例: 明治大学" value={editData.university3} onChange={(e) => handleUniversityChange('university3', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university3'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold" />
                   </div>
 
                   {showSuggestions && suggestions.length > 0 && activeField && (
                     <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-100">
                       {suggestions.map((uni) => (
                         <li key={uni}>
-                          <button type="button" onMouseDown={() => { setEditData({ ...editData, [activeField]: uni }); setShowSuggestions(false); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-gray-700 font-medium transition-colors text-sm" >{uni}</button>
+                          <button type="button" onMouseDown={() => { setEditData({ ...editData, [activeField]: uni }); setShowSuggestions(false); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-slate-800 font-bold transition-colors text-sm" >{uni}</button>
                         </li>
                       ))}
                     </ul>
@@ -346,7 +352,7 @@ export default function MyPage() {
               </>
             )}
 
-            <button onClick={handleSaveProfile} disabled={Boolean(loading || !editData.username || !editData.username.trim() || (editData.status !== "" && editData.status !== "other" && (!isUni1Valid || !isUni2Valid || !isUni3Valid)))} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4" >
+            <button onClick={handleSaveProfile} disabled={Boolean(loading || !editData.username || !editData.username.trim() || (editData.status !== "" && editData.status !== "other" && (!isUni1Valid || !isUni2Valid || !isUni3Valid)))} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300 mt-4 cursor-pointer active:scale-[0.99]" >
               <Check className="w-5 h-5" />
               {loading ? '保存中...' : '変更を保存する'}
             </button>
