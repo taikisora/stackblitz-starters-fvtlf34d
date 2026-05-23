@@ -102,6 +102,7 @@ export default function HomePage() {
 
       {/* 📢 お知らせセクション */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+        {/* 💡 修正：justify-between にし、右側に「すべて見る」ボタンを綺麗に配置しました */}
         <div className="flex items-center justify-between mb-4 border-b border-gray-50 pb-3">
           <div className="flex items-center gap-2">
             <div className="bg-amber-100 p-2 rounded-xl shadow-2xs">
@@ -109,6 +110,14 @@ export default function HomePage() {
             </div>
             <h3 className="font-extrabold text-gray-800 text-sm">運営からのお知らせ</h3>
           </div>
+          
+          {/* 💡 追加：「すべて見る」ボタン。押すとお知らせ一覧画面へ遷移します */}
+          <button 
+            onClick={() => router.push('/announcements')}
+            className="text-xs font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-0.5 active:scale-95"
+          >
+            すべて見る ➔
+          </button>
         </div>
 
         {loading ? (
