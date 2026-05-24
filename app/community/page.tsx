@@ -20,17 +20,17 @@ const CATEGORIES: { [key: string]: { id: string; name: string; description: stri
   university: [
     { id: 'waseda_keio', name: '早慶上理', description: '最難関私立大を目指す仲間の議論場' },
     { id: 'imperial', name: '旧帝大・国公立', description: '全国の国公立志望者の情報交換' },
-    { id: 'gmarch', name: 'GMARCH', description: '学習院・明治・青山・立教・中央・法政' }, // 💡 MARCH から GMARCH に修正
+    { id: 'gmarch', name: 'GMARCH', description: '学習院・明治・青山・立教・中央・法政' },
     { id: 'kankan_douritsu', name: '関関同立', description: '関西大学・関西学院・同志社・立命館' },
-    { id: 'other_univ', name: 'その他大学', description: '日東駒専・産近甲龍や各私立・単科大など' }, // 💡 追加
+    { id: 'other_univ', name: 'その他大学', description: '日東駒専・産近甲龍や各私立・単科大など' },
     { id: 'target_general', name: '志望校総合・悩み', description: '併願校や志望校選びの相談など' },
   ],
   book: [
     { id: 'english', name: '英語参考書', description: '単語・文法・長文など英語教材の議論' },
     { id: 'math', name: '数学参考書', description: '数IA・数IIB・数IIICなど数学教材の議論' },
     { id: 'japanese', name: '国語参考書', description: '現代文・古文・漢文の教材議論' },
-    { id: 'science', name: '理科参考書', description: '物理・化学・生物・地学の教材やルート議論' }, // 💡 理社から理科に独立
-    { id: 'social', name: '社会参考書', description: '日本史・世界史・地理・公共などの教材議論' }, // 💡 社会に独立
+    { id: 'science', name: '理科参考書', description: '物理・化学・生物・地学の教材やルート議論' },
+    { id: 'social', name: '社会参考書', description: '日本史・世界史・地理・公共などの教材議論' },
   ],
   qa: [
     { id: 'study_method', name: '勉強方法', description: '効率的な勉強スタイルへの質問' },
@@ -56,7 +56,7 @@ export default function CommunityPage() {
         .from('community_threads')
         .select(`
           id, title, main_topic, category, created_at,
-          profiles(username, avatar_color)
+          profiles ( username, avatar_color )
         `)
         .order('created_at', { ascending: false })
         .limit(5);
@@ -146,7 +146,6 @@ export default function CommunityPage() {
                   onClick={() => router.push(`/community/threads/${thread.id}`)}
                   className="w-full p-4 hover:bg-slate-50 transition-colors text-left group"
                 >
-                  {/* 💡 修正：英語表記を日本語マッピングに変換 */}
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <span className="text-[8px] font-black bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded tracking-tighter">
                       {thread.main_topic === 'university' ? '大学受験' : 
@@ -161,8 +160,8 @@ export default function CommunityPage() {
                   <h4 className="font-extrabold text-xs text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-2 leading-relaxed">
                     {thread.title}
                   </h4>
-                  {/* 💡 修正：参考書ルートと同じロジックを移植し、avatar_colorの単語（redやorange）に応じてTailwindの背景色を当てはめます */}
                   <div className="mt-2 flex items-center gap-1.5">
+                    {/* 💡 修正：参考書ルート検索と同じカラー分岐・未設定時は bg-gray-500 にカチッと統一 */}
                     <div 
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0 border border-black/5 shadow-3xs overflow-hidden ${
                         thread.profiles?.avatar_color === 'red' ? 'bg-red-500' :
@@ -174,7 +173,7 @@ export default function CommunityPage() {
                         thread.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
                         thread.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
                         thread.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
-                        'bg-orange-500' /* 👈 カラーが未設定、または該当しない場合のデフォルトは綺麗なオレンジ */
+                        'bg-gray-500'
                       }`}
                     >
                       <User size={11} className="stroke-[3]" />
@@ -186,14 +185,10 @@ export default function CommunityPage() {
             )}
           </div>
           
-          {/* 💡 修正：背景色をグレーにし、アイコンを見切れないように配置した完全版 */}
           <div className="bg-slate-100/70 rounded-2xl p-5 text-white border border-slate-200/60 overflow-hidden relative shadow-3xs flex items-center gap-4">
-             {/* 左側：見切れを解消し、綺麗に収めたアイコン */}
              <div className="bg-blue-600 p-2.5 rounded-xl shrink-0">
                 <MessageSquare className="w-5 h-5 text-white stroke-[3]" />
              </div>
-
-             {/* 右側：文字（背景が白・グレー系になったので、黒文字にしてハッキリ見せる） */}
              <div className="relative z-10 space-y-1">
                 <span className="text-[10px] font-black tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md uppercase">
                   コミュニティ規定

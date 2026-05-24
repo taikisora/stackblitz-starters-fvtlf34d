@@ -5,27 +5,27 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../../lib/supabase';
 import { 
   ChevronLeft, ThumbsUp, Lightbulb, Send, Clock, 
-  MessageSquare, BookOpen, X, User, CornerUpLeft, Trash2 
+  BookOpen, X, User, CornerUpLeft, Trash2 
 } from 'lucide-react';
 
 // 表示用の日本語板名マッピング
 const BOARD_NAMES: { [key: string]: string } = {
-    waseda_keio: '早慶上理',
-    imperial: '旧帝大・国公立',
-    gmarch: 'GMARCH',
-    kankan_douritsu: '関関同立',
-    other_univ: 'その他大学',
-    target_general: '志望校総合・悩み',
-    english: '英語参考書',
-    math: '数学参考書',
-    japanese: '国語参考書',
-    science: '理科参考書',
-    social: '社会参考書',
-    study_method: '勉強方法',
-    exam_info: '入試情報',
-    free_talk: 'フリートーク',
-    study_log: '今日の勉強報告',
-  };
+  waseda_keio: '早慶上理',
+  imperial: '旧帝大・国公立',
+  gmarch: 'GMARCH',
+  kankan_douritsu: '関関同立',
+  other_univ: 'その他大学',
+  target_general: '志望校総合・悩み',
+  english: '英語参考書',
+  math: '数学参考書',
+  japanese: '国語参考書',
+  science: '理科参考書',
+  social: '社会参考書',
+  study_method: '勉強方法',
+  exam_info: '入試情報',
+  free_talk: 'フリートーク',
+  study_log: '今日の勉強報告',
+};
 
 export default function ThreadDetailPage() {
   const params = useParams();
@@ -42,9 +42,9 @@ export default function ThreadDetailPage() {
   // 入力欄へ自動フォーカスするための参照
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // アンカーポップアップ用の状態
+  // アンカーポップアップ用の状態（いま読んでいるカードのIDと、表示するターゲットのコメントデータ）
   const [hoveredComment, setHoveredComment] = useState<any>(null);
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  const [activePopupCommentId, setActivePopupCommentId] = useState<string | null>(null);
 
   // アプリ内の主要な参考書ワード（自動リンク用キーワード）
   const BOOK_KEYWORDS = ['LEAP', '青チャート', 'ターゲット', '一対一', 'ポラリス', 'ネクステ', '鉄壁', 'プラチカ', 'システム英単語'];
@@ -63,7 +63,7 @@ export default function ThreadDetailPage() {
 
       const { data: threadData } = await supabase
         .from('community_threads')
-        .select('*, profiles(username, avatar_color)')
+        .select('*, profiles ( username, avatar_color )')
         .eq('id', threadId)
         .single();
       
@@ -78,7 +78,7 @@ export default function ThreadDetailPage() {
   const fetchComments = async (currentUser = user) => {
     const { data: commentsData } = await supabase
       .from('community_comments')
-      .select('*, profiles(username, avatar_color)')
+      .select('*, profiles ( username, avatar_color )')
       .eq('thread_id', threadId)
       .order('comment_number', { ascending: true });
 
@@ -132,7 +132,6 @@ export default function ThreadDetailPage() {
 
   // ─── 🗑️ コメント削除処理 ───
   const handleDeleteComment = async (commentId: string, commentNumber: number) => {
-    // 💡 削除前の最終確認確認
     if (!window.confirm(`>>${commentNumber} のコメントを削除してもよろしいですか？\n※この操作は取り消せません。`)) {
       return;
     }
@@ -144,8 +143,6 @@ export default function ThreadDetailPage() {
         .eq('id', commentId);
 
       if (error) throw error;
-
-      // 削除に成功したらコメント一覧を再読込
       await fetchComments();
     } catch (err: any) {
       console.error('削除エラー:', err.message);
@@ -188,7 +185,6 @@ export default function ThreadDetailPage() {
       }
 
       await fetchComments();
-
     } catch (err: any) {
       console.error('リアクション処理エラー:', err.message);
       alert('処理に失敗しました。もう一度お試しください。');
@@ -196,7 +192,7 @@ export default function ThreadDetailPage() {
   };
 
   // 本文のテキストを解析して「アンカー」や「参考書リンク」に置換
-  const renderFormattedContent = (content: string, currentCommentNumber: number) => {
+  const renderFormattedContent = (content: string, currentCommentId: string) => {
     const regex = /(>>\d+)|(LEAP|青チャート|ターゲット|一対一|ポラリス|ネクステ|鉄壁|プラチカ|システム英単語)/g;
     const parts = content.split(regex);
     
@@ -210,8 +206,8 @@ export default function ThreadDetailPage() {
         return (
           <span
             key={index}
-            /* 💡 いま読んでいるカードのコメント番号も一緒に渡します */
-            onClick={(e) => showAnchorPopup(num, currentCommentNumber, e)}
+            /* 💡 修正：いま読んでいる枠の一意なID（UUID）を関数に渡してガチッと紐付けます */
+            onClick={(e) => showAnchorPopup(num, currentCommentId, e)}
             className="text-blue-600 font-black cursor-pointer bg-blue-50 px-1 py-0.5 rounded hover:bg-blue-100 transition-colors mx-0.5 text-[11px]"
           >
             {part}
@@ -237,13 +233,13 @@ export default function ThreadDetailPage() {
     });
   };
 
-  /* 💡 修正：ズレる座標の記録をやめ、現在のコメント番号をxに退避させて枠を完全固定 */
-  const showAnchorPopup = (num: number, currentCommentNumber: number, e: React.MouseEvent) => {
+  /* 💡 修正：ズレを完全に防ぐため、いま読んでいるカードのIDをセットするクリーンなロジックに変更 */
+  const showAnchorPopup = (num: number, currentCommentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const targetComment = comments.find(c => c.comment_number === num);
     if (targetComment) {
       setHoveredComment(targetComment);
-      setPopupPosition({ x: currentCommentNumber, y: 0 });
+      setActivePopupCommentId(currentCommentId);
     } else {
       alert(`>>${num} のコメントは見つかりませんでした。`);
     }
@@ -304,7 +300,7 @@ export default function ThreadDetailPage() {
                   {comment.comment_number}
                 </span>
                 
-                {/* 💡 修正①：個々のコメントのアイコンも動的カラー分岐を完全に移植 */}
+                {/* 💡 修正：作成者カラー。未設定時は bg-gray-500 で一貫して完璧にリンク */}
                 <div className="flex items-center justify-center shrink-0">
                     <div 
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-white border border-black/5 shadow-3xs overflow-hidden ${
@@ -317,7 +313,7 @@ export default function ThreadDetailPage() {
                         comment.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
                         comment.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
                         comment.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
-                        'bg-orange-500'
+                        'bg-gray-500'
                       }`}
                     >
                         <User size={13} className="stroke-[3]" />
@@ -349,7 +345,7 @@ export default function ThreadDetailPage() {
 
             {/* 本文 */}
             <p className="text-xs md:text-sm text-slate-800 font-medium leading-relaxed whitespace-pre-wrap break-words">
-              {renderFormattedContent(comment.content)}
+              {renderFormattedContent(comment.content, comment.id)}
             </p>
 
             {/* ボタンエリア */}
@@ -394,8 +390,8 @@ export default function ThreadDetailPage() {
               </button>
             </div>
 
-            {/* 💡 修正②：アンカーポップアップを『今読んでいるこのカード』の中に完全に内包させて、ジャストフィットで重ねる */}
-            {hoveredComment && popupPosition.x === comment.comment_number && (
+            {/* 💡 修正：厳密なID一致判定。inset-0 を用いて4番目のカード枠へ左右ズレなく寸分違わずフィットさせます */}
+            {hoveredComment && activePopupCommentId === comment.id && (
               <div className="absolute inset-0 z-30 bg-white text-slate-800 p-4 rounded-2xl shadow-xl border border-slate-200/80 flex flex-col justify-between animate-fade-in">
                 <div>
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
@@ -404,7 +400,7 @@ export default function ThreadDetailPage() {
                         {`>>`}{hoveredComment.comment_number}
                       </span>
                       <div className="flex items-center gap-1">
-                        {/* ポップアップ内の相手のアイコンも分岐カラーを適用 */}
+                        {/* 💡 ポップアップ内アイコンもカラー条件分岐が美しく連動 */}
                         <div 
                           className={`w-4 h-4 rounded-full flex items-center justify-center text-white shrink-0 border border-black/5 overflow-hidden ${
                             hoveredComment.profiles?.avatar_color === 'red' ? 'bg-red-500' :
@@ -416,7 +412,7 @@ export default function ThreadDetailPage() {
                             hoveredComment.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
                             hoveredComment.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
                             hoveredComment.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
-                            'bg-orange-500'
+                            'bg-gray-500'
                           }`}
                         >
                           <User size={9} className="stroke-[3]" />
@@ -426,7 +422,7 @@ export default function ThreadDetailPage() {
                         </span>
                       </div>
                     </div>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); setHoveredComment(null); }} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-0.5">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setHoveredComment(null); setActivePopupCommentId(null); }} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-0.5">
                       <X size={13} strokeWidth={2.5} />
                     </button>
                   </div>
@@ -463,41 +459,6 @@ export default function ThreadDetailPage() {
           </button>
         </form>
       </div>
-
-      {/* ── 🪟 モダンアンカーポップアップ UI ── */}
-      {hoveredComment && (
-        <div 
-          className="fixed z-50 bg-white text-slate-800 p-4 rounded-2xl shadow-xl max-w-xs md:max-w-md border border-slate-200/80 transition-all animate-fade-in"
-          style={{ left: `${popupPosition.x}px`, top: `${popupPosition.y}px`, transform: 'translateX(-20%)' }}
-        >
-          {/* ヘッダー部分 */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
-            <div className="flex items-center gap-2">
-              <span className="font-black text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md border border-blue-100">
-                {`>>`}{hoveredComment.comment_number}
-              </span>
-              <div className="flex items-center gap-1">
-                <div className="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center text-white shrink-0">
-                  <User size={9} className="stroke-[3]" />
-                </div>
-                {/* 💡 文字色を白から濃いグレー（text-slate-700）に変更して読みやすく */}
-                <span className="text-[10px] font-extrabold text-slate-700">
-                  {hoveredComment.profiles?.username || '名無し'}
-                </span>
-              </div>
-            </div>
-            {/* 閉じる×ボタン */}
-            <button type="button" onClick={() => setHoveredComment(null)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-0.5">
-              <X size={13} strokeWidth={2.5} />
-            </button>
-          </div>
-
-          {/* 💡 本文の文字色を text-slate-100 から、しっかり読める濃い黒（text-slate-800）に変更 */}
-          <p className="text-xs leading-relaxed text-slate-800 font-bold whitespace-pre-wrap line-clamp-4 break-words">
-            {hoveredComment.content}
-          </p>
-        </div>
-      )}
 
     </div>
   );

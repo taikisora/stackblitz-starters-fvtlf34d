@@ -51,15 +51,15 @@ export default function BoardPage() {
     return 'chat';
   };
 
-  // スレッド一覧の取得関数（削除後にも再利用するため外に出しました）
+  // スレッド一覧の取得関数
   const fetchThreads = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('community_threads')
       .select(`
         id, title, created_at, user_id,
-        profiles(username, avatar_color)
-      `)
+        profiles ( username, avatar_color )
+      `) // 💡 修正：検索画面のお手本に倣い、厳密なスペース区切り結合に変更
       .eq('category', boardId)
       .order('created_at', { ascending: false });
 
@@ -139,7 +139,6 @@ export default function BoardPage() {
 
   // ─── 🗑️ スレッド削除処理 ───
   const handleDeleteThread = async (threadId: string, threadTitle: string, e: React.MouseEvent) => {
-    // 💡 重要：ボタンのクリックイベントが親のカードに伝わって画面遷移するのを防ぐ
     e.stopPropagation();
 
     if (!window.confirm(`「${threadTitle}」\nこのスレッドと中のコメントをすべて削除してもよろしいですか？`)) {
@@ -154,7 +153,6 @@ export default function BoardPage() {
 
       if (error) throw error;
 
-      // リロードして一覧を更新
       await fetchThreads();
     } catch (err: any) {
       console.error('スレッド削除エラー:', err.message);
@@ -182,7 +180,7 @@ export default function BoardPage() {
         </h1>
       </div>
 
-      {/* 画面上部に完全固定された「スレッド作成ボタン」 */}
+      {/* スレッド作成ボタン */}
       <div className="mb-6">
         {user ? (
           <button
@@ -227,7 +225,7 @@ export default function BoardPage() {
                 {/* 投稿者と日時のメタ情報 */}
                 <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold">
                   <div className="flex items-center gap-1">
-                    {/* 💡 修正：未設定・該当なしの場合は、見本通り完全に bg-gray-500 にします */}
+                    {/* 💡 修正：参考書ルートと完全に色分岐を一致させ、未設定時は bg-gray-500 で美しく統一 */}
                     <div 
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0 border border-black/5 shadow-3xs overflow-hidden ${
                         thread.profiles?.avatar_color === 'red' ? 'bg-red-500' :
@@ -239,7 +237,7 @@ export default function BoardPage() {
                         thread.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
                         thread.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
                         thread.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
-                        'bg-gray-500' /* 👈 ここを元の仕様通り bg-gray-500 に修正しました */
+                        'bg-gray-500'
                       }`}
                     >
                       <User size={11} className="stroke-[3]" />
@@ -255,9 +253,9 @@ export default function BoardPage() {
                 </div>
               </div>
 
-              {/* 💡 右端のアクションエリア（自分のスレならゴミ箱、それ以外なら通常矢印） */}
+              {/* 右端のアクションエリア */}
               <div className="flex items-center shrink-0">
-                {user && thread.user_id === user.id ? (
+                {user && thread.user_id === user.id && (
                   <button
                     type="button"
                     onClick={(e) => handleDeleteThread(thread.id, thread.title, e)}
@@ -266,7 +264,8 @@ export default function BoardPage() {
                   >
                     <Trash2 size={15} className="stroke-[2.5]" />
                   </button>
-                ) : (
+                )}
+                {(!user || thread.user_id !== user.id) && (
                   <div className="bg-slate-50 p-2 rounded-xl group-hover:bg-blue-50 transition-colors">
                     <ArrowRight size={14} className="text-slate-300 group-hover:text-blue-500" />
                   </div>
@@ -282,7 +281,6 @@ export default function BoardPage() {
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-xl border border-slate-100 flex flex-col max-h-[90vh] animate-fade-in">
             
-            {/* モーダルヘッダー */}
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
               <h3 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
                 <MessageSquare size={16} className="text-blue-600" />
@@ -296,7 +294,6 @@ export default function BoardPage() {
               </button>
             </div>
 
-            {/* モーダルフォーム */}
             <form onSubmit={handleCreateThread} className="p-5 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1.5">
