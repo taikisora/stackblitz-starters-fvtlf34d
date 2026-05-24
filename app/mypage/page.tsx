@@ -121,8 +121,8 @@ export default function MyPage() {
       updateData.university2 = null;
       updateData.university3 = null;
     } else {
-      // 💡 修正：日本語表記でDBを確実に埋める
-      updateData.stream = editData.stream === 'undecided' ? '未定' : (editData.stream === 'humanities' ? '文系' : '理系');
+      // 💡 修正：日本語に変換せず、editData.stream に入っている英語（'humanities' | 'sciences' | 'undecided'）をそのままDBへ保存する！
+      updateData.stream = editData.stream || 'undecided';
       
       // 💡 修正：「まだ決めていない（未定）」にチェックがあれば、DBへ「未定」という固定文字を送る
       // 💡 修正：もし入力欄に文字があればそれを優先。文字がなくて、かつ未定チェックがあれば「未定」にする
@@ -140,7 +140,8 @@ export default function MyPage() {
       setProfile({
         username: updateData.username,
         status: updateData.status,
-        stream: updateData.stream || 'undecided',
+        // 💡 修正：DBに送った英語データをそのまま画面の表示状態にも反映する
+        stream: updateData.stream,
         university: updateData.university || '',
         university2: updateData.university2 || '',
         university3: updateData.university3 || '',
