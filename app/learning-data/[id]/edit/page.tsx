@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '../../../../lib/supabase';
-import { ChevronLeft, ArrowDown, Trash2, Search, Plus, Save, Globe, Lock } from 'lucide-react';
+import { ChevronLeft, ArrowDown, Trash2, Search, Plus, Save, Globe, Lock, Heart, BookOpen } from 'lucide-react';
 
 export default function EditRoutePage() {
   const router = useRouter();
@@ -23,6 +23,11 @@ export default function EditRoutePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // 💡 追加：いいね・使用中ポップアップ用の状態
+  const [modalType, setModalType] = useState<'likes' | 'status' | null>(null);
+  const [modalBooks, setModalBooks] = useState<any[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     const fetchRouteData = async () => {
@@ -69,6 +74,39 @@ export default function EditRoutePage() {
 
     if (routeId) fetchRouteData();
   }, [routeId, router]);
+
+  // 💡 追加：user_book_status テーブル（is_saved, is_used カラム）に完全対応した取得ロジック
+  const openBooksModal = async (type: 'likes' | 'status') => {
+    setModalType(type);
+    setModalLoading(true);
+    setModalBooks([]);
+    
+    try {
+      let query = supabase
+        .from('user_book_status')
+        .select('books(*)')
+        .eq('user_id', user.id);
+
+      if (type === 'likes') {
+        query = query.eq('is_saved', true);
+      } else {
+        query = query.eq('is_used', true);
+      }
+
+      const { data, error } = await query;
+
+      if (!error && data) {
+        const extractedBooks = data.map((item: any) => item.books).filter(Boolean);
+        setModalBooks(extractedBooks);
+      } else if (error) {
+        console.error("データ取得エラー:", error.message);
+      }
+    } catch (err) {
+      console.error("ポップアップデータ同期エラー:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -189,7 +227,6 @@ export default function EditRoutePage() {
   if (loading && !user) return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">読み込み中...</div>;
 
   return (
-    // 💡 max-w-md から max-w-5xl に大拡張し、2カラムの美しい最新UIへリニューアル
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen pb-24">
       
       {/* ヘッダー */}
@@ -230,7 +267,7 @@ export default function EditRoutePage() {
                   <option value="英文法">英文法</option>
                   <option value="長文">長文</option>
                   <option value="リスニング">リスニング</option>
-                  <option value="英作文">英作文</option> {/* 💡 英作文を追加 */}
+                  <option value="英作文">英作文</option>
                   <option value="その他（英語）">その他（英語）</option>
                 </optgroup>
                 <optgroup label="数学">
@@ -242,7 +279,7 @@ export default function EditRoutePage() {
                 </optgroup>
                 <optgroup label="国語">
                   <option value="国語（総合）">国語（総合）</option>
-                  <option value="現代文">現代文</option>
+                  <option value="現代文">现代文</option>
                   <option value="古文">古文</option>
                   <option value="漢文">漢文</option>
                   <option value="その他（国語）">その他（国語）</option>
@@ -293,14 +330,32 @@ export default function EditRoutePage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="このルートの特徴、おすすめの進め方やアドバイス等"
               rows={5}
-              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50/60 focus:outline-none focus:border-blue-500 focus:bg-white font-medium text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
+              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50/60 focus:outline-none focus:border-blue-500 focus:bg-white font-bold text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
             />
           </div>
         </div>
 
         {/* 右カラム：参考書ルート構築 */}
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 relative">
           <label className="text-xs font-black text-slate-400 block uppercase tracking-wider border-b border-slate-100 pb-1.5">参考書を順番に繋げる</label>
+
+          {/* 💡 追加：いいね・使用中から選ぶショートカットボタン */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => openBooksModal('likes')}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-50/60 hover:bg-rose-100/70 border border-rose-100 text-rose-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+            >
+              <Heart size={14} className="fill-current" /> いいねから追加
+            </button>
+            <button
+              type="button"
+              onClick={() => openBooksModal('status')}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+            >
+              <BookOpen size={14} /> 使用中から追加
+            </button>
+          </div>
 
           {/* 🔎 検索窓 */}
           <div className="relative">
@@ -311,7 +366,7 @@ export default function EditRoutePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="参考書の名前で検索して追加..."
+              placeholder="または、参考書の名前で検索して追加..."
               className="w-full bg-slate-50/60 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-black text-slate-800 shadow-3xs transition-all"
             />
 
@@ -345,32 +400,98 @@ export default function EditRoutePage() {
 
           {/* 追加された本のリスト */}
           <div className="space-y-2 pt-1 max-h-[340px] overflow-y-auto pr-1 content-start scrollbar-none">
-            {selectedBooks.map((book, index) => (
-              <div key={book.id} className="flex flex-col items-center">
-                <div className="w-full bg-slate-50/60 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-100/70 transition-all">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm">
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-black text-xs text-slate-800 truncate leading-tight group-hover:text-blue-600 transition-colors">{book.title}</p>
-                      <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
+            {selectedBooks.length === 0 ? (
+              <p className="text-center py-16 text-xs text-slate-400 border border-dashed border-slate-200 bg-slate-50/50 rounded-2xl font-bold leading-relaxed">
+                上の検索窓やショートカットボタンから、<br />参考書を順番に追加していきましょう！
+              </p>
+            ) : (
+              selectedBooks.map((book, index) => (
+                <div key={book.id} className="flex flex-col items-center">
+                  <div className="w-full bg-slate-50/60 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-100/70 transition-all">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-black text-xs text-slate-800 truncate leading-tight group-hover:text-blue-600 transition-colors">{book.title}</p>
+                        <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
+                      <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
+                      <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
+                      <button type="button" onClick={() => handleRemoveBook(index)} className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors ml-0.5"><Trash2 size={13} /></button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
-                    <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
-                    <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
-                    <button type="button" onClick={() => handleRemoveBook(index)} className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors ml-0.5"><Trash2 size={13} /></button>
-                  </div>
+                  {index < selectedBooks.length - 1 && (
+                    <div className="my-0.5 text-blue-500/70 animate-pulse">
+                      <ArrowDown size={14} className="stroke-[2.5]" />
+                    </div>
+                  )}
                 </div>
-                {index < selectedBooks.length - 1 && (
-                  <div className="my-0.5 text-blue-500/70 animate-pulse">
-                    <ArrowDown size={14} className="stroke-[2.5]" />
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            )}
           </div>
+
+          {/* 💡 ポップアップ（モーダル）UI */}
+          {modalType && (
+            <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
+                {/* モーダルヘッダー */}
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
+                  <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
+                    {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
+                    {modalType === 'likes' ? 'いいね（保存）した参考書' : '使用中の参考書棚'}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setModalType(null)}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors text-xs font-bold cursor-pointer"
+                  >
+                    閉じる
+                  </button>
+                </div>
+                
+                {/* モーダルコンテンツリスト（白文字バグ対策済） */}
+                <div className="p-2 overflow-y-auto divide-y divide-slate-50 flex-1 min-h-[200px]">
+                  {modalLoading ? (
+                    <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
+                  ) : modalBooks.length === 0 ? (
+                    <div className="text-center py-12 text-xs font-black text-slate-400 leading-relaxed">
+                      該当する参考書がありません。<br/>マイページで本を登録してみてくださいね。
+                    </div>
+                  ) : (
+                    modalBooks.map((book) => {
+                      const isAdded = selectedBooks.some(b => b.id === book.id);
+                      return (
+                        <div key={book.id} className="p-2 flex items-center justify-between gap-3 group">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-black text-xs text-slate-800 truncate leading-snug group-hover:text-blue-600 transition-colors">{book.title}</p>
+                            <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={isAdded}
+                            onClick={() => {
+                              handleAddBook(book);
+                              setModalType(null); 
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide border transition-all shrink-0 active:scale-95 cursor-pointer ${
+                              isAdded 
+                                ? 'bg-slate-50 border-slate-200 text-slate-400 font-bold' 
+                                : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white'
+                            }`}
+                          >
+                            {isAdded ? '追加済み' : 'ルートへ追加'}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 保存ボタン */}

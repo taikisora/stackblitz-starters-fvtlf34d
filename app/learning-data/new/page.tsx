@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase'; 
-import { ChevronLeft, ArrowDown, Trash2, Search, Plus, Save, Globe, Lock } from 'lucide-react';
+import { ChevronLeft, ArrowDown, Trash2, Search, Plus, Save, Globe, Lock, Heart, BookOpen } from 'lucide-react';
 
 export default function NewRoutePage() {
   const router = useRouter();
@@ -24,6 +24,11 @@ export default function NewRoutePage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // 💡 ポップアップ（モーダル）用の状態
+  const [modalType, setModalType] = useState<'likes' | 'status' | null>(null);
+  const [modalBooks, setModalBooks] = useState<any[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -36,6 +41,43 @@ export default function NewRoutePage() {
     };
     checkUser();
   }, [router]);
+
+  // 💡 修正：スクショのテーブル構造（user_book_status）に100%準拠させたデータ取得ロジック
+  const openBooksModal = async (type: 'likes' | 'status') => {
+    setModalType(type);
+    setModalLoading(true);
+    setModalBooks([]);
+    
+    try {
+      // ベースとなるクエリ（user_book_status テーブルからリレーションで本を取得）
+      let query = supabase
+        .from('user_book_status')
+        .select('books(*)')
+        .eq('user_id', user.id);
+
+      if (type === 'likes') {
+        // ❤️ いいね（保存）した本：is_saved が TRUE のものを抽出
+        query = query.eq('is_saved', true);
+      } else {
+        // 🟢 使用中の参考書：is_used が TRUE のものを抽出
+        query = query.eq('is_used', true);
+      }
+
+      const { data, error } = await query;
+
+      if (!error && data) {
+        // 取得したリレーション配列から、空のデータを弾いて books の中身だけを配列化
+        const extractedBooks = data.map((item: any) => item.books).filter(Boolean);
+        setModalBooks(extractedBooks);
+      } else if (error) {
+        console.error("データ取得に失敗しました:", error.message);
+      }
+    } catch (err) {
+      console.error("ポップアップデータ同期エラー:", err);
+    } finally {
+      setModalLoading(false);
+    }
+  };
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -200,7 +242,7 @@ export default function NewRoutePage() {
                   <option value="英文法">英文法</option>
                   <option value="長文">長文</option>
                   <option value="リスニング">リスニング</option>
-                  <option value="英作文">英作文</option> {/* 💡 英作文を追加 */}
+                  <option value="英作文">英作文</option>
                   <option value="その他（英語）">その他（英語）</option>
                 </optgroup>
                 <optgroup label="数学">
@@ -211,12 +253,14 @@ export default function NewRoutePage() {
                   <option value="その他（数学）">その他（数学）</option>
                 </optgroup>
                 <optgroup label="国語">
+                  <option value="国語（総合）">国語（総合）</option>
                   <option value="現代文">現代文</option>
                   <option value="古文">古文</option>
                   <option value="漢文">漢文</option>
                   <option value="その他（国語）">その他（国語）</option>
                 </optgroup>
                 <optgroup label="理科">
+                  <option value="理科（総合）">理科（総合）</option>
                   <option value="物理">物理</option>
                   <option value="化学">化学</option>
                   <option value="生物">生物</option>
@@ -224,6 +268,7 @@ export default function NewRoutePage() {
                   <option value="その他（理科）">その他（理科）</option>
                 </optgroup>
                 <optgroup label="社会">
+                  <option value="社会（総合）">社会（総合）</option>
                   <option value="歴史総合">歴史総合</option>
                   <option value="日本史">日本史</option>
                   <option value="世界史">世界史</option>
@@ -255,20 +300,37 @@ export default function NewRoutePage() {
 
           <div>
             <label className="text-xs font-black text-slate-400 mb-2 block uppercase tracking-wider">説明・備考</label>
-            {/* 💡 修正点：onChange={(e) => setDescription(e.target.value)} を追加して入力可能にしました */}
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="このルートの特徴、おすすめの進め方やアドバイス等"
               rows={5}
-              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50/60 focus:outline-none focus:border-blue-500 focus:bg-white font-medium text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
+              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50/60 focus:outline-none focus:border-blue-500 focus:bg-white font-bold text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
             />
           </div>
         </div>
 
         {/* 右カラム：参考書ルート構築 */}
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 relative">
           <label className="text-xs font-black text-slate-400 block uppercase tracking-wider border-b border-slate-100 pb-1.5">参考書を順番に繋げる</label>
+
+          {/* 💡 マイページ連動：いいね（保存）・使用中本棚から選ぶショートカットボタン */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => openBooksModal('likes')}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-50/60 hover:bg-rose-100/70 border border-rose-100 text-rose-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+            >
+              <Heart size={14} className="fill-current" /> いいねから追加
+            </button>
+            <button
+              type="button"
+              onClick={() => openBooksModal('status')}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+            >
+              <BookOpen size={14} /> 使用中から追加
+            </button>
+          </div>
 
           {/* 検索窓 */}
           <div className="relative">
@@ -279,7 +341,7 @@ export default function NewRoutePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="参考書の名前で検索して追加..."
+              placeholder="または、参考書の名前で検索して追加..."
               className="w-full bg-slate-50/60 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-black text-slate-800 shadow-3xs transition-all"
             />
 
@@ -315,7 +377,7 @@ export default function NewRoutePage() {
           <div className="space-y-2 pt-1 max-h-[340px] overflow-y-auto pr-1 content-start scrollbar-none">
             {selectedBooks.length === 0 ? (
               <p className="text-center py-16 text-xs text-slate-400 border border-dashed border-slate-200 bg-slate-50/50 rounded-2xl font-bold leading-relaxed">
-                上の検索窓から、ルートに入れる参考書を<br />順番に追加していきましょう！
+                上の検索窓やショートカットボタンから、<br />参考書を順番に追加していきましょう！
               </p>
             ) : (
               selectedBooks.map((book, index) => (
@@ -347,6 +409,66 @@ export default function NewRoutePage() {
               ))
             )}
           </div>
+
+          {/* 💡 ポップアップ（モーダル）UI */}
+          {modalType && (
+            <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
+                {/* モーダルヘッダー */}
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
+                  <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
+                    {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
+                    {modalType === 'likes' ? 'いいね（保存）した参考書' : '使用中の参考書棚'}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setModalType(null)}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors text-xs font-bold cursor-pointer"
+                  >
+                    閉じる
+                  </button>
+                </div>
+                
+                {/* モーダルコンテンツリスト（白文字バグ対策済） */}
+                <div className="p-2 overflow-y-auto divide-y divide-slate-50 flex-1 min-h-[200px]">
+                  {modalLoading ? (
+                    <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
+                  ) : modalBooks.length === 0 ? (
+                    <div className="text-center py-12 text-xs font-black text-slate-400 leading-relaxed">
+                      該当する参考書がありません。<br/>マイページで本を登録してみてくださいね。
+                    </div>
+                  ) : (
+                    modalBooks.map((book) => {
+                      const isAdded = selectedBooks.some(b => b.id === book.id);
+                      return (
+                        <div key={book.id} className="p-2 flex items-center justify-between gap-3 group">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-black text-xs text-slate-800 truncate leading-snug group-hover:text-blue-600 transition-colors">{book.title}</p>
+                            <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={isAdded}
+                            onClick={() => {
+                              handleAddBook(book);
+                              setModalType(null); 
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide border transition-all shrink-0 active:scale-95 cursor-pointer ${
+                              isAdded 
+                                ? 'bg-slate-50 border-slate-200 text-slate-400 font-bold' 
+                                : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white'
+                            }`}
+                          >
+                            {isAdded ? '追加済み' : 'ルートへ追加'}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 保存ボタン */}
