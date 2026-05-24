@@ -69,8 +69,18 @@ export default function OnboardingPage() {
 
     setLoading(true);
 
+    // 💡 修正：保存する直前に、Supabaseのセッションから最新のユーザーIDを確実に取得する
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user?.id) {
+      alert('セッションが切れました。もう一度ログインし直してください。');
+      router.push('/login');
+      setLoading(false);
+      return;
+    }
+
     const updateData: any = {
-      id: user?.id,
+      id: session.user.id, // 👈 確実に実在するログインIDをセット
       username: username.trim(),
       status: status,
       is_onboarded: true,
