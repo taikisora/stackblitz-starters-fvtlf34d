@@ -31,19 +31,19 @@ export default function RouteDetailPage() {
           currentUser = session.user;
         }
 
+        // 1. ルートの情報を取得
         const { data: routeData } = await supabase
           .from('study_routes')
-          .select('*, profiles(username)')
+          .select('*, profiles(username, avatar_color)')
           .eq('id', routeId)
           .single();
-
-        if (!routeData) {
-          setLoading(false);
-          return;
+        
+        if (routeData) {
+          setRoute(routeData);
+          setLikesCount(routeData.likes_count || 0);
         }
-        setRoute(routeData);
-        setLikesCount(routeData.likes_count || 0);
 
+        // 2. 紐づく本物の参考書リストを取得（元の状態に戻しました）
         const { data: booksData } = await supabase
           .from('route_books')
           .select('*, books(*)')
@@ -64,7 +64,6 @@ export default function RouteDetailPage() {
         if (commentsData) setComments(commentsData);
 
         if (currentUser) {
-          // 正しいテーブル「route_likes」からデータが存在するか確認する
           const { data: likeData } = await supabase
             .from('route_likes')
             .select('id')
@@ -72,7 +71,6 @@ export default function RouteDetailPage() {
             .eq('route_id', routeId)
             .maybeSingle();
           
-          // データが存在すれば「いいね済み(true)」、無ければ「未いいね(false)」
           setIsLiked(!!likeData);
         }
 
@@ -101,16 +99,13 @@ export default function RouteDetailPage() {
 
     try {
       if (nextStatus) {
-        // いいねした時はデータを「追加（insert）」する
         await supabase.from('route_likes').insert({
           user_id: user.id,
           route_id: routeId
         });
       } else {
-        // いいねを解除した時はデータを「削除（delete）」する
         await supabase.from('route_likes').delete().eq('user_id', user.id).eq('route_id', routeId);
       }
-
       await supabase.from('study_routes').update({ likes_count: nextCount }).eq('id', routeId);
     } catch (e) {
       console.error(e);
@@ -218,42 +213,53 @@ export default function RouteDetailPage() {
       </div>
 
       <div className="bg-white rounded-3xl p-5 md:p-6 border border-gray-100 shadow-xs space-y-4 mb-5">
-        <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-gray-50 pb-2">
-          <BookOpen size={15} strokeWidth={2.5} /> ルートのロードマップ（全 {books.length} 冊）
-        </h2>
-        {books.length === 0 ? (
-          <p className="p-8 text-center text-sm font-bold text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-gray-100">参考書が登録されていません。</p>
-        ) : (
-          books.map((book, index) => (
-            <div key={book.id} className="flex flex-col items-center">
-              <div onClick={() => router.push(`/books/${book.id}`)} className="w-full bg-slate-50/60 rounded-2xl p-3 border border-gray-100 shadow-3xs flex items-center gap-4 hover:bg-white transition-all cursor-pointer group">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">{index + 1}</div>
-                <div className="w-11 h-16 bg-white rounded-lg overflow-hidden border border-gray-200/80 flex-shrink-0 flex items-center justify-center text-gray-400 text-[9px]">
-                  {book.cover_url ? <img src={book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] font-bold text-slate-400 mb-0.5">{book.publisher}</p>
-                  <h3 className="font-black text-sm text-slate-800 truncate group-hover:text-blue-600">{book.title}</h3>
-                </div>
+      <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-gray-50 pb-2">
+        <BookOpen size={15} strokeWidth={2.5} /> ルートのロードマップ（全 {books.length} 冊）
+      </h2>
+      {books.length === 0 ? (
+        <p className="p-8 text-center text-sm font-bold text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-gray-100">参考書が登録されていません。</p>
+      ) : (
+        books.map((book, index) => (
+          <div key={book.id} className="flex flex-col items-center">
+            
+            {/* 💡 綺麗にはめ直しました */}
+            <div 
+              onClick={() => {
+                if (book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
+                  router.push(`/books/${book.id}`);
+                }
+              }} 
+              className={`w-full bg-slate-50/60 rounded-2xl p-3 border border-gray-100 shadow-3xs flex items-center gap-4 hover:bg-white transition-all group ${
+                book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "cursor-default" : "cursor-pointer"
+              }`}
+            >
+              <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">{index + 1}</div>
+              <div className="w-11 h-16 bg-white rounded-lg overflow-hidden border border-gray-200/80 flex-shrink-0 flex items-center justify-center text-gray-400 text-[9px]">
+                {book.cover_url ? <img src={book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
               </div>
-              {index < books.length - 1 && (
-                <div className="my-1.5 text-blue-500/60 p-0.5 bg-blue-50 rounded-full border border-blue-100">
-                  <ArrowDown size={14} strokeWidth={3} />
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-bold text-slate-400 mb-0.5">{book.publisher}</p>
+                <h3 className="font-black text-sm text-slate-800 truncate group-hover:text-blue-600">{book.title}</h3>
+              </div>
+            </div> {/* 👈 ここで正しくカードを閉じる */}
+
+            {index < books.length - 1 && (
+              <div className="my-1.5 text-blue-500/60 p-0.5 bg-blue-50 rounded-full border border-blue-100">
+                <ArrowDown size={14} strokeWidth={3} />
+              </div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
 
       <div className="bg-white rounded-3xl p-5 md:p-6 border border-gray-100 shadow-xs space-y-4">
-      <h3 className="font-black text-slate-800 text-sm tracking-wide border-b border-gray-50 pb-2.5">
+        <h3 className="font-black text-slate-800 text-sm tracking-wide border-b border-gray-50 pb-2.5">
           コメント欄（{comments.length}）
         </h3>
 
         <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
           {comments.length === 0 ? (
-            // 💡 修正：text-gray-400 ➔ text-slate-400 font-bold にして見やすく
             <p className="text-xs text-slate-400 font-bold text-center py-6">まだコメントはありません。</p>
           ) : (
             comments.map((comment) => {
@@ -265,7 +271,6 @@ export default function RouteDetailPage() {
                       <span className="font-extrabold text-slate-700">{comment.profiles?.username || '名無しユーザー'}</span>
                       <span className="text-[9px] text-slate-400 font-bold">{new Date(comment.created_at).toLocaleDateString('ja-JP')}</span>
                     </div>
-                    {/* 💡 修正：他人のコメント文も text-slate-700 font-bold でクッキリ化 */}
                     <p className="text-slate-700 font-bold leading-relaxed break-words">{comment.content}</p>
                   </div>
                   {isMyComment && (
@@ -286,7 +291,6 @@ export default function RouteDetailPage() {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             disabled={!user || isSubmitting}
-            // 💡 修正：text-slate-800 font-bold を追加して、入力文字が白化するのを完全に防ぎました！
             className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 disabled:opacity-50"
           />
           <button type="submit" disabled={!user || !newComment.trim() || isSubmitting} className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 disabled:bg-slate-200 shrink-0 cursor-pointer transition-colors active:scale-95">

@@ -24,7 +24,6 @@ export default function EditRoutePage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // 💡 追加：いいね・使用中ポップアップ用の状態
   const [modalType, setModalType] = useState<'likes' | 'status' | null>(null);
   const [modalBooks, setModalBooks] = useState<any[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
@@ -64,10 +63,22 @@ export default function EditRoutePage() {
         .eq('route_id', routeId)
         .order('sort_order', { ascending: true });
 
-      if (booksData) {
-        const orderedBooks = booksData.map(rb => rb.books).filter(Boolean);
-        setSelectedBooks(orderedBooks);
-      }
+        if (booksData) {
+          const orderedBooks = booksData.map(rb => {
+            // 💡 もしデータベースから返ってきた本（books）のIDがカスタム参考書のものなら、
+            // タイトルやサブテキストが真っ新のデフォルトに戻らないよう、明示的に上書きして復元する
+            if (rb.books && rb.books.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
+              return {
+                ...rb.books,
+                title: "カスタム参考書",
+                publisher: "※詳細は説明・備考欄に記入してください"
+              };
+            }
+            return rb.books;
+          }).filter(Boolean);
+  
+          setSelectedBooks(orderedBooks);
+        }
 
       setLoading(false);
     };
@@ -75,7 +86,6 @@ export default function EditRoutePage() {
     if (routeId) fetchRouteData();
   }, [routeId, router]);
 
-  // 💡 追加：user_book_status テーブル（is_saved, is_used カラム）に完全対応した取得ロジック
   const openBooksModal = async (type: 'likes' | 'status') => {
     setModalType(type);
     setModalLoading(true);
@@ -98,11 +108,9 @@ export default function EditRoutePage() {
       if (!error && data) {
         const extractedBooks = data.map((item: any) => item.books).filter(Boolean);
         setModalBooks(extractedBooks);
-      } else if (error) {
-        console.error("データ取得エラー:", error.message);
       }
     } catch (err) {
-      console.error("ポップアップデータ同期エラー:", err);
+      console.error(err);
     } finally {
       setModalLoading(false);
     }
@@ -187,38 +195,41 @@ export default function EditRoutePage() {
 
     if (routeError) {
       setLoading(false);
-      if (routeError.code === '23505') {
-        alert('既に同じ題名のルートが存在します。別の題名にしてください。');
-      } else {
-        alert('ルートの更新に失敗しました。');
-      }
+      alert('ルートの更新に失敗しました。');
       return;
     }
 
     await supabase.from('route_books').delete().eq('route_id', routeId);
 
-    const routeBooksData = selectedBooks.map((book, index) => ({
+    const routeBooksData = selectedBooks.map((book: any, index: number) => ({
       route_id: routeId,
       book_id: book.id,
-      sort_order: index + 1
+      sort_order: index + 1 
     }));
 
-    const { error: booksError } = await supabase
-      .from('route_books')
-      .insert(routeBooksData);
+    if (routeBooksData.length > 0) {
+      const { error: booksError } = await supabase
+        .from('route_books')
+        .insert(routeBooksData);
 
-    if (booksError) {
-      setLoading(false);
-      alert('ルート中身の更新に失敗しました。');
-      return;
+      if (booksError) {
+        setLoading(false);
+        alert('ルートの中身の保存に失敗しました。');
+        return;
+      }
     }
 
-    const userBookStatusData = selectedBooks.map(book => ({
-      user_id: user.id,
-      book_id: book.id,
-      is_used: true
-    }));
-    await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
+   // 💡 修正：カスタム参考書（ID: b2531a01-...）以外の本物の参考書だけを本棚に同期する
+   const realBooksForStatus = selectedBooks.filter((book: any) => book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81");
+
+   if (realBooksForStatus.length > 0) {
+     const userBookStatusData = realBooksForStatus.map((book: any) => ({
+       user_id: user.id,
+       book_id: book.id,
+       is_used: true
+     }));
+     await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
+   }
 
     alert('参考書ルートを更新しました！');
     router.push('/learning-data');
@@ -229,7 +240,6 @@ export default function EditRoutePage() {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen pb-24">
       
-      {/* ヘッダー */}
       <div className="flex items-center justify-between border-b border-gray-200/60 pb-4 mb-6">
         <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-3xs hover:bg-gray-50 transition-all">
           <ChevronLeft size={18} /> 戻る
@@ -240,7 +250,6 @@ export default function EditRoutePage() {
 
       <form onSubmit={handleUpdateRoute} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         
-        {/* 左カラム：ルート設定 */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5">
           <div>
             <label className="text-xs font-black text-slate-400 mb-2 block uppercase tracking-wider">ルートの題名（必須）</label>
@@ -279,7 +288,7 @@ export default function EditRoutePage() {
                 </optgroup>
                 <optgroup label="国語">
                   <option value="国語（総合）">国語（総合）</option>
-                  <option value="現代文">现代文</option>
+                  <option value="現代文">現代文</option>
                   <option value="古文">古文</option>
                   <option value="漢文">漢文</option>
                   <option value="その他（国語）">その他（国語）</option>
@@ -301,7 +310,7 @@ export default function EditRoutePage() {
                   <option value="公共">公共</option>
                   <option value="倫理">倫理</option>
                   <option value="政治・経済">政治・経済</option>
-                  <option value="その他（社会）">その他（社会）</option>
+                  <option value="その他（社会）">社会（社会）</option>
                 </optgroup>
               </select>
             </div>
@@ -337,10 +346,10 @@ export default function EditRoutePage() {
 
         {/* 右カラム：参考書ルート構築 */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 relative">
-          <label className="text-xs font-black text-slate-400 block uppercase tracking-wider border-b border-slate-100 pb-1.5">参考書を順番に繋げる</label>
+          <label className="text-xs font-black text-slate-400 block uppercase tracking-wider border-b border-slate-100 pb-1.5">参考書ルートを組み立てる</label>
 
-          {/* 💡 追加：いいね・使用中から選ぶショートカットボタン */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* マイページ連動ボタン ＋ 見つからない場合の専用ボタン */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => openBooksModal('likes')}
@@ -355,9 +364,23 @@ export default function EditRoutePage() {
             >
               <BookOpen size={14} /> 使用中から追加
             </button>
+            
+            <button
+              type="button"
+              onClick={() => {
+                handleAddBook({
+                  id: "b2531a01-d6ea-47ad-ae84-3fac68cf3c81",
+                  title: "カスタム参考書",
+                  publisher: "※詳細は説明・備考欄に記入してください"
+                });
+              }}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+            >
+              <Plus size={14} strokeWidth={2.5} /> （参考書が見つからない場合）
+            </button>
           </div>
 
-          {/* 🔎 検索窓 */}
+          {/* 検索窓 */}
           <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
               <Search size={16} strokeWidth={2.5} />
@@ -370,7 +393,6 @@ export default function EditRoutePage() {
               className="w-full bg-slate-50/60 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-black text-slate-800 shadow-3xs transition-all"
             />
 
-            {/* サジェスト窓 */}
             {searchQuery && (
               <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-64 overflow-y-auto divide-y divide-gray-100">
                 {isSearching ? (
@@ -398,7 +420,6 @@ export default function EditRoutePage() {
             )}
           </div>
 
-          {/* 追加された本のリスト */}
           <div className="space-y-2 pt-1 max-h-[340px] overflow-y-auto pr-1 content-start scrollbar-none">
             {selectedBooks.length === 0 ? (
               <p className="text-center py-16 text-xs text-slate-400 border border-dashed border-slate-200 bg-slate-50/50 rounded-2xl font-bold leading-relaxed">
@@ -417,12 +438,14 @@ export default function EditRoutePage() {
                         <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
                       </div>
                     </div>
+
                     <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
                       <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
                       <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
                       <button type="button" onClick={() => handleRemoveBook(index)} className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors ml-0.5"><Trash2 size={13} /></button>
                     </div>
                   </div>
+
                   {index < selectedBooks.length - 1 && (
                     <div className="my-0.5 text-blue-500/70 animate-pulse">
                       <ArrowDown size={14} className="stroke-[2.5]" />
@@ -433,11 +456,10 @@ export default function EditRoutePage() {
             )}
           </div>
 
-          {/* 💡 ポップアップ（モーダル）UI */}
+          {/* ポップアップ（モーダル）UI */}
           {modalType && (
             <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
               <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
-                {/* モーダルヘッダー */}
                 <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
                   <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
                     {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
@@ -452,13 +474,13 @@ export default function EditRoutePage() {
                   </button>
                 </div>
                 
-                {/* モーダルコンテンツリスト（白文字バグ対策済） */}
                 <div className="p-2 overflow-y-auto divide-y divide-slate-50 flex-1 min-h-[200px]">
+                  {/* 💡 修正：ローディング中 ➔ 0件の時 ➔ 通常表示 の順番で正しく判定 */}
                   {modalLoading ? (
                     <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
                   ) : modalBooks.length === 0 ? (
-                    <div className="text-center py-12 text-xs font-black text-slate-400 leading-relaxed">
-                      該当する参考書がありません。<br/>マイページで本を登録してみてくださいね。
+                    <div className="text-center py-16 text-xs font-black text-slate-400 leading-relaxed">
+                      該当する参考書がありません。
                     </div>
                   ) : (
                     modalBooks.map((book) => {
@@ -502,7 +524,7 @@ export default function EditRoutePage() {
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-md disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none transition-all active:scale-[0.99] text-base"
           >
             <Save size={18} className="stroke-[2.5]" />
-            {loading ? '変更を保存中...' : '変更を保存する'}
+            {loading ? 'ルートを保存中...' : '参考書ルートを保存する'}
           </button>
         </div>
 

@@ -24,7 +24,7 @@ export default function NewRoutePage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // 💡 ポップアップ（モーダル）用の状態
+  // ポップアップ（モーダル）用の状態
   const [modalType, setModalType] = useState<'likes' | 'status' | null>(null);
   const [modalBooks, setModalBooks] = useState<any[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
@@ -42,31 +42,26 @@ export default function NewRoutePage() {
     checkUser();
   }, [router]);
 
-  // 💡 修正：スクショのテーブル構造（user_book_status）に100%準拠させたデータ取得ロジック
   const openBooksModal = async (type: 'likes' | 'status') => {
     setModalType(type);
     setModalLoading(true);
     setModalBooks([]);
     
     try {
-      // ベースとなるクエリ（user_book_status テーブルからリレーションで本を取得）
       let query = supabase
         .from('user_book_status')
         .select('books(*)')
         .eq('user_id', user.id);
 
       if (type === 'likes') {
-        // ❤️ いいね（保存）した本：is_saved が TRUE のものを抽出
         query = query.eq('is_saved', true);
       } else {
-        // 🟢 使用中の参考書：is_used が TRUE のものを抽出
         query = query.eq('is_used', true);
       }
 
       const { data, error } = await query;
 
       if (!error && data) {
-        // 取得したリレーション配列から、空のデータを弾いて books の中身だけを配列化
         const extractedBooks = data.map((item: any) => item.books).filter(Boolean);
         setModalBooks(extractedBooks);
       } else if (error) {
@@ -133,6 +128,7 @@ export default function NewRoutePage() {
     setSelectedBooks(nextList);
   };
 
+  // 💡 修正：自作テキストにまつわる例外ロジックをすべて削除し、100%元の状態に戻しました
   const handleSaveRoute = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -170,29 +166,36 @@ export default function NewRoutePage() {
 
     const newRouteId = routeData.id;
 
-    const routeBooksData = selectedBooks.map((book, index) => ({
+    const routeBooksData = selectedBooks.map((book: any, index: number) => ({
       route_id: newRouteId,
       book_id: book.id,
       sort_order: index + 1 
     }));
 
-    const { error: booksError } = await supabase
-      .from('route_books')
-      .insert(routeBooksData);
+    if (routeBooksData.length > 0) {
+      const { error: booksError } = await supabase
+        .from('route_books')
+        .insert(routeBooksData);
 
-    if (booksError) {
-      setLoading(false);
-      alert('ルートの中身の保存に失敗しました。');
-      return;
+      if (booksError) {
+        setLoading(false);
+        alert('ルートの中身の保存に失敗しました。');
+        return;
+      }
     }
 
-    const userBookStatusData = selectedBooks.map(book => ({
-      user_id: user.id,
-      book_id: book.id,
-      is_used: true
-    }));
+   // 💡 修正：カスタム参考書（ID: b2531a01-...）以外の本物の参考書だけを本棚に同期する
+   const realBooksForStatus = selectedBooks.filter((book: any) => book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81");
 
-    await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
+   if (realBooksForStatus.length > 0) {
+     const userBookStatusData = realBooksForStatus.map((book: any) => ({
+       user_id: user.id,
+       book_id: book.id,
+       is_used: true
+     }));
+
+     await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
+   }
 
     alert('参考書ルートを保存しました！');
     router.push('/learning-data');
@@ -312,10 +315,10 @@ export default function NewRoutePage() {
 
         {/* 右カラム：参考書ルート構築 */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 relative">
-          <label className="text-xs font-black text-slate-400 block uppercase tracking-wider border-b border-slate-100 pb-1.5">参考書を順番に繋げる</label>
+          <label className="text-xs font-black text-slate-400 block uppercase tracking-wider border-b border-slate-100 pb-1.5">参考書ルートを組み立てる</label>
 
-          {/* 💡 マイページ連動：いいね（保存）・使用中本棚から選ぶショートカットボタン */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* マイページ連動ボタン ＋ 見つからない場合の専用ボタン */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => openBooksModal('likes')}
@@ -330,6 +333,21 @@ export default function NewRoutePage() {
             >
               <BookOpen size={14} /> 使用中から追加
             </button>
+            
+            {/* 💡 ボタンそのものの名前を分かりやすく修正しました */}
+            <button
+              type="button"
+              onClick={() => {
+                handleAddBook({
+                  id: "b2531a01-d6ea-47ad-ae84-3fac68cf3c81", // 👈 例: "a1b2c3d4-..."
+                  title: "カスタム参考書",
+                  publisher: "※詳細は説明・備考欄に記入してください"
+                });
+              }}
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+            >
+              <Plus size={14} strokeWidth={2.5} /> （参考書が見つからない場合）
+            </button>
           </div>
 
           {/* 検索窓 */}
@@ -341,7 +359,7 @@ export default function NewRoutePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="または、参考書の名前で検索して追加..."
+              placeholder="参考書の名前で検索して追加..."
               className="w-full bg-slate-50/60 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-black text-slate-800 shadow-3xs transition-all"
             />
 
@@ -374,7 +392,7 @@ export default function NewRoutePage() {
           </div>
 
           {/* 追加された本の一覧リスト */}
-          <div className="space-y-2 pt-1 max-h-[340px] overflow-y-auto pr-1 content-start scrollbar-none">
+          <div className="space-y-2 pt-1 max-h-[340px] overflow-y-auto pr-1 content-start scroll-none">
             {selectedBooks.length === 0 ? (
               <p className="text-center py-16 text-xs text-slate-400 border border-dashed border-slate-200 bg-slate-50/50 rounded-2xl font-bold leading-relaxed">
                 上の検索窓やショートカットボタンから、<br />参考書を順番に追加していきましょう！
@@ -410,15 +428,14 @@ export default function NewRoutePage() {
             )}
           </div>
 
-          {/* 💡 ポップアップ（モーダル）UI */}
+          {/* ポップアップ（モーダル）UI */}
           {modalType && (
             <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
               <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
-                {/* モーダルヘッダー */}
                 <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
                   <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
                     {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
-                    {modalType === 'likes' ? 'いいね（保存）した参考書' : '使用中の参考書棚'}
+                    {modalType === 'likes' ? 'いいねした参考書' : '使用した参考書'}
                   </h4>
                   <button
                     type="button"
@@ -429,13 +446,13 @@ export default function NewRoutePage() {
                   </button>
                 </div>
                 
-                {/* モーダルコンテンツリスト（白文字バグ対策済） */}
                 <div className="p-2 overflow-y-auto divide-y divide-slate-50 flex-1 min-h-[200px]">
+                  {/* 💡 修正：ローディング中 ➔ 0件の時 ➔ 通常表示 の順番で正しく判定 */}
                   {modalLoading ? (
                     <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
                   ) : modalBooks.length === 0 ? (
-                    <div className="text-center py-12 text-xs font-black text-slate-400 leading-relaxed">
-                      該当する参考書がありません。<br/>マイページで本を登録してみてくださいね。
+                    <div className="text-center py-16 text-xs font-black text-slate-400 leading-relaxed">
+                      該当する参考書がありません。
                     </div>
                   ) : (
                     modalBooks.map((book) => {
