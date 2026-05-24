@@ -125,7 +125,9 @@ export default function MyPage() {
       updateData.stream = editData.stream === 'undecided' ? '未定' : (editData.stream === 'humanities' ? '文系' : '理系');
       
       // 💡 修正：「まだ決めていない（未定）」にチェックがあれば、DBへ「未定」という固定文字を送る
-      updateData.university = isUniUndecided ? '未定' : (editData.university.trim() || null);
+      // 💡 修正：もし入力欄に文字があればそれを優先。文字がなくて、かつ未定チェックがあれば「未定」にする
+      const trimmedUni = editData.university.trim();
+      updateData.university = trimmedUni ? trimmedUni : (isUniUndecided ? '未定' : null);
       updateData.university2 = editData.university2.trim() || null;
       updateData.university3 = editData.university3.trim() || null;
     }
