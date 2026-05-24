@@ -11,7 +11,8 @@ export default function LearningDataPage() {
   const [routes, setRoutes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const MAX_ROUTES = 15;
+  // 🎯 修正：作成上限を 15 から 30 に増やしました！（50 などお好きな数字に変えてもOKです）
+  const MAX_ROUTES = 30;
 
   useEffect(() => {
     const fetchRoutes = async () => {
@@ -19,7 +20,6 @@ export default function LearningDataPage() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        // 💡 修正：強制リダイレクトをせず、未ログイン状態で読み込みを完了させる
         setUser(null);
         setLoading(false);
         return;
@@ -74,7 +74,6 @@ export default function LearningDataPage() {
 
   if (loading) return <p className="text-center py-20 text-gray-500 font-bold animate-pulse">ルートを読み込み中...</p>;
 
-  // 💡 未ログイン時の誘導ガード画面（絵文字なし・クリーンUI）
   if (!user) {
     return (
       <div className="p-4 md:p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 pt-16 flex flex-col items-center justify-center">
@@ -87,7 +86,8 @@ export default function LearningDataPage() {
               マイ参考書ルートの管理にはログインが必要です
             </h4>
             <p className="text-gray-400 font-bold text-xs max-w-md leading-relaxed">
-              アカウントを作成またはログインすると、志望校合格に向けた自分だけのオリジナル参考書ルートを最大15個まで自由に作成・保存できます。
+              {/* 💡 案内文の表記も上限に合わせて自動で変わるようにテンプレートリテラル化しました */}
+              アカウントを作成またはログインすると、志望校合格に向けた自分だけのオリジナル参考書ルートを最大{MAX_ROUTES}個まで自由に作成・保存できます。
             </p>
           </div>
           <button
@@ -108,7 +108,6 @@ export default function LearningDataPage() {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen pb-24 pt-6">
       
-      {/* ヘッダータイトル・作成枠数表示 */}
       <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-2xs border border-gray-100">
         <div className="flex items-center gap-2.5 text-slate-800">
           <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md">
@@ -124,7 +123,6 @@ export default function LearningDataPage() {
         </div>
       </div>
 
-      {/* 新規作成ボタン */}
       <button
         onClick={() => {
           if (isLimitReached) {
@@ -137,14 +135,13 @@ export default function LearningDataPage() {
         className={`w-full mb-6 py-3.5 flex items-center justify-center gap-2 font-black rounded-2xl shadow-sm border transition-all active:scale-[0.99] text-sm md:text-base ${
           isLimitReached
             ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-blue-500/10 shadow-blue-500/10'
+            : 'bg-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-blue-500/10 shadow-blue-500/10 cursor-pointer'
         }`}
       >
         <Plus size={18} strokeWidth={3} />
         新しい参考書ルートを作成する
       </button>
 
-      {/* ルート一覧カードフィード */}
       {routes.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-2xs p-6">
           <AlertCircle size={40} className="text-gray-300 mx-auto mb-3" />
@@ -204,14 +201,14 @@ export default function LearningDataPage() {
                       e.stopPropagation();
                       router.push(`/learning-data/${route.id}/edit`);
                     }}
-                    className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-100 transition-colors shadow-3xs"
+                    className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-100 transition-colors shadow-3xs cursor-pointer"
                     title="ルートを編集"
                   >
                     <Edit2 size={14} strokeWidth={2.5} />
                   </button>
                   <button
                     onClick={(e) => handleDelete(e, route.id, route.title)}
-                    className="p-2 rounded-xl bg-red-50/50 border border-red-100 text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-colors shadow-3xs"
+                    className="p-2 rounded-xl bg-red-50/50 border border-red-100 text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-colors shadow-3xs cursor-pointer"
                     title="ルートを削除"
                   >
                     <Trash2 size={14} strokeWidth={2.5} />
