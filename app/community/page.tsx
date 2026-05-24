@@ -169,14 +169,19 @@ export default function CommunityPage() {
             )}
           </div>
           
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 text-white shadow-md border border-white/10 overflow-hidden relative group cursor-pointer active:scale-95 transition-transform">
-             <div className="relative z-10">
-                <p className="text-[10px] font-black opacity-80 mb-1">公式からのお願い</p>
-                <h5 className="font-black text-sm leading-snug">
-                  みんなが気持ちよく使えるよう、<br />敬意を持って議論しましょう！
+          {/* 💡 修正：クリック演出を完全削除し、文字の視認性をマックスに高めた看板 */}
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-white border border-slate-700/50 overflow-hidden relative shadow-xs">
+             <div className="relative z-10 space-y-1.5">
+                <span className="text-[10px] font-black tracking-wider text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded-md uppercase">
+                  コミュニティ規定
+                </span>
+                <h5 className="font-black text-sm leading-relaxed pt-1">
+                  みんなが気持ちよく使えるよう、<br />
+                  お互いに敬意を持って情報交換しましょう！
                 </h5>
              </div>
-             <MessageSquare className="absolute -right-4 -bottom-4 w-20 h-20 opacity-10 group-hover:scale-110 transition-transform" />
+             {/* 背景の薄いアイコン装飾 */}
+             <MessageSquare className="absolute -right-3 -bottom-3 w-20 h-20 opacity-5 text-white" />
           </div>
         </div>
 
