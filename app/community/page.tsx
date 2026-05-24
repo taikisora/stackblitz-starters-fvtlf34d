@@ -59,7 +59,7 @@ export default function CommunityPage() {
           profiles ( username, avatar_color )
         `)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(20);
 
       if (!error && data) setRecentThreads(data);
       setLoading(false);
