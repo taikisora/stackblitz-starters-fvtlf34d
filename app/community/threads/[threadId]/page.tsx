@@ -408,26 +408,33 @@ export default function ThreadDetailPage() {
       {/* ── 🪟 モダンアンカーポップアップ UI ── */}
       {hoveredComment && (
         <div 
-          className="fixed z-50 bg-slate-900/90 text-white p-4 rounded-2xl shadow-xl max-w-xs md:max-w-md border border-slate-700"
+          className="fixed z-50 bg-white text-slate-800 p-4 rounded-2xl shadow-xl max-w-xs md:max-w-md border border-slate-200/80 transition-all animate-fade-in"
           style={{ left: `${popupPosition.x}px`, top: `${popupPosition.y}px`, transform: 'translateX(-20%)' }}
         >
-          <div className="flex items-center justify-between border-b border-slate-700 pb-1.5 mb-2">
-            <span className="font-black text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded">
-              {`>>`}{hoveredComment.comment_number}
-            </span>
-            <div className="flex items-center gap-1">
+          {/* ヘッダー部分 */}
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="font-black text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md border border-blue-100">
+                {`>>`}{hoveredComment.comment_number}
+              </span>
+              <div className="flex items-center gap-1">
                 <div className="w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center text-white shrink-0">
-                    <User size={9} className="stroke-[3]" />
+                  <User size={9} className="stroke-[3]" />
                 </div>
-                <span className="text-[10px] font-bold text-slate-300">
-                    {hoveredComment.profiles?.username || '名無し'}
+                {/* 💡 文字色を白から濃いグレー（text-slate-700）に変更して読みやすく */}
+                <span className="text-[10px] font-extrabold text-slate-700">
+                  {hoveredComment.profiles?.username || '名無し'}
                 </span>
+              </div>
             </div>
-            <button type="button" onClick={() => setHoveredComment(null)} className="text-slate-400 hover:text-white transition-colors cursor-pointer">
-              <X size={12} />
+            {/* 閉じる×ボタン */}
+            <button type="button" onClick={() => setHoveredComment(null)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-0.5">
+              <X size={13} strokeWidth={2.5} />
             </button>
           </div>
-          <p className="text-xs leading-relaxed text-slate-100 font-medium whitespace-pre-wrap line-clamp-4">
+
+          {/* 💡 本文の文字色を text-slate-100 から、しっかり読める濃い黒（text-slate-800）に変更 */}
+          <p className="text-xs leading-relaxed text-slate-800 font-bold whitespace-pre-wrap line-clamp-4 break-words">
             {hoveredComment.content}
           </p>
         </div>
