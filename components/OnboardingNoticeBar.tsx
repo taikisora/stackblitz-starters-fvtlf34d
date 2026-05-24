@@ -31,13 +31,17 @@ export default function OnboardingNoticeBar() {
         return;
       }
 
+      // 1. 基本項目の空チェック
       const isNameEmpty = !profile.username || profile.username.trim() === '';
       const isStatusEmpty = !profile.status || profile.status.trim() === '' || profile.status === 'EMPTY';
 
+      // 2. 詳細項目のチェック（英語・漢字どちらのデータが来ても安全に判定する）
       let isDetailInvalid = false;
-      if (profile.status !== 'other') {
+      
+      if (profile.status !== 'other' && profile.status !== 'other') {
         const isStreamEmpty = !profile.stream || profile.stream.trim() === '';
         const isUniversityEmpty = !profile.university || profile.university.trim() === '';
+        
         if (isStreamEmpty || isUniversityEmpty) {
           isDetailInvalid = true;
         }

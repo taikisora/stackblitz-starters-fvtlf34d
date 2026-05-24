@@ -88,10 +88,10 @@ export default function OnboardingPage() {
 
     // 💡 修正：NULLではなく、明確な文字列で埋める
     if (status === 'other') {
-      updateData.stream = 'その他';
+      updateData.stream = 'other'; // 💡 英語で統一
       updateData.university = '無し';
     } else {
-      updateData.stream = stream === 'undecided' ? '未定' : (stream === 'humanities' ? '文系' : '理系');
+      updateData.stream = stream; // 💡 選択された英語（'humanities' | 'sciences' | 'undecided'）をそのまま保存！
       updateData.university = isUniUndecided ? '未定' : university.trim();
     }
 
