@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { ChevronLeft, Heart, BookOpen, Star, ChevronRight } from 'lucide-react';
 
-const ITEMS_PER_PAGE = 20; // 💡 1ページに表示する件数
+const ITEMS_PER_PAGE = 20;
 
 export default function BooksPage() {
   const searchParams = useSearchParams();
@@ -15,17 +15,14 @@ export default function BooksPage() {
   const [sortBy, setSortBy] = useState('saved_count_desc');  
   const [user, setUser] = useState<any>(null);
 
-  // 💡 ページネーション用のState
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
-    // 💡 検索条件や並び替えが変わったら、ページ数を1ページ目に戻す
     setCurrentPage(1);
   }, [searchParams, sortBy]);
 
   useEffect(() => {
-    // 💡 ページ数が変わった瞬間に、画面のスクロール位置を一番上に強制移動させる
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
 
@@ -33,13 +30,24 @@ export default function BooksPage() {
     const fetchBooks = async () => {
       setLoading(true);
       
-      // 💡 クエリを2つ（本データ取得用、合計件数カウント用）作ります
-      let query = supabase.from('books').select('*', { count: 'exact' }); // count: 'exact' で条件に合う総件数を取得
+      let query = supabase.from('books').select('*', { count: 'exact' });
 
       const q = searchParams.get('q');
       const target = searchParams.get('target');
 
-      if (q) query = query.ilike('title', `%${q}%`);
+      // ─── 🔍 修正：届いたキーワードをスペースで分解してAND検索をかける ───
+      if (q) {
+        const keywords = q
+          .replace(/ /g, ' ') // 全角スペースを半角に
+          .trim()
+          .split(/\s+/)      // スペースで配列に分解
+          .filter(Boolean);  // 空の文字列を除去
+
+        // 💡 分解したすべてのキーワードが含まれるタイトルを探す（AND条件の連鎖）
+        keywords.forEach((keyword) => {
+          query = query.ilike('title', `%${keyword}%`);
+        });
+      }
 
       if (target === 'exam') {
         const subject = searchParams.get('subject');
@@ -67,13 +75,11 @@ export default function BooksPage() {
         if (publishers.length > 0) query = query.in('publisher', publishers);
       }
 
-      // 並び替えの適用
       if (sortBy === 'saved_count_desc') query = query.order('saved_count', { ascending: false });
       else if (sortBy === 'published_date_desc') query = query.order('published_date', { ascending: false });
       else if (sortBy === 'used_count_desc') query = query.order('used_count', { ascending: false });
       else if (sortBy === 'title_asc') query = query.order('title', { ascending: true });
 
-      // 💡 【超重要】ページ数に応じて、取得する範囲を20件に制限（これであのバグが消滅します！）
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
       query = query.range(from, to);
@@ -83,14 +89,13 @@ export default function BooksPage() {
       if (error) {
         console.error("検索エラー:", error);
       } else if (data) {
-        if (count !== null) setTotalItems(count); // 全体の合計件数をStateに保存
+        if (count !== null) setTotalItems(count);
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
           const bookIds = data.map(b => b.id);
           
-          // 💡 bookIdsは最大でも絶対に20個しか入らないので、絶対にパンクしません！
           const { data: userStatus } = await supabase
             .from('user_book_status')
             .select('book_id, is_saved, is_used')
@@ -115,7 +120,7 @@ export default function BooksPage() {
     };
 
     fetchBooks();
-  }, [searchParams, sortBy, currentPage]); // 💡 currentPage が変わるたびに再ロード
+  }, [searchParams, sortBy, currentPage]);
 
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
 
@@ -145,7 +150,7 @@ export default function BooksPage() {
     }
     if (target === 'publisher') {
       const pubs = searchParams.get('publishers')?.replace(/,/g, '・');
-      return pubs ? `「${pubs}」の検索結果` : '「すべての出版社」の検索結果';
+      return pubs ? `「${pubs}」の検索結果` : '「すべての出版社()」の検索結果';
     }
     return '検索結果';
   };
@@ -209,7 +214,7 @@ export default function BooksPage() {
                 router.push('/search');
               }
             }} 
-            className="text-sm text-blue-600 flex items-center font-bold w-fit hover:opacity-70 transition-opacity"
+            className="text-sm text-blue-600 flex items-center font-bold w-fit hover:opacity-70 transition-opacity cursor-pointer"
           >
             <ChevronLeft size={18} /> 条件を変更して再検索
           </button>
@@ -221,13 +226,12 @@ export default function BooksPage() {
             <div className="flex items-center gap-3 flex-shrink-0">
             {!loading && <span className="text-xs text-gray-400 font-bold">{books.length}件 / 全 {totalItems} 件</span>}
             
-            {/* 💡 上部用のミニページ遷移ボタン（1行でスッキリ収まります） */}
             {!loading && totalPages > 1 && (
               <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200/60">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform"
+                  className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform cursor-pointer"
                 >
                   <ChevronLeft size={14} strokeWidth={2.5} />
                 </button>
@@ -237,7 +241,7 @@ export default function BooksPage() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform"
+                  className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform cursor-pointer"
                 >
                   <ChevronRight size={14} strokeWidth={2.5} />
                 </button>
@@ -247,7 +251,7 @@ export default function BooksPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-                className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-500 font-bold shadow-sm"
+                className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-500 font-bold shadow-sm cursor-pointer"
               >
                 <option value="saved_count_desc">いいね数が多い順</option>
                 <option value="used_count_desc">使用者が多い順</option>
@@ -268,7 +272,6 @@ export default function BooksPage() {
                 onClick={() => router.push(`/books/${book.id}`)}
                 className="group bg-white rounded-2xl p-3.5 shadow-sm border border-gray-100/80 flex flex-row gap-4 hover:shadow-md hover:border-blue-100 transition-all cursor-pointer items-center"
               >
-                {/* 表紙画像 */}
                 <div className="w-24 h-32 md:w-24 md:h-32 bg-gray-50 rounded-xl flex-shrink-0 flex items-center justify-center text-gray-400 text-sm overflow-hidden border border-gray-200 shadow-sm relative">
                   {book.cover_url ? (
                     <img src={book.cover_url} alt="cover" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -277,7 +280,6 @@ export default function BooksPage() {
                   )}
                 </div>
                 
-                {/* コンテンツ全体 */}
                 <div className="flex-1 flex flex-col justify-between h-32 py-0.5">
                   <div>
                     <div className="mb-1.5">
@@ -291,7 +293,6 @@ export default function BooksPage() {
                   </div>
                   
                   <div className="flex flex-wrap items-center justify-start gap-x-6 gap-y-2 mt-auto">
-                    {/* 星評価 */}
                     <div className="flex items-center gap-1.5">
                       <div className="flex text-amber-400">
                         {[...Array(5)].map((_, i) => (
@@ -304,11 +305,10 @@ export default function BooksPage() {
                       <span className="text-xs font-bold text-gray-400">({book.review_count || 0})</span>
                     </div>
 
-                    {/* ボタンエリア */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button 
                         onClick={(e) => handleToggle(e, book.id, 'saved')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border cursor-pointer ${
                           book.user_status?.is_saved 
                             ? 'bg-pink-50 text-pink-600 border-pink-200 shadow-3xs' 
                             : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
@@ -320,7 +320,7 @@ export default function BooksPage() {
                       
                       <button 
                         onClick={(e) => handleToggle(e, book.id, 'used')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border cursor-pointer ${
                           book.user_status?.is_used 
                             ? 'bg-green-50 text-green-700 border border-green-200 shadow-3xs' 
                             : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
@@ -340,7 +340,7 @@ export default function BooksPage() {
                 <p className="text-gray-500 font-bold mb-2">条件に合う参考書がありません</p>
                 <button 
                   onClick={() => router.push(`/search?${searchParams.toString()}`)} 
-                  className="text-sm text-blue-600 flex items-center font-bold"
+                  className="text-sm text-blue-600 flex items-center font-bold cursor-pointer"
                 >
                   <ChevronLeft size={18} /> 再検索
                 </button>
@@ -350,7 +350,6 @@ export default function BooksPage() {
         )}
       </div>
 
-      {/* 💡 修正：fixedを解除して、一番下までスクロールした時だけ自然に現れるようにスタイルをスッキリさせました */}
       {!loading && books.length > 0 && (
         <div className="mt-8 flex items-center justify-center gap-6 bg-white py-5 border-t border-gray-200 shadow-2xs w-full max-w-7xl mx-auto px-4 rounded-b-2xl">
           <button

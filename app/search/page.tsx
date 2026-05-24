@@ -8,10 +8,17 @@ export default function SearchPage() {
   const router = useRouter();
   const [keywordSearchText, setKeywordSearchText] = useState('');
 
+  // 💡 修正：右側の虫眼鏡ボタンを押したときだけ、スペース区切りのクエリを作成して遷移します
   const handleKeywordSearch = () => {
-    if (keywordSearchText.trim() !== '') {
-      router.push(`/books?q=${encodeURIComponent(keywordSearchText.trim())}`);
-    }
+    const rawText = keywordSearchText.trim();
+    if (!rawText) return;
+
+    // 全角スペースを半角に変換し、連続するスペースを1つにまとめてから綺麗に成形
+    const cleanSearchQuery = rawText
+      .replace(/ /g, ' ')
+      .replace(/\s+/g, ' ');
+
+    router.push(`/books?q=${encodeURIComponent(cleanSearchQuery)}`);
   };
 
   return (
@@ -20,17 +27,21 @@ export default function SearchPage() {
       <div className="space-y-6">
         {/* キーワード検索窓 */}
         <div className="relative flex items-center">
+          {/* 💡 inputから onKeyDown を完全に削除し、キー入力での勝手な遷移をストップしました */}
           <input 
             type="text" 
             placeholder="参考書名やキーワードで検索" 
             value={keywordSearchText}
             onChange={(e) => setKeywordSearchText(e.target.value)}
-            // 💡 text-slate-800 font-bold を追加して、文字をハッキリと見やすくしました
             className="w-full bg-white border border-gray-200 rounded-2xl py-4 pl-12 pr-12 focus:outline-none focus:border-blue-500 shadow-sm text-slate-800 font-bold"
           />
           <Search className="absolute left-4 text-gray-400" size={20} />
-          {/* 💡 エンターキーを押したときだけでなく、ボタンクリックでも確実に検索を走らせます */}
-          <button onClick={handleKeywordSearch} className="absolute right-3 bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition-colors">
+          
+          {/* 🎯 このボタンをクリックした時のみ handleKeywordSearch が発火します */}
+          <button 
+            onClick={handleKeywordSearch} 
+            className="absolute right-3 bg-gray-100 p-2 rounded-xl text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+          >
             <Search size={18} />
           </button>
         </div>
@@ -40,7 +51,7 @@ export default function SearchPage() {
           <p className="text-sm font-bold text-gray-400 pl-1">参考書から探す</p>
           <button 
             onClick={() => router.push('/search/routes')}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 p-5 rounded-2xl shadow-md text-white flex items-center justify-between active:scale-[0.98] transition-all group"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 p-5 rounded-2xl shadow-md text-white flex items-center justify-between active:scale-[0.98] transition-all group cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-xl">
@@ -57,7 +68,6 @@ export default function SearchPage() {
 
         {/* カテゴリ別検索カード群 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* 💡 修正：アラートを消して、それぞれの独立したフォルダへrouter.pushするようにリンクを繋ぎました！ */}
           <MenuCard icon={<Pencil className="text-orange-500" />} title="教科" bgColor="bg-orange-50/60 hover:bg-orange-100/70" onClick={() => router.push('/search/subject')} />
           <MenuCard icon={<Bookmark className="text-green-500" />} title="出版社" bgColor="bg-green-50/60 hover:bg-green-100/70" onClick={() => router.push('/search/publisher')} />
           <MenuCard icon={<School className="text-blue-500" />} title="大学別" bgColor="bg-blue-50/60 hover:bg-blue-100/70" onClick={() => router.push('/search/university')} />
@@ -73,7 +83,7 @@ export default function SearchPage() {
               <h3 className="font-bold text-lg text-gray-800">教科書から探す</h3>
               <p className="text-xs text-gray-400 leading-relaxed">学校の教科書や、定期テスト対策用のガイド本を検索します。</p>
             </div>
-            <button onClick={() => router.push('/search/textbook')} className="mt-6 w-full bg-indigo-50 text-indigo-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-indigo-100 transition-colors">
+            <button onClick={() => router.push('/search/textbook')} className="mt-6 w-full bg-indigo-50 text-indigo-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-indigo-100 transition-colors cursor-pointer">
               教科書を開く <ChevronRight size={16} />
             </button>
           </div>
@@ -85,8 +95,7 @@ export default function SearchPage() {
               <h3 className="font-bold text-lg text-gray-800">共通テスト対策</h3>
               <p className="text-xs text-gray-400 leading-relaxed">黒本・赤本などの過去問から、各社の模試・予想パックまで網羅。</p>
             </div>
-            {/* 💡 クエリを使って共通テスト（exam）画面へリンク */}
-            <button onClick={() => router.push('/search/exam?type=center')} className="mt-6 w-full bg-sky-50 text-sky-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-sky-100 transition-colors">
+            <button onClick={() => router.push('/search/exam?type=center')} className="mt-6 w-full bg-sky-50 text-sky-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-sky-100 transition-colors cursor-pointer">
               共テ対策を開く <ChevronRight size={16} />
             </button>
           </div>
@@ -98,8 +107,7 @@ export default function SearchPage() {
               <h3 className="font-bold text-lg text-gray-800">私大・2次試験対策</h3>
               <p className="text-xs text-gray-400 leading-relaxed">大学別過去問（赤本）や、二次試験レベルの記述対策問題集。</p>
             </div>
-            {/* 💡 クエリを使って私大2次（exam）画面へリンク */}
-            <button onClick={() => router.push('/search/exam?type=secondary')} className="mt-6 w-full bg-rose-50 text-rose-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors">
+            <button onClick={() => router.push('/search/exam?type=secondary')} className="mt-6 w-full bg-rose-50 text-rose-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors cursor-pointer">
               2次対策を開く <ChevronRight size={16} />
             </button>
           </div>
@@ -114,7 +122,7 @@ function MenuCard({ icon, title, bgColor, onClick }: { icon: React.ReactNode, ti
   return (
     <button 
       onClick={onClick} 
-      className={`p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-4 active:scale-95 transition-all w-full h-32 ${bgColor}`}
+      className={`p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-4 active:scale-95 transition-all w-full h-32 cursor-pointer ${bgColor}`}
     >
       <div className="p-3 bg-white rounded-xl text-2xl shadow-sm">{icon}</div>
       <span className="font-bold text-gray-700 text-sm">{title}</span>

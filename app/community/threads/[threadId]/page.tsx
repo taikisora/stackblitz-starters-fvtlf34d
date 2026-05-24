@@ -191,9 +191,10 @@ export default function ThreadDetailPage() {
     }
   };
 
-  // 本文のテキストを解析して「アンカー」や「参考書リンク」に置換
+  // ─── 💡 修正：参考書の自動バッジ化を廃止し、アンカー（>>）だけを解析するシンプル仕様に変更 ───
   const renderFormattedContent = (content: string, currentCommentId: string) => {
-    const regex = /(>>\d+)|(LEAP|青チャート|ターゲット|一対一|ポラリス|ネクステ|鉄壁|プラチカ|システム英単語)/g;
+    // 正規表現から参考書ワードを除外し、アンカーだけに絞ります
+    const regex = /(>>\d+)/g;
     const parts = content.split(regex);
     
     if (parts.length === 1) return content;
@@ -201,12 +202,12 @@ export default function ThreadDetailPage() {
     return parts.map((part, index) => {
       if (!part) return null;
 
+      // アンカー（>>番号）のときだけ、固定ポップアップを表示する
       if (part.startsWith('>>')) {
         const num = parseInt(part.replace('>>', ''), 10);
         return (
           <span
             key={index}
-            /* 💡 修正：いま読んでいる枠の一意なID（UUID）を関数に渡してガチッと紐付けます */
             onClick={(e) => showAnchorPopup(num, currentCommentId, e)}
             className="text-blue-600 font-black cursor-pointer bg-blue-50 px-1 py-0.5 rounded hover:bg-blue-100 transition-colors mx-0.5 text-[11px]"
           >
@@ -215,20 +216,7 @@ export default function ThreadDetailPage() {
         );
       }
 
-      if (BOOK_KEYWORDS.includes(part)) {
-        return (
-          <button
-            key={index}
-            type="button"
-            onClick={() => router.push(`/search?query=${encodeURIComponent(part)}`)}
-            className="inline-flex items-center gap-0.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 font-black text-[10px] text-slate-700 px-1.5 py-0.5 rounded-lg border border-slate-200/60 transition-colors mx-0.5 shadow-3xs cursor-pointer"
-          >
-            <BookOpen size={10} />
-            {part}
-          </button>
-        );
-      }
-
+      // ターゲットや青チャートなどの文字列は、そのまま普通のプレーンテキストとして返します
       return part;
     });
   };
