@@ -410,7 +410,7 @@ export default function BookDetailPage() {
                 }`}
               >
                 <BookOpen size={14} fill={status.is_used ? "currentColor" : "none"} strokeWidth={2.5} />
-                <span className="truncate">{status.is_used ? '使用中' : 'この本を使用'}</span>
+                <span className="truncate">{status.is_used ? '使用中' : '使用する'}</span>
                 <span className="px-1 py-0.2 text-[9px] rounded bg-black/5 shrink-0">{book.used_count || 0}</span>
               </button>
               
