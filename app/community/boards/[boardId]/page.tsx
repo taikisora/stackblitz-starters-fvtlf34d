@@ -227,7 +227,21 @@ export default function BoardPage() {
                 {/* 投稿者と日時のメタ情報 */}
                 <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold">
                   <div className="flex items-center gap-1">
-                    <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white shrink-0">
+                    {/* 💡 修正：未設定・該当なしの場合は、見本通り完全に bg-gray-500 にします */}
+                    <div 
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0 border border-black/5 shadow-3xs overflow-hidden ${
+                        thread.profiles?.avatar_color === 'red' ? 'bg-red-500' :
+                        thread.profiles?.avatar_color === 'orange' ? 'bg-orange-500' :
+                        thread.profiles?.avatar_color === 'amber' ? 'bg-amber-500' :
+                        thread.profiles?.avatar_color === 'emerald' ? 'bg-emerald-500' :
+                        thread.profiles?.avatar_color === 'sky' ? 'bg-sky-500' :
+                        thread.profiles?.avatar_color === 'blue' ? 'bg-blue-500' :
+                        thread.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
+                        thread.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
+                        thread.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
+                        'bg-gray-500' /* 👈 ここを元の仕様通り bg-gray-500 に修正しました */
+                      }`}
+                    >
                       <User size={11} className="stroke-[3]" />
                     </div>
                     <span className="text-slate-500 truncate max-w-[120px]">
@@ -292,7 +306,7 @@ export default function BoardPage() {
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="例：【英語】LEAP使ってる人、回し方語ろう"
+                  placeholder="例：【英語】ターゲット？シス単？LEAP？最強の単語帳はどれか語ろう"
                   maxLength={70}
                   className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs md:text-sm font-bold text-slate-800 shadow-3xs transition-all"
                 />

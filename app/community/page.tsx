@@ -161,9 +161,22 @@ export default function CommunityPage() {
                   <h4 className="font-extrabold text-xs text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-2 leading-relaxed">
                     {thread.title}
                   </h4>
-                  {/* 💡 修正：青い「U」をオレンジの人型アイコンに統一 */}
+                  {/* 💡 修正：参考書ルートと同じロジックを移植し、avatar_colorの単語（redやorange）に応じてTailwindの背景色を当てはめます */}
                   <div className="mt-2 flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white shrink-0">
+                    <div 
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-white shrink-0 border border-black/5 shadow-3xs overflow-hidden ${
+                        thread.profiles?.avatar_color === 'red' ? 'bg-red-500' :
+                        thread.profiles?.avatar_color === 'orange' ? 'bg-orange-500' :
+                        thread.profiles?.avatar_color === 'amber' ? 'bg-amber-500' :
+                        thread.profiles?.avatar_color === 'emerald' ? 'bg-emerald-500' :
+                        thread.profiles?.avatar_color === 'sky' ? 'bg-sky-500' :
+                        thread.profiles?.avatar_color === 'blue' ? 'bg-blue-500' :
+                        thread.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
+                        thread.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
+                        thread.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
+                        'bg-orange-500' /* 👈 カラーが未設定、または該当しない場合のデフォルトは綺麗なオレンジ */
+                      }`}
+                    >
                       <User size={11} className="stroke-[3]" />
                     </div>
                     <span className="text-[9px] text-slate-400 font-bold">{thread.profiles?.username || '名無し'}</span>

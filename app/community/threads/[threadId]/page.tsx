@@ -196,7 +196,7 @@ export default function ThreadDetailPage() {
   };
 
   // 本文のテキストを解析して「アンカー」や「参考書リンク」に置換
-  const renderFormattedContent = (content: string) => {
+  const renderFormattedContent = (content: string, currentCommentNumber: number) => {
     const regex = /(>>\d+)|(LEAP|青チャート|ターゲット|一対一|ポラリス|ネクステ|鉄壁|プラチカ|システム英単語)/g;
     const parts = content.split(regex);
     
@@ -210,7 +210,8 @@ export default function ThreadDetailPage() {
         return (
           <span
             key={index}
-            onClick={(e) => showAnchorPopup(num, e)}
+            /* 💡 いま読んでいるカードのコメント番号も一緒に渡します */
+            onClick={(e) => showAnchorPopup(num, currentCommentNumber, e)}
             className="text-blue-600 font-black cursor-pointer bg-blue-50 px-1 py-0.5 rounded hover:bg-blue-100 transition-colors mx-0.5 text-[11px]"
           >
             {part}
@@ -236,11 +237,13 @@ export default function ThreadDetailPage() {
     });
   };
 
-  const showAnchorPopup = (num: number, e: React.MouseEvent) => {
+  /* 💡 修正：ズレる座標の記録をやめ、現在のコメント番号をxに退避させて枠を完全固定 */
+  const showAnchorPopup = (num: number, currentCommentNumber: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     const targetComment = comments.find(c => c.comment_number === num);
     if (targetComment) {
       setHoveredComment(targetComment);
-      setPopupPosition({ x: e.clientX, y: e.clientY - 120 });
+      setPopupPosition({ x: currentCommentNumber, y: 0 });
     } else {
       alert(`>>${num} のコメントは見つかりませんでした。`);
     }
@@ -264,8 +267,6 @@ export default function ThreadDetailPage() {
       {/* 🏆 スレッド大タイトル（パンくずリスト付き） */}
       {thread && (
         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6 space-y-3">
-          
-          {/* 💡 修正：大学受験 ＞ 旧帝大・国公立 板 の階層ナビゲーション */}
           <div className="flex items-center gap-1.5 text-[11px] font-black tracking-tight text-slate-400">
             <span>
               {thread.main_topic === 'university' ? '大学受験' : 
@@ -302,8 +303,23 @@ export default function ThreadDetailPage() {
                 <span className="font-black text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">
                   {comment.comment_number}
                 </span>
+                
+                {/* 💡 修正①：個々のコメントのアイコンも動的カラー分岐を完全に移植 */}
                 <div className="flex items-center justify-center shrink-0">
-                    <div className={`w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white`}>
+                    <div 
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-white border border-black/5 shadow-3xs overflow-hidden ${
+                        comment.profiles?.avatar_color === 'red' ? 'bg-red-500' :
+                        comment.profiles?.avatar_color === 'orange' ? 'bg-orange-500' :
+                        comment.profiles?.avatar_color === 'amber' ? 'bg-amber-500' :
+                        comment.profiles?.avatar_color === 'emerald' ? 'bg-emerald-500' :
+                        comment.profiles?.avatar_color === 'sky' ? 'bg-sky-500' :
+                        comment.profiles?.avatar_color === 'blue' ? 'bg-blue-500' :
+                        comment.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
+                        comment.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
+                        comment.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
+                        'bg-orange-500'
+                      }`}
+                    >
                         <User size={13} className="stroke-[3]" />
                     </div>
                 </div>
@@ -318,7 +334,6 @@ export default function ThreadDetailPage() {
                   {new Date(comment.created_at).toLocaleDateString('ja-JP')}
                 </span>
                 
-                {/* 💡 自分が書き込んだコメントにだけ、コンパクトなゴミ箱ボタンを表示 */}
                 {user && comment.user_id === user.id && (
                   <button
                     type="button"
@@ -378,6 +393,50 @@ export default function ThreadDetailPage() {
                 <span>返信</span>
               </button>
             </div>
+
+            {/* 💡 修正②：アンカーポップアップを『今読んでいるこのカード』の中に完全に内包させて、ジャストフィットで重ねる */}
+            {hoveredComment && popupPosition.x === comment.comment_number && (
+              <div className="absolute inset-0 z-30 bg-white text-slate-800 p-4 rounded-2xl shadow-xl border border-slate-200/80 flex flex-col justify-between animate-fade-in">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-md border border-blue-100">
+                        {`>>`}{hoveredComment.comment_number}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {/* ポップアップ内の相手のアイコンも分岐カラーを適用 */}
+                        <div 
+                          className={`w-4 h-4 rounded-full flex items-center justify-center text-white shrink-0 border border-black/5 overflow-hidden ${
+                            hoveredComment.profiles?.avatar_color === 'red' ? 'bg-red-500' :
+                            hoveredComment.profiles?.avatar_color === 'orange' ? 'bg-orange-500' :
+                            hoveredComment.profiles?.avatar_color === 'amber' ? 'bg-amber-500' :
+                            hoveredComment.profiles?.avatar_color === 'emerald' ? 'bg-emerald-500' :
+                            hoveredComment.profiles?.avatar_color === 'sky' ? 'bg-sky-500' :
+                            hoveredComment.profiles?.avatar_color === 'blue' ? 'bg-blue-500' :
+                            hoveredComment.profiles?.avatar_color === 'indigo' ? 'bg-indigo-500' :
+                            hoveredComment.profiles?.avatar_color === 'purple' ? 'bg-purple-500' :
+                            hoveredComment.profiles?.avatar_color === 'pink' ? 'bg-pink-500' :
+                            'bg-orange-500'
+                          }`}
+                        >
+                          <User size={9} className="stroke-[3]" />
+                        </div>
+                        <span className="text-[10px] font-extrabold text-slate-700">
+                          {hoveredComment.profiles?.username || '名無し'}
+                        </span>
+                      </div>
+                    </div>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); setHoveredComment(null); }} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-0.5">
+                      <X size={13} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                  <p className="text-xs leading-relaxed text-slate-800 font-bold whitespace-pre-wrap line-clamp-4 break-words">
+                    {hoveredComment.content}
+                  </p>
+                </div>
+              </div>
+            )}
+
           </div>
         ))}
       </div>
