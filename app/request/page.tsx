@@ -131,12 +131,13 @@ export default function RequestPage() {
                 <label className="text-xs font-bold text-gray-600 mb-1.5 block">
                   参考書のタイトル <span className="text-gray-400 font-medium">(判る範囲でOK)</span>
                 </label>
+                {/* 💡 修正：text-slate-800 と font-bold、placeholder:font-bold を追加して、入力文字がくっきり見えるようにしました */}
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="例: 青チャート 数学I+A"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm font-medium transition-colors"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 placeholder:text-gray-400 placeholder:font-bold transition-all shadow-3xs"
                 />
               </div>
             )}
@@ -148,12 +149,13 @@ export default function RequestPage() {
                 {type === 'update' && 'どの情報のどこを修正すべきか'}
                 {type === 'opinion' && '不具合報告や、アプリへのご意見・ご感想'}
               </label>
+              {/* 💡 修正：こちらも text-slate-800 と font-bold、placeholder:font-bold をしっかりと指定 */}
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="こちらに入力してください..."
                 rows={5}
-                className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-gray-50 focus:outline-none focus:border-blue-500 focus:bg-white transition-all min-h-[140px]"
+                className="w-full text-sm font-bold text-slate-800 border border-gray-200 rounded-xl p-3 bg-gray-50 focus:outline-none focus:border-blue-500 focus:bg-white placeholder:text-gray-400 placeholder:font-bold transition-all shadow-3xs min-h-[140px]"
               />
             </div>
 
