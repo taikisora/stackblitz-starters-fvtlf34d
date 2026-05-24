@@ -8,6 +8,25 @@ import {
   MessageSquare, BookOpen, X, User, CornerUpLeft, Trash2 
 } from 'lucide-react';
 
+// 表示用の日本語板名マッピング
+const BOARD_NAMES: { [key: string]: string } = {
+    waseda_keio: '早慶上理',
+    imperial: '旧帝大・国公立',
+    gmarch: 'GMARCH',
+    kankan_douritsu: '関関同立',
+    other_univ: 'その他大学',
+    target_general: '志望校総合・悩み',
+    english: '英語参考書',
+    math: '数学参考書',
+    japanese: '国語参考書',
+    science: '理科参考書',
+    social: '社会参考書',
+    study_method: '勉強方法',
+    exam_info: '入試情報',
+    free_talk: 'フリートーク',
+    study_log: '今日の勉強報告',
+  };
+
 export default function ThreadDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -242,13 +261,28 @@ export default function ThreadDetailPage() {
         </button>
       </div>
 
-      {/* スレッド大タイトル */}
+      {/* 🏆 スレッド大タイトル（パンくずリスト付き） */}
       {thread && (
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6">
-          <span className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md uppercase tracking-wider mb-2 inline-block">
-            {thread.category}
-          </span>
-          <h1 className="text-base md:text-xl font-black text-slate-900 leading-snug">
+        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6 space-y-3">
+          
+          {/* 💡 修正：大学受験 ＞ 旧帝大・国公立 板 の階層ナビゲーション */}
+          <div className="flex items-center gap-1.5 text-[11px] font-black tracking-tight text-slate-400">
+            <span>
+              {thread.main_topic === 'university' ? '大学受験' : 
+               thread.main_topic === 'book' ? '参考書' : 
+               thread.main_topic === 'qa' ? 'Q&A' : '雑談'}
+            </span>
+            <span className="text-slate-300 font-normal">＞</span>
+            <button
+              type="button"
+              onClick={() => router.push(`/community/boards/${thread.category}`)}
+              className="text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors"
+            >
+              {BOARD_NAMES[thread.category] || '掲示板'}
+            </button>
+          </div>
+
+          <h1 className="text-base md:text-xl font-black text-slate-900 leading-snug pt-0.5">
             {thread.title}
           </h1>
         </div>

@@ -63,18 +63,24 @@ export default function MyPage() {
 
       const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       if (data) {
+        // 💡 修正：データベースの値が「未定」の時だけ、画面上のチェックボックスをONにして、入力欄を空文字にする
+        const isUndecided = data.university === '未定';
+        // 💡 修正：データベースの値が「無し」の場合も、画面上では空欄（''）にしてあげる
+        const isNone = data.university === '無し';
+
         const loadedProfile = {
           username: data.username || 'ユーザー',
           status: data.status || '',
           stream: data.stream || '',
-          university: data.university || '',
+          university: (isUndecided || isNone) ? '' : (data.university || ''),
           university2: data.university2 || '',
           university3: data.university3 || '',
           avatar_color: data.avatar_color || 'gray'
         };
+        
         setProfile(loadedProfile);
         setEditData(loadedProfile);
-        setIsUniUndecided(!data.university);
+        setIsUniUndecided(isUndecided); // 👈 「未定」という意思表示がある場合のみON
       }
       setLoading(false);
     };
@@ -115,8 +121,11 @@ export default function MyPage() {
       updateData.university2 = null;
       updateData.university3 = null;
     } else {
-      updateData.stream = (!editData.stream || editData.stream === 'undecided') ? null : editData.stream;
-      updateData.university = isUniUndecided ? null : editData.university.trim();
+      // 💡 修正：日本語表記でDBを確実に埋める
+      updateData.stream = editData.stream === 'undecided' ? '未定' : (editData.stream === 'humanities' ? '文系' : '理系');
+      
+      // 💡 修正：「まだ決めていない（未定）」にチェックがあれば、DBへ「未定」という固定文字を送る
+      updateData.university = isUniUndecided ? '未定' : (editData.university.trim() || null);
       updateData.university2 = editData.university2.trim() || null;
       updateData.university3 = editData.university3.trim() || null;
     }
@@ -156,7 +165,8 @@ export default function MyPage() {
     }
   };
 
-  const isUni1Valid = isUniUndecided || UNIVERSITY_LIST.includes(editData.university.trim());
+  // 💡 修正：チェックが入っているか、入力文字が「未定」か、正式な大学名であれば保存ボタンを押せるようにする
+  const isUni1Valid = isUniUndecided || editData.university.trim() === '未定' || UNIVERSITY_LIST.includes(editData.university.trim());
   const isUni2Valid = editData.university2.trim() === '' || UNIVERSITY_LIST.includes(editData.university2.trim());
   const isUni3Valid = editData.university3.trim() === '' || UNIVERSITY_LIST.includes(editData.university3.trim());
 

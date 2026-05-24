@@ -29,7 +29,12 @@ export default function OnboardingPage() {
         router.push('/login');
       } else {
         setUser(session.user);
-        const { data } = await supabase.from('profiles').select('username').eq('id', session.user.id).single();
+        const { data } = await supabase.from('profiles').select('username, is_onboarded').eq('id', session.user.id).single();
+        
+        if (data && data.is_onboarded) {
+          router.push('/');
+          return;
+        }
         if (data && data.username) setUsername(data.username);
       }
     };
@@ -54,12 +59,11 @@ export default function OnboardingPage() {
     setShowSuggestions(true);
   };
 
-  // 💡 修正された保存処理（スキップ不可・デフォルト上書きバグを修正）
+  // 💡 保存処理（NULLにせず「未定」「無し」の文字で埋める）
   const handleSave = async () => {
-    // 🚨 最終チェック：万が一名前が空欄なら、絶対に保存させない
     if (!username.trim()) {
       alert('お名前を入力してください。');
-      setStep(1); // 名前入力画面に強制的に引き戻す
+      setStep(1);
       return;
     }
 
@@ -67,18 +71,18 @@ export default function OnboardingPage() {
 
     const updateData: any = {
       id: user?.id,
-      username: username.trim(), // 👈 入力された名前を確実にそのまま保存（「ユーザー」で上書きさせない）
+      username: username.trim(),
       status: status,
       is_onboarded: true,
     };
 
-    // ステータスが「その他」なら文理・大学は強制的に null
+    // 💡 修正：NULLではなく、明確な文字列で埋める
     if (status === 'other') {
-      updateData.stream = null;
-      updateData.university = null;
+      updateData.stream = 'その他';
+      updateData.university = '無し';
     } else {
-      updateData.stream = stream === 'undecided' ? null : stream;
-      updateData.university = isUniUndecided ? null : university.trim();
+      updateData.stream = stream === 'undecided' ? '未定' : (stream === 'humanities' ? '文系' : '理系');
+      updateData.university = isUniUndecided ? '未定' : university.trim();
     }
 
     const { error } = await supabase.from('profiles').upsert(updateData);
@@ -87,7 +91,6 @@ export default function OnboardingPage() {
       alert('保存に失敗しました: ' + error.message);
       setLoading(false);
     } else {
-      // 保存が完了したら、気持ちよくホーム画面へリダイレクト！
       window.location.href = '/';
     }
   };
@@ -99,15 +102,7 @@ export default function OnboardingPage() {
   return (
     <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 relative">
       
-      {/* 💡 修正：STEP 1（名前入力）のときだけは、右上の「あとで設定する」を絶対に表示させない */}
-      {step > 1 && (
-        <button 
-          onClick={handleSave} // 👈 あとで設定する場合も、それまでに入力した名前を正しく保持して保存
-          className="absolute top-6 right-6 text-sm text-gray-400 hover:text-gray-600 font-medium"
-        >
-          あとで設定する
-        </button>
-      )}
+      {/* 💡 修正：「あとで設定する」のボタンコードを完全に消去しました */}
 
       {/* 進捗バー */}
       <div className="w-full bg-gray-100 h-2 rounded-full mb-8 mt-8">
@@ -117,7 +112,7 @@ export default function OnboardingPage() {
         />
       </div>
 
-      {/* ── STEP 1: ユーザーネーム ── */}
+      {/* STEP 1: ユーザーネーム */}
       {step === 1 && (
         <div className="animate-fade-in">
           <h2 className="text-xl font-bold mb-2 text-center text-gray-800">お名前を教えてください</h2>
@@ -138,7 +133,7 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* ── STEP 2: 現在のステータス ── */}
+      {/* STEP 2: 現在のステータス */}
       {step === 2 && (
         <div className="animate-fade-in">
           <h2 className="text-xl font-bold mb-6 text-center text-gray-800">現在の状況を教えてください</h2>
@@ -184,7 +179,7 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* ── STEP 3: 文理の選択 ── */}
+      {/* STEP 3: 文理の選択 */}
       {step === 3 && (
         <div className="animate-fade-in">
           <h2 className="text-xl font-bold mb-6 text-center text-gray-800">文系·理系どちらですか？</h2>
@@ -219,7 +214,7 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* ── STEP 4: 大学名の入力 ── */}
+      {/* STEP 4: 大学名の入力 */}
       {step === 4 && (
         <div className="animate-fade-in">
           <h2 className="text-xl font-bold mb-4 text-center text-gray-800">
@@ -273,7 +268,7 @@ export default function OnboardingPage() {
           </div>
 
           <button
-            onClick={handleSave} // 👈 修正：引数を排除してシンプルなセーブに変更
+            onClick={handleSave}
             disabled={loading || (!isUniUndecided && !isUniversityValid)}
             className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300"
           >

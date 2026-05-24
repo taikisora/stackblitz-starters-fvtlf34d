@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { 
   Trophy, Book, HelpCircle, MessageCircle, 
-  ChevronRight, MessageSquare, Flame, Clock
+  ChevronRight, MessageSquare, Flame, Clock, User
 } from 'lucide-react';
 
 // ─── 1. カテゴリデータの定義 ───
@@ -27,7 +27,7 @@ const CATEGORIES: { [key: string]: { id: string; name: string; description: stri
   ],
   book: [
     { id: 'english', name: '英語参考書', description: '単語・文法・長文など英語教材の議論' },
-    { id: 'math', name: '数学参考書', description: '数!A・数IIB・数IIICなど数学教材の議論' },
+    { id: 'math', name: '数学参考書', description: '数IA・数IIB・数IIICなど数学教材の議論' },
     { id: 'japanese', name: '国語参考書', description: '現代文・古文・漢文の教材議論' },
     { id: 'science', name: '理科参考書', description: '物理・化学・生物・地学の教材やルート議論' }, // 💡 理社から理科に独立
     { id: 'social', name: '社会参考書', description: '日本史・世界史・地理・公共などの教材議論' }, // 💡 社会に独立
@@ -146,9 +146,12 @@ export default function CommunityPage() {
                   onClick={() => router.push(`/community/threads/${thread.id}`)}
                   className="w-full p-4 hover:bg-slate-50 transition-colors text-left group"
                 >
+                  {/* 💡 修正：英語表記を日本語マッピングに変換 */}
                   <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="text-[8px] font-black bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded uppercase tracking-tighter">
-                      {thread.main_topic}
+                    <span className="text-[8px] font-black bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded tracking-tighter">
+                      {thread.main_topic === 'university' ? '大学受験' : 
+                       thread.main_topic === 'book' ? '参考書' : 
+                       thread.main_topic === 'qa' ? 'Q&A' : '雑談'}
                     </span>
                     <span className="text-[8px] text-slate-400 font-bold flex items-center gap-0.5">
                       <Clock size={10} />
@@ -158,9 +161,10 @@ export default function CommunityPage() {
                   <h4 className="font-extrabold text-xs text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-2 leading-relaxed">
                     {thread.title}
                   </h4>
+                  {/* 💡 修正：青い「U」をオレンジの人型アイコンに統一 */}
                   <div className="mt-2 flex items-center gap-1.5">
-                    <div className={`w-3.5 h-3.5 rounded-full bg-${thread.profiles?.avatar_color || 'gray'}-500 flex items-center justify-center`}>
-                      <span className="text-[6px] text-white font-bold">U</span>
+                    <div className="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center text-white shrink-0">
+                      <User size={11} className="stroke-[3]" />
                     </div>
                     <span className="text-[9px] text-slate-400 font-bold">{thread.profiles?.username || '名無し'}</span>
                   </div>

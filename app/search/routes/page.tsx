@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
-import { ChevronLeft, Search, User, Heart, MessageCircle, BookOpen, ArrowDown, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Search, User, Heart, MessageCircle, BookOpen, ArrowDown, ChevronRight, LogIn } from 'lucide-react';
 
 const SUBJECT_DATA = { 
   '英語': ['英語（総合）', '英単語', '英熟語', '英文法', '長文', 'リスニング', '英作文', 'その他（英語）'], 
@@ -24,7 +24,7 @@ export default function RouteSearchPage() {
   const [activeRouteTab, setActiveRouteTab] = useState('all');
   const [user, setUser] = useState<any>(null);
 
-  // 💡 ページネーション用の状態
+  // ページネーション用の状態
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
@@ -36,7 +36,7 @@ export default function RouteSearchPage() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
 
-  // 💡 データをロードする関数を独立化
+  // データをロードする関数
   const fetchRoutesData = useCallback(async (isSilent = false) => {
     if (!isSilent) setRoutesLoading(true);
     try {
@@ -45,6 +45,8 @@ export default function RouteSearchPage() {
       if (session) {
         setUser(session.user);
         currentUser = session.user;
+      } else {
+        setUser(null); // 未ログイン状態を明示的にセット
       }
 
       // 1. フィルタリングと総件数取得のためのベースクエリを構築
@@ -78,7 +80,7 @@ export default function RouteSearchPage() {
 
       query = query.order('created_at', { ascending: false });
 
-      // 💡 20件制限の範囲指定を適用
+      // 20件制限の範囲指定を適用
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
       query = query.range(from, to);
@@ -114,7 +116,6 @@ export default function RouteSearchPage() {
     }
   }, [currentPage, activeRouteTab, selectedRouteSubject, routeSearchQuery]);
 
-  // 💡 画面初回読み込み ＆ 戻り時フォーカス検知で完全同期
   useEffect(() => {
     fetchRoutesData();
 
@@ -129,7 +130,7 @@ export default function RouteSearchPage() {
 
   const handleRouteLike = async (routeId: string) => {
     if (!user) {
-      alert('この機能を使うにはログインが必要です！\nマイページからログインしてください。');
+      alert('この機能を使うにはログインが必要です。ログイン画面へ移動します。');
       router.push('/login');
       return;
     }
@@ -173,8 +174,8 @@ export default function RouteSearchPage() {
             <ChevronLeft size={18} /> 検索メニューへ
           </button>
           
-          {/* 💡 上部ミニページ遷移ボタン */}
-          {!routesLoading && totalPages > 1 && (
+          {/* 上部ミニページ遷移ボタン */}
+          {!routesLoading && user && totalPages > 1 && (
             <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200/60">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -197,18 +198,17 @@ export default function RouteSearchPage() {
           )}
 
           <div className="flex items-center gap-2">
-            {!routesLoading && <span className="text-xs text-gray-400 font-bold">全 {totalItems} 件</span>}
+            {!routesLoading && user && <span className="text-xs text-gray-400 font-bold">全 {totalItems} 件</span>}
           </div>
         </div>
 
-          {/* 検索窓 */}
+        {/* 検索窓 */}
         <div className="relative flex items-center">
           <input 
             type="text" 
             placeholder="題名、説明、本で検索" 
             value={routeSearchQuery}
             onChange={(e) => setRouteSearchQuery(e.target.value)}
-            // 💡 text-slate-800 font-bold を追加して、入力文字をハッキリ見えるように修正
             className="w-full bg-white border border-gray-200 rounded-2xl py-3.5 pl-11 pr-4 focus:outline-none focus:border-blue-500 shadow-xs text-sm text-slate-800 font-bold"
           />
           <Search className="absolute left-4 text-gray-400" size={16} />
@@ -265,15 +265,33 @@ export default function RouteSearchPage() {
           </div>
         )}
 
-<div className="space-y-4 md:space-y-5 pt-1">
+        <div className="space-y-4 md:space-y-5 pt-1">
           {routesLoading ? (
             <div className="text-center py-20 text-gray-400 font-bold animate-pulse text-sm">ルートを読み込み中...</div>
-          ) : publicRoutes.length === 0 ? ( /* 💡 filteredRoutes ➔ publicRoutes に修正 */
+          ) : !user ? (
+            /* 💡 修正：未ログインの場合に「見つかりません」ではなく、ログインボタンを配置した案内画面を出す */
+            <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-2xs p-6 flex flex-col items-center justify-center space-y-5">
+              <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-sm">
+                <User size={24} className="stroke-[2.5]" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-black text-slate-800 text-sm md:text-base">参考書ルートを閲覧するにはログインが必要です</h4>
+                <p className="text-gray-400 font-bold text-xs">アカウントを作成またはログインすると、先輩たちのルートがすべて見放題になります。</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push('/login')}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm px-6 py-3 rounded-xl shadow-3xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <LogIn size={15} strokeWidth={3} />
+                ログイン・アカウント作成画面へ
+              </button>
+            </div>
+          ) : publicRoutes.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-2xs">
               <p className="text-gray-400 font-bold text-sm">条件に合う参考書ルートが見つかりませんでした。</p>
             </div>
           ) : (
-            /* 💡 filteredRoutes ➔ publicRoutes に修正 */
             publicRoutes.map((route) => {
                 const sortedBooks = [...(route.route_books || [])].sort((a, b) => a.sort_order - b.sort_order);
                 const isLiked = route.user_liked;
@@ -367,8 +385,8 @@ export default function RouteSearchPage() {
         </div>
       </div>
 
-      {/* 💡 下部固定ではない、ページ最下部にひっそり配置する遷移ボタン */}
-      {!routesLoading && publicRoutes.length > 0 && (
+      {/* 下部固定ではない、ページ最下部にひっそり配置する遷移ボタン */}
+      {!routesLoading && user && publicRoutes.length > 0 && (
         <div className="mt-8 flex items-center justify-center gap-6 bg-white py-5 border-t border-gray-200 shadow-2xs w-full max-w-3xl mx-auto px-4 rounded-b-2xl">
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}

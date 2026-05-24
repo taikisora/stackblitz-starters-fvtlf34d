@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Route as RouteIcon, Plus, Lock, Globe, BookOpen, Trash2, Edit2, AlertCircle, ChevronRight } from 'lucide-react';
+import { Route as RouteIcon, Plus, Lock, Globe, BookOpen, Trash2, Edit2, AlertCircle, ChevronRight, User, LogIn } from 'lucide-react';
 
 export default function LearningDataPage() {
   const router = useRouter();
@@ -15,11 +15,16 @@ export default function LearningDataPage() {
 
   useEffect(() => {
     const fetchRoutes = async () => {
+      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
-        router.push('/login');
+        // 💡 修正：強制リダイレクトをせず、未ログイン状態で読み込みを完了させる
+        setUser(null);
+        setLoading(false);
         return;
       }
+      
       setUser(session.user);
 
       const { data, error } = await supabase
@@ -69,6 +74,35 @@ export default function LearningDataPage() {
 
   if (loading) return <p className="text-center py-20 text-gray-500 font-bold animate-pulse">ルートを読み込み中...</p>;
 
+  // 💡 未ログイン時の誘導ガード画面（絵文字なし・クリーンUI）
+  if (!user) {
+    return (
+      <div className="p-4 md:p-6 max-w-3xl mx-auto bg-gray-50 min-h-screen pb-24 pt-16 flex flex-col items-center justify-center">
+        <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-2xs p-8 flex flex-col items-center justify-center space-y-5 text-center">
+          <div className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-sm">
+            <User size={24} className="stroke-[2.5]" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-black text-slate-800 text-sm md:text-base">
+              マイ参考書ルートの管理にはログインが必要です
+            </h4>
+            <p className="text-gray-400 font-bold text-xs max-w-md leading-relaxed">
+              アカウントを作成またはログインすると、志望校合格に向けた自分だけのオリジナル参考書ルートを最大15個まで自由に作成・保存できます。
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/login')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm px-6 py-3 rounded-xl shadow-3xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <LogIn size={15} strokeWidth={3} />
+            ログイン・アカウント作成画面へ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const isLimitReached = routes.length >= MAX_ROUTES;
 
   return (
@@ -100,7 +134,6 @@ export default function LearningDataPage() {
           router.push('/learning-data/new');
         }}
         disabled={isLimitReached}
-        /* 💡 修正箇所：環境を問わず確実にグラデーションが出る bg-gradient-to-r (v3表記) に戻し、万が一の未対応環境に備えて bg-blue-600 も標準装備しました */
         className={`w-full mb-6 py-3.5 flex items-center justify-center gap-2 font-black rounded-2xl shadow-sm border transition-all active:scale-[0.99] text-sm md:text-base ${
           isLimitReached
             ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
