@@ -65,8 +65,6 @@ export default function EditRoutePage() {
 
         if (booksData) {
           const orderedBooks = booksData.map(rb => {
-            // 💡 もしデータベースから返ってきた本（books）のIDがカスタム参考書のものなら、
-            // タイトルやサブテキストが真っ新のデフォルトに戻らないよう、明示的に上書きして復元する
             if (rb.books && rb.books.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
               return {
                 ...rb.books,
@@ -124,7 +122,7 @@ export default function EditRoutePage() {
     }
 
     setIsSearching(true);
-    const { data, error } = await supabase
+    const { data, error = null } = await supabase
       .from('books')
       .select('*')
       .ilike('title', `%${query}%`)
@@ -136,8 +134,14 @@ export default function EditRoutePage() {
     setIsSearching(false);
   };
 
+  // 💡 修正：編集画面でも30冊を超えようとしたらアラートを出しガード
   const handleAddBook = (book: any) => {
-    if (selectedBooks.some(b => b.id === book.id)) {
+    if (selectedBooks.length >= 30) {
+      alert('ルートに追加できる参考書は最大30冊までです。');
+      return;
+    }
+
+    if (book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" && selectedBooks.some(b => b.id === book.id)) {
       alert('この参考書は既にルートに追加されています。');
       return;
     }
@@ -180,6 +184,10 @@ export default function EditRoutePage() {
       alert('参考書を最低1冊は選択してください。');
       return;
     }
+    if (selectedBooks.length > 30) {
+      alert('参考書の登録数が上限（30冊）を超えています。');
+      return;
+    }
 
     setLoading(true);
 
@@ -219,7 +227,6 @@ export default function EditRoutePage() {
       }
     }
 
-   // 💡 修正：カスタム参考書（ID: b2531a01-...）以外の本物の参考書だけを本棚に同期する
    const realBooksForStatus = selectedBooks.filter((book: any) => book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81");
 
    if (realBooksForStatus.length > 0) {
@@ -344,11 +351,14 @@ export default function EditRoutePage() {
           </div>
         </div>
 
-        {/* 右カラム：参考書ルート構築 */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 relative">
-          <label className="text-xs font-black text-slate-400 block uppercase tracking-wider border-b border-slate-100 pb-1.5">参考書ルートを組み立てる</label>
+          <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
+            <label className="text-xs font-black text-slate-400 block uppercase tracking-wider">参考書ルートを組み立てる</label>
+            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${selectedBooks.length >= 30 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'}`}>
+              {selectedBooks.length} / 30 冊
+            </span>
+          </div>
 
-          {/* マイページ連動ボタン ＋ 見つからない場合の専用ボタン */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               type="button"
@@ -380,7 +390,6 @@ export default function EditRoutePage() {
             </button>
           </div>
 
-          {/* 検索窓 */}
           <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
               <Search size={16} strokeWidth={2.5} />
@@ -427,7 +436,7 @@ export default function EditRoutePage() {
               </p>
             ) : (
               selectedBooks.map((book, index) => (
-                <div key={book.id} className="flex flex-col items-center">
+                <div key={index} className="flex flex-col items-center">
                   <div className="w-full bg-slate-50/60 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-100/70 transition-all">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm">
@@ -456,14 +465,13 @@ export default function EditRoutePage() {
             )}
           </div>
 
-          {/* ポップアップ（モーダル）UI */}
           {modalType && (
             <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
               <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
                 <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
                   <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
                     {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
-                    {modalType === 'likes' ? 'いいね（保存）した参考書' : '使用中の参考書棚'}
+                    {modalType === 'likes' ? 'いいねした参考書' : '使用した参考書'}
                   </h4>
                   <button
                     type="button"
@@ -475,7 +483,6 @@ export default function EditRoutePage() {
                 </div>
                 
                 <div className="p-2 overflow-y-auto divide-y divide-slate-50 flex-1 min-h-[200px]">
-                  {/* 💡 修正：ローディング中 ➔ 0件の時 ➔ 通常表示 の順番で正しく判定 */}
                   {modalLoading ? (
                     <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
                   ) : modalBooks.length === 0 ? (
@@ -516,7 +523,6 @@ export default function EditRoutePage() {
           )}
         </div>
 
-        {/* 保存ボタン */}
         <div className="md:col-span-2 pt-3">
           <button
             type="submit"
