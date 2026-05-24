@@ -21,7 +21,7 @@ export default function RootLayout({
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2558388156982404"
-          crossorigin="anonymous"
+          crossOrigin="anonymous"
           strategy="afterInteractive" // ➔ アプリの表示速度を落とさないように優しく読み込む設定
         />
       </head>
