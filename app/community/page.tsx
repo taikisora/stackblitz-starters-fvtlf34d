@@ -169,19 +169,23 @@ export default function CommunityPage() {
             )}
           </div>
           
-          {/* 💡 修正：クリック演出を完全削除し、文字の視認性をマックスに高めた看板 */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-white border border-slate-700/50 overflow-hidden relative shadow-xs">
-             <div className="relative z-10 space-y-1.5">
-                <span className="text-[10px] font-black tracking-wider text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded-md uppercase">
+          {/* 💡 修正：背景色をグレーにし、アイコンを見切れないように配置した完全版 */}
+          <div className="bg-slate-100/70 rounded-2xl p-5 text-white border border-slate-200/60 overflow-hidden relative shadow-3xs flex items-center gap-4">
+             {/* 左側：見切れを解消し、綺麗に収めたアイコン */}
+             <div className="bg-blue-600 p-2.5 rounded-xl shrink-0">
+                <MessageSquare className="w-5 h-5 text-white stroke-[3]" />
+             </div>
+
+             {/* 右側：文字（背景が白・グレー系になったので、黒文字にしてハッキリ見せる） */}
+             <div className="relative z-10 space-y-1">
+                <span className="text-[10px] font-black tracking-wider text-blue-700 bg-blue-100 px-2 py-0.5 rounded-md uppercase">
                   コミュニティ規定
                 </span>
-                <h5 className="font-black text-sm leading-relaxed pt-1">
+                <h5 className="font-black text-[13px] md:text-sm text-slate-900 leading-relaxed pt-0.5">
                   みんなが気持ちよく使えるよう、<br />
                   お互いに敬意を持って情報交換しましょう！
                 </h5>
              </div>
-             {/* 背景の薄いアイコン装飾 */}
-             <MessageSquare className="absolute -right-3 -bottom-3 w-20 h-20 opacity-5 text-white" />
           </div>
         </div>
 
