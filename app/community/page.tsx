@@ -27,7 +27,7 @@ const CATEGORIES: { [key: string]: { id: string; name: string; description: stri
   ],
   book: [
     { id: 'english', name: '英語参考書', description: '単語・文法・長文など英語教材の議論' },
-    { id: 'math', name: '数学参考書', description: 'チャート・プラチカなど数学教材の議論' },
+    { id: 'math', name: '数学参考書', description: '数!A・数IIB・数IIICなど数学教材の議論' },
     { id: 'japanese', name: '国語参考書', description: '現代文・古文・漢文の教材議論' },
     { id: 'science', name: '理科参考書', description: '物理・化学・生物・地学の教材やルート議論' }, // 💡 理社から理科に独立
     { id: 'social', name: '社会参考書', description: '日本史・世界史・地理・公共などの教材議論' }, // 💡 社会に独立
