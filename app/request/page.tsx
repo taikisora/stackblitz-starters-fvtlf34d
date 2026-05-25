@@ -129,14 +129,14 @@ export default function RequestPage() {
             {type !== 'opinion' && (
               <div className="animate-fade-in">
                 <label className="text-xs font-bold text-gray-600 mb-1.5 block">
-                  参考書のタイトル <span className="text-gray-400 font-medium">(判る範囲でOK)</span>
+                  参考書のタイトル <span className="text-gray-400 font-medium">(なるべく正式名称でお願いします)</span>
                 </label>
                 {/* 💡 修正：text-slate-800 と font-bold、placeholder:font-bold を追加して、入力文字がくっきり見えるようにしました */}
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="例: 青チャート 数学I+A"
+                  placeholder="例: チャート式 基礎からの 数学I+A"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 placeholder:text-gray-400 placeholder:font-bold transition-all shadow-3xs"
                 />
               </div>
@@ -145,7 +145,7 @@ export default function RequestPage() {
             {/* メッセージ本文 */}
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1.5 block">
-                {type === 'add' && '追加してほしい理由やURLなど'}
+                {type === 'add' && '追加してほしい理由やISBN-13など'}
                 {type === 'update' && 'どの情報のどこを修正すべきか'}
                 {type === 'opinion' && '不具合報告や、アプリへのご意見・ご感想'}
               </label>
