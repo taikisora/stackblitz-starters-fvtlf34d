@@ -417,10 +417,12 @@ export default function NewRoutePage() {
             >
               <Heart size={14} className="fill-current" /> いいねから追加
             </button>
+            {/* 💡 修正：使用中から追加ボタンも本番のPurgeから守るため、緑色のスタイルをインラインでガチ固定します */}
             <button
               type="button"
               onClick={() => openBooksModal('status')}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 border text-emerald-800 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
+              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }} // bg-emerald-100, border-emerald-200 相当
             >
               <BookOpen size={14} /> 使用中から追加
             </button>

@@ -59,7 +59,7 @@ export default function EditRoutePage() {
         setIsPublic(routeData.is_public);
       }
 
-      // 💡 修正：新旧データのフォールバックロード ＆ custom_titleの復元ロード
+      // 💡 新旧データのフォールバックロード ＆ custom_titleの復元ロード
       if (routeData && routeData.flow_structure && Array.isArray(routeData.flow_structure)) {
         const allBookIds: string[] = [];
         routeData.flow_structure.forEach((node: any) => {
@@ -214,8 +214,7 @@ export default function EditRoutePage() {
   };
 
   // 💡 カスタム参考書のタイトル打ち替え関数
- // 💡 修正：TypeScriptのルールに従い、必須引数を前に、省略可能(subIndex?)を一番後ろに並び替えました
- const handleUpdateCustomBookTitle = (index: number, slot: 'main' | 'A' | 'B', newTitle: string, subIndex?: number) => {
+  const handleUpdateCustomBookTitle = (index: number, slot: 'main' | 'A' | 'B', newTitle: string, subIndex?: number) => {
     setSelectedBooks((prev) => prev.map((item, idx) => {
       if (idx !== index) return item;
       if (slot === 'main') {
@@ -366,10 +365,11 @@ export default function EditRoutePage() {
   if (loading && !user) return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">読み込み中...</div>;
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen pb-24">
+    /* 💡 修正：本番環境でのカラー消滅を防ぐため、インラインスタイルで背景を薄灰色に100%絶対固定します */
+    <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24" style={{ backgroundColor: '#f1f5f9' }}>
       
-      <div className="flex items-center justify-between border-b border-gray-200/60 pb-4 mb-6">
-        <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-3xs hover:bg-gray-50 transition-all">
+      <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
+        <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-3xs hover:bg-gray-50 transition-all">
           <ChevronLeft size={18} /> 戻る
         </button>
         <h1 className="text-lg font-black text-slate-900">参考書ルート編集</h1>
@@ -378,26 +378,26 @@ export default function EditRoutePage() {
 
       <form onSubmit={handleUpdateRoute} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5">
+        {/* 左カラム */}
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
           <div>
-            <label className="text-xs font-black text-slate-400 mb-2 block uppercase tracking-wider">ルートの題名（必須）</label>
+            <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">ルートの題名（必須）</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-slate-50/60 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs transition-all"
+              className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs transition-all"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-black text-slate-400 mb-2 block uppercase tracking-wider">対象の教科</label>
+              <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">対象の教科</label>
               <select
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                className="w-full bg-slate-50/60 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs cursor-pointer transition-all"
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs cursor-pointer transition-all"
               >
-                {/* 既存の教科一覧を完全継承 */}
                 <optgroup label="英語">
                   <option value="英語（総合）">英語（総合）</option>
                   <option value="英単語">英単語</option>
@@ -445,14 +445,14 @@ export default function EditRoutePage() {
             </div>
 
             <div>
-              <label className="text-xs font-black text-slate-400 mb-2 block uppercase tracking-wider">公開設定</label>
+              <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">公開設定</label>
               <button
                 type="button"
                 onClick={() => setIsPublic(!isPublic)}
                 className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black border transition-all active:scale-[0.98] shadow-3xs ${
                   isPublic 
-                    ? 'bg-green-50 border-green-200 text-green-700 font-extrabold' 
-                    : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                    ? 'bg-green-50 border-green-300 text-green-700 font-extrabold' 
+                    : 'bg-white border-gray-200 text-slate-600 hover:bg-slate-50'
                 }`}
               >
                 {isPublic ? <Globe size={16} strokeWidth={2.5} /> : <Lock size={16} strokeWidth={2.5} />}
@@ -462,22 +462,22 @@ export default function EditRoutePage() {
           </div>
 
           <div>
-            <label className="text-xs font-black text-slate-400 mb-2 block uppercase tracking-wider">説明・備考</label>
+            <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">説明・備考</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="このルートの特徴、おすすめの進め方やアドバイス等"
               rows={5}
-              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50/60 focus:outline-none focus:border-blue-500 focus:bg-white font-bold text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
+              className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50 focus:outline-none focus:border-blue-500 focus:bg-white font-bold text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
             />
           </div>
         </div>
 
-        {/* 右カラム：組み立てタイムライン */}
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 relative">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
-            <label className="text-xs font-black text-slate-400 block uppercase tracking-wider">参考書ルートを組み立てる</label>
-            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${selectedBooks.length >= 30 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'}`}>
+        {/* 右カラム */}
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 relative">
+          <div className="flex justify-between items-center border-b border-slate-200 pb-1.5">
+            <label className="text-xs font-black text-slate-500 block uppercase tracking-wider">参考書ルートを組み立てる</label>
+            <span className={`text-xs font-black px-2 py-0.5 rounded-md ${selectedBooks.length >= 30 ? 'bg-rose-100 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-600 border border-gray-200'}`}>
               {selectedBooks.length} / 30 冊
             </span>
           </div>
@@ -486,18 +486,21 @@ export default function EditRoutePage() {
             <button
               type="button"
               onClick={() => openBooksModal('likes')}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-50/60 hover:bg-rose-100/70 border border-rose-100 text-rose-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 text-rose-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
             >
               <Heart size={14} className="fill-current" /> いいねから追加
             </button>
+            
+            {/* 💡 修正：使用中から追加ボタンの背景・枠線緑色をインラインで絶対防御 */}
             <button
               type="button"
               onClick={() => openBooksModal('status')}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-100 text-emerald-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 border text-emerald-800 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
+              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }}
             >
               <BookOpen size={14} /> 使用中から追加
             </button>
-            
+
             <button
               type="button"
               onClick={() => {
@@ -507,7 +510,7 @@ export default function EditRoutePage() {
                   publisher: "※タイトルを変更できます"
                 });
               }}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
             >
               <Plus size={14} strokeWidth={2.5} /> （参考書が見つからない場合）
             </button>
@@ -521,8 +524,8 @@ export default function EditRoutePage() {
               type="text"
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="または、参考書の名前で検索して追加..."
-              className="w-full bg-slate-50/60 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-black text-slate-800 shadow-3xs transition-all"
+              placeholder="参考書の名前で検索して追加..."
+              className="w-full bg-slate-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-black text-slate-800 shadow-3xs transition-all"
             />
 
             {searchQuery && (
@@ -554,18 +557,19 @@ export default function EditRoutePage() {
 
           <div className="space-y-3 pt-1 max-h-[450px] overflow-y-auto pr-1 content-start scrollbar-none">
             {selectedBooks.length === 0 ? (
-              <p className="text-center py-16 text-xs text-slate-400 border border-dashed border-slate-200 bg-slate-50/50 rounded-2xl font-bold leading-relaxed">
+              <p className="text-center py-16 text-xs text-slate-400 border border-dashed border-gray-200 bg-slate-50 rounded-2xl font-bold leading-relaxed">
                 上の検索窓やショートカットボタンから、<br />参考書を順番に追加していきましょう！
               </p>
             ) : (
               selectedBooks.map((item, index) => (
                 <div key={index} className="flex flex-col items-center w-full animate-fade-in">
                   
-                  {/* 🟢 パターンA：通常の一本道参考書（custom_title完全同期インプット対応） */}
+                  {/* 🟢 パターンA：通常の一本道参考書 */}
                   {(!item.type || item.type === 'single') ? (
-                    <div className="w-full bg-slate-50/60 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-100/70 transition-all">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="w-full bg-slate-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-200 transition-all">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {/* 💡 修正：インラインスタイルで王道の青背景（#2563eb）サークルを絶対保護 */}
+                        <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
                           {index + 1}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -575,7 +579,7 @@ export default function EditRoutePage() {
                               value={item.custom_title === undefined ? 'カスタム参考書' : item.custom_title}
                               onChange={(e) => handleUpdateCustomBookTitle(index, 'main', e.target.value)}
                               placeholder="参考書名を入力してください..."
-                              className="bg-transparent font-black text-xs text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none w-full py-0.5"
+                              className="bg-transparent font-black text-xs text-blue-600 border-b border-dashed border-blue-400 focus:border-blue-500 focus:outline-none w-full py-0.5"
                             />
                           ) : (
                             <p className="font-black text-xs text-slate-800 truncate leading-tight group-hover:text-blue-600 transition-colors">{item.title}</p>
@@ -584,31 +588,32 @@ export default function EditRoutePage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
-                        <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
-                        <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
+                      <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-200 p-0.5 rounded-lg shadow-3xs">
+                        <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
+                        <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
                         <button type="button" onClick={() => handleRemoveBook(index, undefined, 'main')} className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors ml-0.5"><Trash2 size={13} /></button>
                       </div>
                     </div>
                   ) : (
-                    /* 🟡 パターンB：特殊編集コマンドブロック */
-                    <div className="w-full bg-slate-100/70 border border-slate-200/50 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block">
+                    /* 🟡 パターンB：特殊コマンドブロック */
+                    <div className="w-full bg-slate-100 border border-gray-200 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block">
                       
-                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5 gap-2">
+                      <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2">
                         <div className="flex items-center gap-1 flex-1 min-w-0">
-                          <span className="w-5 h-5 rounded-full bg-slate-700 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                          {/* 💡 修正：インラインスタイルでダークグレー（#475569）のサークル色を強制固定 */}
+                          <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#475569' }}>
                             {index + 1}
                           </span>
                           <input
                             type="text"
                             value={item.title}
                             onChange={(e) => handleUpdateBlockTitle(index, 'title', e.target.value)}
-                            className="bg-transparent font-black text-xs text-slate-700 border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full py-0.5 truncate"
+                            className="bg-transparent font-black text-xs text-slate-800 border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full py-0.5 truncate"
                           />
                         </div>
-                        <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
-                          <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▲</button>
-                          <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▼</button>
+                        <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-200 p-0.5 rounded-lg shadow-3xs">
+                          <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▲</button>
+                          <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▼</button>
                           <button type="button" onClick={() => handleRemoveBook(index, undefined, 'main')} className="p-1 text-slate-400 hover:text-red-500 rounded ml-0.5"><Trash2 size={13} /></button>
                         </div>
                       </div>
@@ -616,7 +621,7 @@ export default function EditRoutePage() {
                       <div className="grid grid-cols-2 gap-2.5 items-start">
                         
                         {/* 左側の箱 (A) */}
-                        <div className="bg-white/90 p-2 rounded-xl border border-slate-200/40 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
+                        <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
                           <input
                             type="text"
                             value={item.label_A === undefined ? (item.type === 'branch' ? '選択 A' : '並行 A') : item.label_A}
@@ -626,25 +631,27 @@ export default function EditRoutePage() {
                                 handleUpdateBlockTitle(index, 'label_A', item.type === 'branch' ? '選択 A' : '並行 A');
                               }
                             }}
-                            className="text-[9px] font-black tracking-wider text-slate-400 uppercase text-center block border-b border-slate-50 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-200 w-full"
+                            className="text-[9px] font-black tracking-wider text-slate-500 uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
                           />
                           <div className="space-y-1 flex-1 py-1">
                             {(item.route_A || []).map((subBook: any, subIdx: number) => (
-                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-100 rounded-lg relative group/sub w-full">
+                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-200 rounded-lg relative group/sub w-full">
                                 {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
                                   <input
                                     type="text"
                                     value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
                                     onChange={(e) => handleUpdateCustomBookTitle(index, 'A', e.target.value, subIdx)}
-                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
+                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-400 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
                                   />
                                 ) : (
-                                  <span className="text-[10px] font-extrabold text-slate-700 truncate flex-1 pl-0.5">{subBook.title}</span>
+                                  <span className="text-[10px] font-extrabold text-slate-800 truncate flex-1 pl-0.5">{subBook.title}</span>
                                 )}
-                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'A')} className="text-slate-300 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
+                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'A')} className="text-slate-400 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
                               </div>
                             ))}
                           </div>
+                          
+                          {/* 💡 修正：「指定を解除」ボタンのスタイルをインラインで絶対保護 */}
                           <button
                             type="button"
                             onClick={() => {
@@ -654,11 +661,12 @@ export default function EditRoutePage() {
                                 setActiveTarget({ index, slot: 'A' });
                               }
                             }}
-                            className={`w-full border border-dashed py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all ${
+                            className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
+                            style={
                               activeTarget?.index === index && activeTarget?.slot === 'A'
-                                ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
-                                : 'border-slate-200 bg-white text-blue-600 hover:bg-blue-50/50'
-                            }`}
+                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
+                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
+                            }
                           >
                             <Plus size={10} />
                             <span>{activeTarget?.index === index && activeTarget?.slot === 'A' ? '指定を解除' : '本を指定'}</span>
@@ -666,7 +674,7 @@ export default function EditRoutePage() {
                         </div>
 
                         {/* 右側の箱 (B) */}
-                        <div className="bg-white/90 p-2 rounded-xl border border-slate-200/40 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
+                        <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
                           <input
                             type="text"
                             value={item.label_B === undefined ? (item.type === 'branch' ? '選択 B' : '並行 B') : item.label_B}
@@ -676,25 +684,27 @@ export default function EditRoutePage() {
                                 handleUpdateBlockTitle(index, 'label_B', item.type === 'branch' ? '選択 B' : '並行 B');
                               }
                             }}
-                            className="text-[9px] font-black tracking-wider text-slate-400 uppercase text-center block border-b border-slate-50 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-200 w-full"
+                            className="text-[9px] font-black tracking-wider text-slate-500 uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
                           />
                           <div className="space-y-1 flex-1 py-1">
-                            {(item.route_B || []).map((subBook: any, subIdx: number) => (
-                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-100 rounded-lg relative group/sub w-full">
+                          {(item.route_B || []).map((subBook: any, subIdx: number) => (
+                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-200 rounded-lg relative group/sub w-full">
                                 {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
                                   <input
                                     type="text"
                                     value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
                                     onChange={(e) => handleUpdateCustomBookTitle(index, 'B', e.target.value, subIdx)}
-                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
+                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-400 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
                                   />
                                 ) : (
-                                  <span className="text-[10px] font-extrabold text-slate-700 truncate flex-1 pl-0.5">{subBook.title}</span>
+                                  <span className="text-[10px] font-extrabold text-slate-800 truncate flex-1 pl-0.5">{subBook.title}</span>
                                 )}
-                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'B')} className="text-slate-300 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
+                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'B')} className="text-slate-400 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
                               </div>
                             ))}
                           </div>
+                          
+                          {/* 💡 修正：「指定を解除」ボタンのスタイルをインラインで絶対保護 */}
                           <button
                             type="button"
                             onClick={() => {
@@ -704,11 +714,12 @@ export default function EditRoutePage() {
                                 setActiveTarget({ index, slot: 'B' });
                               }
                             }}
-                            className={`w-full border border-dashed py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all ${
+                            className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
+                            style={
                               activeTarget?.index === index && activeTarget?.slot === 'B'
-                                ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
-                                : 'border-slate-200 bg-white text-blue-600 hover:bg-blue-50/50'
-                            }`}
+                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
+                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
+                            }
                           >
                             <Plus size={10} />
                             <span>{activeTarget?.index === index && activeTarget?.slot === 'B' ? '指定を解除' : '本を指定'}</span>
@@ -721,7 +732,7 @@ export default function EditRoutePage() {
 
                   {/* 矢印 */}
                   {index < selectedBooks.length - 1 && (
-                    <div className="my-1.5 text-blue-500/70 animate-pulse">
+                    <div className="my-1.5 text-blue-500/80 animate-pulse">
                       <ArrowDown size={14} className="stroke-[2.5]" />
                     </div>
                   )}
@@ -731,27 +742,30 @@ export default function EditRoutePage() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+          {/* 💡 修正：背景色と枠線色を確実なカラーコード（黄・緑）で直書き指定 */}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
             <button
               type="button"
               onClick={() => handleAddSpecialBlock('branch')}
-              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black bg-amber-50 hover:bg-amber-100/70 border border-amber-100 text-amber-700 transition-all active:scale-95 cursor-pointer shadow-3xs"
+              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black text-amber-800 border transition-all active:scale-95 cursor-pointer shadow-3xs"
+              style={{ backgroundColor: '#fef3c7', borderColor: '#fde68a' }}
             >
               <Plus size={12} strokeWidth={2.5} /> 分岐ルートを挿入
             </button>
             <button
               type="button"
               onClick={() => handleAddSpecialBlock('parallel')}
-              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-100 text-emerald-700 transition-all active:scale-95 cursor-pointer shadow-3xs"
+              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black text-emerald-800 border transition-all active:scale-95 cursor-pointer shadow-3xs"
+              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }}
             >
               <Plus size={12} strokeWidth={2.5} /> 並行ルートを挿入
             </button>
           </div>
 
           {modalType && (
-            <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-              <div className="bg-white rounded-3xl border border-slate-100 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
-                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
+            <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white rounded-3xl border border-gray-200 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-slate-50 rounded-t-3xl">
                   <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
                     {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
                     {modalType === 'likes' ? 'いいねした参考書' : '使用した参考書'}
@@ -759,13 +773,13 @@ export default function EditRoutePage() {
                   <button
                     type="button"
                     onClick={() => setModalType(null)}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors text-xs font-bold cursor-pointer"
+                    className="p-1.5 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-xs font-bold cursor-pointer"
                   >
                     閉じる
                   </button>
                 </div>
                 
-                <div className="p-2 overflow-y-auto divide-y divide-slate-50 flex-1 min-h-[200px]">
+                <div className="p-2 overflow-y-auto divide-y divide-slate-100 flex-1 min-h-[200px]">
                   {modalLoading ? (
                     <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
                   ) : modalBooks.length === 0 ? (
@@ -791,7 +805,7 @@ export default function EditRoutePage() {
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide border transition-all shrink-0 active:scale-95 cursor-pointer ${
                               isAdded 
                                 ? 'bg-slate-50 border-slate-200 text-slate-400 font-bold' 
-                                : 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white'
+                                : 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white'
                             }`}
                           >
                             {isAdded ? '追加済み' : 'ルートへ追加'}
@@ -806,6 +820,7 @@ export default function EditRoutePage() {
           )}
         </div>
 
+        {/* 保存ボタン */}
         <div className="md:col-span-2 pt-3">
           <button
             type="submit"
