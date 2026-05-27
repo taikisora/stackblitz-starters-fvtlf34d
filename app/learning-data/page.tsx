@@ -27,6 +27,7 @@ export default function LearningDataPage() {
       
       setUser(session.user);
 
+      // 💡 修正：flow_structure構造から、一本道・分岐内すべての参考書数を正確に合算カウントする最新ロジック
       const { data, error } = await supabase
         .from('study_routes')
         .select('*')
@@ -36,17 +37,27 @@ export default function LearningDataPage() {
       if (error) {
         console.error("ルート取得エラー:", error);
       } else if (data) {
-        const routesWithBookCount = await Promise.all(data.map(async (route) => {
-          const { count, error: countError } = await supabase
-            .from('route_books')
-            .select('*', { count: 'exact', head: true })
-            .eq('route_id', route.id);
-          
+        const routesWithBookCount = data.map((route) => {
+          let totalBooks = 0;
+
+          // 新しい flow_structure (JSON) が入っている場合は、その中の全書籍をカウント
+          if (route.flow_structure && Array.isArray(route.flow_structure)) {
+            route.flow_structure.forEach((node: any) => {
+              if (!node.type || node.type === 'single') {
+                totalBooks += 1;
+              } else {
+                if (node.route_A) totalBooks += node.route_A.length;
+                if (node.route_B) totalBooks += node.route_B.length;
+              }
+            });
+          }
+
           return {
             ...route,
-            book_count: countError ? 0 : (count || 0)
+            book_count: totalBooks // ➔ これで「参考書 5冊」などと正しい総数がカードに即時反映されます
           };
-        }));
+        });
+
         setRoutes(routesWithBookCount);
       }
       setLoading(false);

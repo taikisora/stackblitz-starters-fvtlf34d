@@ -28,6 +28,8 @@ export default function EditRoutePage() {
   const [modalBooks, setModalBooks] = useState<any[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
+  const [activeTarget, setActiveTarget] = useState<{ index: number; slot: 'main' | 'A' | 'B' } | null>(null);
+
   useEffect(() => {
     const fetchRouteData = async () => {
       setLoading(true);
@@ -57,26 +59,65 @@ export default function EditRoutePage() {
         setIsPublic(routeData.is_public);
       }
 
-      const { data: booksData } = await supabase
-        .from('route_books')
-        .select('*, books(*)')
-        .eq('route_id', routeId)
-        .order('sort_order', { ascending: true });
+      // 💡 修正：新旧データのフォールバックロード ＆ custom_titleの復元ロード
+      if (routeData && routeData.flow_structure && Array.isArray(routeData.flow_structure)) {
+        const allBookIds: string[] = [];
+        routeData.flow_structure.forEach((node: any) => {
+          if ((!node.type || node.type === 'single') && node.book_id) allBookIds.push(node.book_id);
+          if (node.route_A) node.route_A.forEach((b: any) => b.book_id && allBookIds.push(b.book_id));
+          if (node.route_B) node.route_B.forEach((b: any) => b.book_id && allBookIds.push(b.book_id));
+        });
+
+        if (allBookIds.length > 0) {
+          const { data: booksMaster } = await supabase
+            .from('books')
+            .select('*')
+            .in('id', allBookIds);
+          if (booksMaster) {
+            const booksMap = new Map(booksMaster.map(b => [b.id, b]));
+            const hydraStructure = routeData.flow_structure.map((node: any) => {
+              if (!node.type || node.type === 'single') {
+                if (node.book_id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
+                  return { id: node.book_id, title: "カスタム参考書", custom_title: node.custom_title || 'カスタム参考書', publisher: "※タイトルを変更できます", type: 'single' };
+                }
+                const baseBook = booksMap.get(node.book_id);
+                return { ...baseBook, type: 'single' };
+              } else {
+                return {
+                  ...node,
+                  route_A: (node.route_A || []).map((b: any) => {
+                    if (b.book_id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") return { id: b.book_id, title: "カスタム参考書", custom_title: b.custom_title || 'カスタム参考書', publisher: "※タイトルを変更できます", type: 'single' };
+                    return { ...booksMap.get(b.book_id), type: 'single' };
+                  }),
+                  route_B: (node.route_B || []).map((b: any) => {
+                    if (b.book_id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") return { id: b.book_id, title: "カスタム参考書", custom_title: b.custom_title || 'カスタム参考書', publisher: "※タイトルを変更できます", type: 'single' };
+                    return { ...booksMap.get(b.book_id), type: 'single' };
+                  })
+                };
+              }
+            });
+            setSelectedBooks(hydraStructure);
+          }
+        }
+      } else {
+        // 旧データ互換
+        const { data: booksData } = await supabase
+          .from('route_books')
+          .select('*, books(*)')
+          .eq('route_id', routeId)
+          .order('sort_order', { ascending: true });
 
         if (booksData) {
           const orderedBooks = booksData.map(rb => {
             if (rb.books && rb.books.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
-              return {
-                ...rb.books,
-                title: "カスタム参考書",
-                publisher: "※詳細は説明・備考欄に記入してください"
-              };
+              return { ...rb.books, title: "カスタム参考書", custom_title: 'カスタム参考書', publisher: "※タイトルを変更できます", type: 'single' };
             }
-            return rb.books;
+            if (rb.books) return { ...rb.books, type: 'single' };
+            return null;
           }).filter(Boolean);
-  
           setSelectedBooks(orderedBooks);
         }
+      }
 
       setLoading(false);
     };
@@ -134,26 +175,95 @@ export default function EditRoutePage() {
     setIsSearching(false);
   };
 
-  // 💡 修正：編集画面でも30冊を超えようとしたらアラートを出しガード
+  // 💡 書籍追加ロジック ＆ custom_titleの初期パッキング
   const handleAddBook = (book: any) => {
     if (selectedBooks.length >= 30) {
       alert('ルートに追加できる参考書は最大30冊までです。');
       return;
     }
 
-    if (book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" && selectedBooks.some(b => b.id === book.id)) {
-      alert('この参考書は既にルートに追加されています。');
-      return;
+    if (!activeTarget || activeTarget.slot === 'main') {
+      if (book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" && selectedBooks.some(b => b.id === book.id)) {
+        alert('この参考書は既にルートに追加されています。');
+        return;
+      }
+      setSelectedBooks((prev) => [...prev, { ...book, type: 'single', custom_title: book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? 'カスタム参考書' : undefined }]);
+    } else {
+      setSelectedBooks((prev) => {
+        const next = JSON.parse(JSON.stringify(prev));
+        const targetBlock = next[activeTarget.index];
+        if (targetBlock && (targetBlock.type === 'branch' || targetBlock.type === 'parallel')) {
+          const newNode = { ...book, type: 'single' };
+          if (activeTarget.slot === 'A') {
+            if (targetBlock.route_A.some((b: any) => b.id === book.id)) return prev;
+            const nodeWithCustom = book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? { ...newNode, custom_title: 'カスタム参考書' } : newNode;
+            targetBlock.route_A = [...(targetBlock.route_A || []), nodeWithCustom];
+          }
+          if (activeTarget.slot === 'B') {
+            if (targetBlock.route_B.some((b: any) => b.id === book.id)) return prev;
+            const nodeWithCustom = book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? { ...newNode, custom_title: 'カスタム参考書' } : newNode;
+            targetBlock.route_B = [...(targetBlock.route_B || []), nodeWithCustom];
+          }
+        }
+        return next;
+      });
     }
-    setSelectedBooks([...selectedBooks, book]);
     setSearchQuery('');
     setSearchResults([]);
+    setActiveTarget(null);
   };
 
-  const handleRemoveBook = (index: number) => {
-    const nextList = [...selectedBooks];
-    nextList.splice(index, 1);
-    setSelectedBooks(nextList);
+  // 💡 カスタム参考書のタイトル打ち替え関数
+  const handleUpdateCustomBookTitle = (index: number, subIndex?: number, slot: 'main' | 'A' | 'B' = 'main', newTitle: string) => {
+    setSelectedBooks((prev) => prev.map((item, idx) => {
+      if (idx !== index) return item;
+      if (slot === 'main') {
+        return { ...item, custom_title: newTitle };
+      } else {
+        const nextBlock = { ...item };
+        if (slot === 'A') nextBlock.route_A = nextBlock.route_A.map((b: any, sIdx: number) => sIdx === subIndex ? { ...b, custom_title: newTitle } : b);
+        if (slot === 'B') nextBlock.route_B = nextBlock.route_B.map((b: any, sIdx: number) => sIdx === subIndex ? { ...b, custom_title: newTitle } : b);
+        return nextBlock;
+      }
+    }));
+  };
+
+  const handleAddSpecialBlock = (type: 'branch' | 'parallel') => {
+    if (selectedBooks.length >= 30) {
+      alert('登録数が上限を超えています。');
+      return;
+    }
+    const defaultTitle = type === 'branch' ? 'どちらか選択' : '同時並行で進める';
+    const newBlock = {
+      id: crypto.randomUUID(),
+      type,
+      title: defaultTitle,
+      label_A: type === 'branch' ? '選択 A' : '並行 A',
+      label_B: type === 'branch' ? '選択 B' : '並行 B',
+      route_A: [],
+      route_B: []
+    };
+    setSelectedBooks((prev) => [...prev, newBlock]);
+  };
+
+  const handleUpdateBlockTitle = (index: number, field: 'title' | 'label_A' | 'label_B', newTitle: string) => {
+    setSelectedBooks((prev) => prev.map((item, idx) => idx === index ? { ...item, [field]: newTitle } : item));
+  };
+
+  const handleRemoveBook = (index: number, subIndex?: number, slot: 'main' | 'A' | 'B' = 'main') => {
+    if (slot === 'main') {
+      setSelectedBooks((prev) => prev.filter((_, idx) => idx !== index));
+    } else {
+      setSelectedBooks((prev) => {
+        const next = [...prev];
+        const targetBlock = next[index];
+        if (targetBlock) {
+          if (slot === 'A') targetBlock.route_A = targetBlock.route_A.filter((_: any, idx: number) => idx !== subIndex);
+          if (slot === 'B') targetBlock.route_B = targetBlock.route_B.filter((_: any, idx: number) => idx !== subIndex);
+        }
+        return next;
+      });
+    }
   };
 
   const moveUp = (index: number) => {
@@ -191,13 +301,30 @@ export default function EditRoutePage() {
 
     setLoading(true);
 
+    // custom_titleも一緒に圧縮パッキング
+    const cleanStructure = selectedBooks.map(item => {
+      if (!item.type || item.type === 'single') {
+        return { type: 'single', book_id: item.id, custom_title: item.custom_title || '' };
+      } else {
+        return {
+          type: item.type,
+          title: item.title || '',
+          label_A: item.label_A || '',
+          label_B: item.label_B || '',
+          route_A: (item.route_A || []).map((b: any) => ({ type: 'single', book_id: b.id, custom_title: b.custom_title || '' })),
+          route_B: (item.route_B || []).map((b: any) => ({ type: 'single', book_id: b.id, custom_title: b.custom_title || '' }))
+        };
+      }
+    });
+
     const { error: routeError } = await supabase
       .from('study_routes')
       .update({
         title: title.trim(),
         subject,
         description: description.trim(),
-        is_public: isPublic
+        is_public: isPublic,
+        flow_structure: cleanStructure
       })
       .eq('id', routeId);
 
@@ -209,34 +336,27 @@ export default function EditRoutePage() {
 
     await supabase.from('route_books').delete().eq('route_id', routeId);
 
-    const routeBooksData = selectedBooks.map((book: any, index: number) => ({
-      route_id: routeId,
-      book_id: book.id,
-      sort_order: index + 1 
-    }));
-
-    if (routeBooksData.length > 0) {
-      const { error: booksError } = await supabase
-        .from('route_books')
-        .insert(routeBooksData);
-
-      if (booksError) {
-        setLoading(false);
-        alert('ルートの中身の保存に失敗しました。');
-        return;
+    const allBooks: any[] = [];
+    selectedBooks.forEach(item => {
+      if (!item.type || item.type === 'single') {
+        allBooks.push(item);
+      } else {
+        if (item.route_A) allBooks.push(...item.route_A);
+        if (item.route_B) allBooks.push(...item.route_B);
       }
+    });
+
+    const realBooksForStatus = allBooks.filter((book: any) => book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81");
+
+    if (realBooksForStatus.length > 0) {
+      const uniqueBookIds = Array.from(new Set(realBooksForStatus.map(b => b.id)));
+      const userBookStatusData = uniqueBookIds.map((bId) => ({
+        user_id: user.id,
+        book_id: bId,
+        is_used: true
+      }));
+      await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
     }
-
-   const realBooksForStatus = selectedBooks.filter((book: any) => book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81");
-
-   if (realBooksForStatus.length > 0) {
-     const userBookStatusData = realBooksForStatus.map((book: any) => ({
-       user_id: user.id,
-       book_id: book.id,
-       is_used: true
-     }));
-     await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
-   }
 
     alert('参考書ルートを更新しました！');
     router.push('/learning-data');
@@ -276,6 +396,7 @@ export default function EditRoutePage() {
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full bg-slate-50/60 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs cursor-pointer transition-all"
               >
+                {/* 既存の教科一覧を完全継承 */}
                 <optgroup label="英語">
                   <option value="英語（総合）">英語（総合）</option>
                   <option value="英単語">英単語</option>
@@ -351,6 +472,7 @@ export default function EditRoutePage() {
           </div>
         </div>
 
+        {/* 右カラム：組み立てタイムライン */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4 relative">
           <div className="flex justify-between items-center border-b border-slate-100 pb-1.5">
             <label className="text-xs font-black text-slate-400 block uppercase tracking-wider">参考書ルートを組み立てる</label>
@@ -381,7 +503,7 @@ export default function EditRoutePage() {
                 handleAddBook({
                   id: "b2531a01-d6ea-47ad-ae84-3fac68cf3c81",
                   title: "カスタム参考書",
-                  publisher: "※詳細は説明・備考欄に記入してください"
+                  publisher: "※タイトルを変更できます"
                 });
               }}
               className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-100 text-blue-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer"
@@ -429,40 +551,200 @@ export default function EditRoutePage() {
             )}
           </div>
 
-          <div className="space-y-2 pt-1 max-h-[340px] overflow-y-auto pr-1 content-start scrollbar-none">
+          <div className="space-y-3 pt-1 max-h-[450px] overflow-y-auto pr-1 content-start scrollbar-none">
             {selectedBooks.length === 0 ? (
               <p className="text-center py-16 text-xs text-slate-400 border border-dashed border-slate-200 bg-slate-50/50 rounded-2xl font-bold leading-relaxed">
                 上の検索窓やショートカットボタンから、<br />参考書を順番に追加していきましょう！
               </p>
             ) : (
-              selectedBooks.map((book, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="w-full bg-slate-50/60 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-100/70 transition-all">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="font-black text-xs text-slate-800 truncate leading-tight group-hover:text-blue-600 transition-colors">{book.title}</p>
-                        <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
+              selectedBooks.map((item, index) => (
+                <div key={index} className="flex flex-col items-center w-full animate-fade-in">
+                  
+                  {/* 🟢 パターンA：通常の一本道参考書（custom_title完全同期インプット対応） */}
+                  {(!item.type || item.type === 'single') ? (
+                    <div className="w-full bg-slate-50/60 p-3 rounded-xl border border-gray-100 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-100/70 transition-all">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-sm">
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          {item.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
+                            <input
+                              type="text"
+                              value={item.custom_title === undefined ? 'カスタム参考書' : item.custom_title}
+                              onChange={(e) => handleUpdateCustomBookTitle(index, undefined, 'main', e.target.value)}
+                              placeholder="参考書名を入力してください..."
+                              className="bg-transparent font-black text-xs text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none w-full py-0.5"
+                            />
+                          ) : (
+                            <p className="font-black text-xs text-slate-800 truncate leading-tight group-hover:text-blue-600 transition-colors">{item.title}</p>
+                          )}
+                          <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{item.publisher}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
+                        <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
+                        <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
+                        <button type="button" onClick={() => handleRemoveBook(index, undefined, 'main')} className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors ml-0.5"><Trash2 size={13} /></button>
                       </div>
                     </div>
+                  ) : (
+                    /* 🟡 パターンB：特殊編集コマンドブロック */
+                    <div className="w-full bg-slate-100/70 border border-slate-200/50 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block">
+                      
+                      <div className="flex items-center justify-between border-b border-slate-200/60 pb-1.5 gap-2">
+                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                          <span className="w-5 h-5 rounded-full bg-slate-700 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                            {index + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={(e) => handleUpdateBlockTitle(index, 'title', e.target.value)}
+                            className="bg-transparent font-black text-xs text-slate-700 border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full py-0.5 truncate"
+                          />
+                        </div>
+                        <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
+                          <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▲</button>
+                          <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▼</button>
+                          <button type="button" onClick={() => handleRemoveBook(index, undefined, 'main')} className="p-1 text-slate-400 hover:text-red-500 rounded ml-0.5"><Trash2 size={13} /></button>
+                        </div>
+                      </div>
 
-                    <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-100 p-0.5 rounded-lg shadow-3xs">
-                      <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▲</button>
-                      <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black transition-colors">▼</button>
-                      <button type="button" onClick={() => handleRemoveBook(index)} className="p-1 text-slate-400 hover:text-red-500 rounded transition-colors ml-0.5"><Trash2 size={13} /></button>
+                      <div className="grid grid-cols-2 gap-2.5 items-start">
+                        
+                        {/* 左側の箱 (A) */}
+                        <div className="bg-white/90 p-2 rounded-xl border border-slate-200/40 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
+                          <input
+                            type="text"
+                            value={item.label_A === undefined ? (item.type === 'branch' ? '選択 A' : '並行 A') : item.label_A}
+                            onChange={(e) => handleUpdateBlockTitle(index, 'label_A', e.target.value)}
+                            onBlur={() => {
+                              if (!item.label_A || !item.label_A.trim()) {
+                                handleUpdateBlockTitle(index, 'label_A', item.type === 'branch' ? '選択 A' : '並行 A');
+                              }
+                            }}
+                            className="text-[9px] font-black tracking-wider text-slate-400 uppercase text-center block border-b border-slate-50 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-200 w-full"
+                          />
+                          <div className="space-y-1 flex-1 py-1">
+                            {(item.route_A || []).map((subBook: any, subIdx: number) => (
+                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-100 rounded-lg relative group/sub w-full">
+                                {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
+                                  <input
+                                    type="text"
+                                    value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
+                                    onChange={(e) => handleUpdateCustomBookTitle(index, subIdx, 'A', e.target.value)}
+                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
+                                  />
+                                ) : (
+                                  <span className="text-[10px] font-extrabold text-slate-700 truncate flex-1 pl-0.5">{subBook.title}</span>
+                                )}
+                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'A')} className="text-slate-300 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (activeTarget?.index === index && activeTarget?.slot === 'A') {
+                                setActiveTarget(null);
+                              } else {
+                                setActiveTarget({ index, slot: 'A' });
+                              }
+                            }}
+                            className={`w-full border border-dashed py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all ${
+                              activeTarget?.index === index && activeTarget?.slot === 'A'
+                                ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
+                                : 'border-slate-200 bg-white text-blue-600 hover:bg-blue-50/50'
+                            }`}
+                          >
+                            <Plus size={10} />
+                            <span>{activeTarget?.index === index && activeTarget?.slot === 'A' ? '指定を解除' : '本を指定'}</span>
+                          </button>
+                        </div>
+
+                        {/* 右側の箱 (B) */}
+                        <div className="bg-white/90 p-2 rounded-xl border border-slate-200/40 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
+                          <input
+                            type="text"
+                            value={item.label_B === undefined ? (item.type === 'branch' ? '選択 B' : '並行 B') : item.label_B}
+                            onChange={(e) => handleUpdateBlockTitle(index, 'label_B', e.target.value)}
+                            onBlur={() => {
+                              if (!item.label_B || !item.label_B.trim()) {
+                                handleUpdateBlockTitle(index, 'label_B', item.type === 'branch' ? '選択 B' : '並行 B');
+                              }
+                            }}
+                            className="text-[9px] font-black tracking-wider text-slate-400 uppercase text-center block border-b border-slate-50 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-200 w-full"
+                          />
+                          <div className="space-y-1 flex-1 py-1">
+                            {(item.route_B || []).map((subBook: any, subIdx: number) => (
+                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-100 rounded-lg relative group/sub w-full">
+                                {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
+                                  <input
+                                    type="text"
+                                    value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
+                                    onChange={(e) => handleUpdateCustomBookTitle(index, subIdx, 'B', e.target.value)}
+                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
+                                  />
+                                ) : (
+                                  <span className="text-[10px] font-extrabold text-slate-700 truncate flex-1 pl-0.5">{subBook.title}</span>
+                                )}
+                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'B')} className="text-slate-300 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (activeTarget?.index === index && activeTarget?.slot === 'B') {
+                                setActiveTarget(null);
+                              } else {
+                                setActiveTarget({ index, slot: 'B' });
+                              }
+                            }}
+                            className={`w-full border border-dashed py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all ${
+                              activeTarget?.index === index && activeTarget?.slot === 'B'
+                                ? 'bg-rose-500 border-rose-500 text-white shadow-sm'
+                                : 'border-slate-200 bg-white text-blue-600 hover:bg-blue-50/50'
+                            }`}
+                          >
+                            <Plus size={10} />
+                            <span>{activeTarget?.index === index && activeTarget?.slot === 'B' ? '指定を解除' : '本を指定'}</span>
+                          </button>
+                        </div>
+
+                      </div>
                     </div>
-                  </div>
+                  )}
 
+                  {/* 矢印 */}
                   {index < selectedBooks.length - 1 && (
-                    <div className="my-0.5 text-blue-500/70 animate-pulse">
+                    <div className="my-1.5 text-blue-500/70 animate-pulse">
                       <ArrowDown size={14} className="stroke-[2.5]" />
                     </div>
                   )}
+
                 </div>
               ))
             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => handleAddSpecialBlock('branch')}
+              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black bg-amber-50 hover:bg-amber-100/70 border border-amber-100 text-amber-700 transition-all active:scale-95 cursor-pointer shadow-3xs"
+            >
+              <Plus size={12} strokeWidth={2.5} /> 分岐ルートを挿入
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAddSpecialBlock('parallel')}
+              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-100 text-emerald-700 transition-all active:scale-95 cursor-pointer shadow-3xs"
+            >
+              <Plus size={12} strokeWidth={2.5} /> 並行ルートを挿入
+            </button>
           </div>
 
           {modalType && (
