@@ -413,8 +413,9 @@ export default function RouteSearchPage() {
                       <span>{route.title}</span>
                       <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 shrink-0 transition-colors" />
                     </h3>
+                    {/* 💡 修正：説明欄を最大2行まで表示し、長すぎる場合は自動で「...」と省略するように調整しました */}
                     {route.description && (
-                      <p className="text-xs text-slate-500 font-medium line-clamp-1 leading-normal">
+                      <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed break-all">
                         {route.description}
                       </p>
                     )}

@@ -298,9 +298,9 @@ export default function RouteDetailPage() {
           <div>
             <h1 className={`font-black text-slate-900 leading-snug transition-all ${isScreenshotMode ? 'text-lg' : 'text-xl md:text-2xl mb-2'}`}>{route.title}</h1>
             {!isScreenshotMode && (
-              <p className="text-sm text-slate-700 font-medium whitespace-pre-wrap leading-relaxed bg-slate-50/60 p-3 rounded-xl border border-gray-100/60 shadow-inner shadow-slate-100">
-                {route.description || 'このルートに詳細な解説はまだ登録されていません。'}
-              </p>
+              <div className="bg-slate-50/60 p-4 rounded-2xl border border-gray-100/60 shadow-inner mt-4">
+                <ExpandableDescription text={route.description} />
+              </div>
             )}
           </div>
 
@@ -533,4 +533,31 @@ export default function RouteDetailPage() {
       </div>
     </>
   );
+
+  // 💡 文字数で自動的に「もっと見る」を出すための部品です
+  function ExpandableDescription({ text }: { text: string }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const MAX_CHARS = 100; // 途中まで表示する文字数
+    const isLong = text.length > MAX_CHARS;
+
+    if (!text) return <p className="text-sm text-slate-400">説明はありません。</p>;
+
+    return (
+      <div className="text-sm text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">
+        <p className={`${isOpen ? '' : 'line-clamp-3'}`}>
+          {text}
+        </p>
+        {isLong && (
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-xs font-black text-blue-600 mt-2 hover:text-blue-700 cursor-pointer"
+          >
+            {isOpen ? '▲ 折りたたむ' : '...もっと見る'}
+          </button>
+        )}
+      </div>
+    );
+  }
+
 }

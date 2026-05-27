@@ -64,6 +64,23 @@ export default function SearchPage() {
             </div>
             <ChevronRight className="text-white/70 group-hover:translate-x-1 transition-transform" />
           </button>
+
+          {/* 💡 追加：すべての参考書を検索ボタン */}
+          <button 
+            onClick={() => router.push('/books')}
+            className="w-full bg-white p-5 rounded-2xl shadow-sm border border-gray-100 text-slate-800 flex items-center justify-between active:scale-[0.98] transition-all group cursor-pointer hover:border-blue-200"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-100 p-2 rounded-xl text-slate-600">
+                <Search size={22} />
+              </div>
+              <div className="text-left">
+                <span className="font-extrabold text-base block leading-tight">すべての参考書を検索</span>
+                <span className="text-[10px] text-gray-600 font-medium">登録されている全参考書から探す</span>
+              </div>
+            </div>
+            <ChevronRight className="text-gray-300 group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
 
         {/* カテゴリ別検索カード群 */}
