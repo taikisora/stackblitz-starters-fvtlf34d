@@ -144,10 +144,14 @@ export default function RouteSearchPage() {
             
             if (oldBooks) {
               totalCount = oldBooks.length;
-              displayBooks = oldBooks.map(ob => ({
-                sort_order: ob.sort_order,
-                title: ob.books?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "カスタム参考書" : (ob.books?.title || '')
-              }));
+              displayBooks = oldBooks.map(ob => {
+                // 💡 修正：TypeScriptの配列誤認による型エラーを回避するため、安全にキャストを挟みます
+                const bookData = ob.books as any;
+                return {
+                  sort_order: ob.sort_order,
+                  title: bookData?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "カスタム参考書" : (bookData?.title || '')
+                };
+              });
             }
           }
 
