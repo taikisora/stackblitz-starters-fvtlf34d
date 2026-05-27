@@ -291,8 +291,8 @@ export default function NewRoutePage() {
   if (loading && !user) return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">読み込み中...</div>;
 
   return (
-    /* 💡 修正：外側の背景色を明示的な薄灰色（bg-slate-100）に強めて、カードの白との明暗差をくっきり固定化 */
-    <div className="p-4 md:p-6 max-w-5xl mx-auto bg-slate-100 min-h-screen pb-24">
+    /* 💡 修正：本番環境でのカラー消滅を防ぐため、インラインスタイルで背景を薄灰色に100%絶対固定します */
+    <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24" style={{ backgroundColor: '#f1f5f9' }}>
       
       <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
         <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-3xs hover:bg-gray-50 transition-all">
@@ -491,8 +491,8 @@ export default function NewRoutePage() {
                   {(!item.type || item.type === 'single') ? (
                     <div className="w-full bg-slate-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-200 transition-all">
                       <div className="flex items-center gap-2 min-w-0">
-                        {/* 💡 修正：メインタイムラインの通常カードには、クッキリした白文字で正しい通し番号を表示 */}
-                        <span className="w-5 h-5 rounded-md bg-slate-800 text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs">
+                        {/* 💡 修正：本番最適化での色消滅を防ぐため、インラインスタイルで青背景（#2563eb）を絶対固定します */}
+                        <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
                           {index + 1}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -523,8 +523,8 @@ export default function NewRoutePage() {
                       
                       <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2">
                         <div className="flex items-center gap-1 flex-1 min-w-0">
-                          {/* 💡 修正：分岐・並行ブロックのヘッダー左側にも、エラーを起こさない形で番号をクッキリ表示 */}
-                          <span className="w-5 h-5 rounded-md bg-slate-700 text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs">
+                          {/* 💡 修正：こちらもインラインスタイルでダークグレー（#475569）のサークル色を強制固定します */}
+                          <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#475569' }}>
                             {index + 1}
                           </span>
                           <input
@@ -574,7 +574,7 @@ export default function NewRoutePage() {
                             ))}
                           </div>
                           
-                          {/* 💡 修正：「指定を解除」が赤抜けするのを防御するため、明示的な境界線、テキストカラー、背景（bg-rose-600 / border-rose-600）を本番用に100%固定。白飛びを完全撃破！ */}
+                          {/* 💡 修正：「指定を解除」の赤色（#dc2626）ボタンをインラインスタイルで本番サイト用に絶対保護！ */}
                           <button
                             type="button"
                             onClick={() => {
@@ -584,14 +584,15 @@ export default function NewRoutePage() {
                                 setActiveTarget({ index, slot: 'A' });
                               }
                             }}
-                            className={`w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                            className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
+                            style={
                               activeTarget?.index === index && activeTarget?.slot === 'A'
-                                ? 'bg-red-600 border-red-600 text-white shadow-xs font-black'
-                                : 'border-blue-200 border-dashed bg-blue-50/60 text-blue-600 hover:bg-blue-100'
-                            }`}
+                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
+                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
+                            }
                           >
                             <Plus size={10} />
-                            <span>{activeTarget?.index === index && activeTarget?.slot === 'A' ? '＋ 指定を解除' : '本を指定'}</span>
+                            <span>{activeTarget?.index === index && activeTarget?.slot === 'A' ? '指定を解除' : '本を指定'}</span>
                           </button>
                         </div>
 
@@ -626,7 +627,7 @@ export default function NewRoutePage() {
                             ))}
                           </div>
                           
-                          {/* 💡 修正：「指定を解除」が赤抜けするのを防御するため、明示的な境界線、テキストカラー、背景（bg-rose-600 / border-rose-600）を本番用に100%固定。白飛びを完全撃破！ */}
+                          {/* 💡 修正：「指定を解除」の赤色（#dc2626）ボタンをインラインスタイルで本番サイト用に絶対保護！ */}
                           <button
                             type="button"
                             onClick={() => {
@@ -636,14 +637,15 @@ export default function NewRoutePage() {
                                 setActiveTarget({ index, slot: 'B' });
                               }
                             }}
-                            className={`w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                            className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
+                            style={
                               activeTarget?.index === index && activeTarget?.slot === 'B'
-                                ? 'bg-red-600 border-red-600 text-white shadow-xs font-black'
-                                : 'border-blue-200 border-dashed bg-blue-50/60 text-blue-600 hover:bg-blue-100'
-                            }`}
+                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
+                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
+                            }
                           >
                             <Plus size={10} />
-                            <span>{activeTarget?.index === index && activeTarget?.slot === 'B' ? '＋ 指定を解除' : '本を指定'}</span>
+                            <span>{activeTarget?.index === index && activeTarget?.slot === 'B' ? '指定を解除' : '本を指定'}</span>
                           </button>
                         </div>
 
@@ -663,19 +665,21 @@ export default function NewRoutePage() {
             )}
           </div>
 
-          {/* 特殊ブロック追加コマンドバー */}
+          {/* 💡 修正：本番ビルドで削られないよう、背景色と枠線色を確実なカラーコード（黄・緑）で直書き指定します */}
           <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
             <button
               type="button"
               onClick={() => handleAddSpecialBlock('branch')}
-              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 transition-all active:scale-95 cursor-pointer shadow-3xs"
+              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black text-amber-800 border transition-all active:scale-95 cursor-pointer shadow-3xs"
+              style={{ backgroundColor: '#fef3c7', borderColor: '#fde68a' }} // bg-amber-100, border-amber-200
             >
               <Plus size={12} strokeWidth={2.5} /> 分岐ルートを挿入
             </button>
             <button
               type="button"
               onClick={() => handleAddSpecialBlock('parallel')}
-              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition-all active:scale-95 cursor-pointer shadow-3xs"
+              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black text-emerald-800 border transition-all active:scale-95 cursor-pointer shadow-3xs"
+              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }} // bg-emerald-100, border-emerald-200
             >
               <Plus size={12} strokeWidth={2.5} /> 並行ルートを挿入
             </button>
