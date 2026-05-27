@@ -428,7 +428,8 @@ export default function RouteSearchPage() {
                     </p>
                     
                     {/* 💡 変更：表示上限を「最初の2冊（slice(0, 2)）」に変更！これで縦幅が一気に激減します */}
-                    {sortedBooks.slice(0, 2).map((rb: any, idx) => (
+                    {/* 💡 修正：idx に : number 型をカチッと明示して TypeScript の型エラーを完全解決しました */}
+                     {sortedBooks.slice(0, 2).map((rb: any, idx: number) => (
                       <div key={idx} className="flex flex-col items-center w-full">
                         <div className="w-full flex items-center gap-2 text-xs text-slate-700 min-w-0 py-0.5">
                           <span className="w-4 h-4 bg-slate-400/90 text-white font-black text-[9px] rounded-full flex items-center justify-center shrink-0 shadow-3xs">
