@@ -214,7 +214,8 @@ export default function EditRoutePage() {
   };
 
   // 💡 カスタム参考書のタイトル打ち替え関数
-  const handleUpdateCustomBookTitle = (index: number, subIndex?: number, slot: 'main' | 'A' | 'B' = 'main', newTitle: string) => {
+ // 💡 修正：TypeScriptのルールに従い、必須引数を前に、省略可能(subIndex?)を一番後ろに並び替えました
+ const handleUpdateCustomBookTitle = (index: number, slot: 'main' | 'A' | 'B', newTitle: string, subIndex?: number) => {
     setSelectedBooks((prev) => prev.map((item, idx) => {
       if (idx !== index) return item;
       if (slot === 'main') {
@@ -572,7 +573,7 @@ export default function EditRoutePage() {
                             <input
                               type="text"
                               value={item.custom_title === undefined ? 'カスタム参考書' : item.custom_title}
-                              onChange={(e) => handleUpdateCustomBookTitle(index, undefined, 'main', e.target.value)}
+                              onChange={(e) => handleUpdateCustomBookTitle(index, 'main', e.target.value)}
                               placeholder="参考書名を入力してください..."
                               className="bg-transparent font-black text-xs text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none w-full py-0.5"
                             />
@@ -634,7 +635,7 @@ export default function EditRoutePage() {
                                   <input
                                     type="text"
                                     value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
-                                    onChange={(e) => handleUpdateCustomBookTitle(index, subIdx, 'A', e.target.value)}
+                                    onChange={(e) => handleUpdateCustomBookTitle(index, 'A', e.target.value, subIdx)}
                                     className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
                                   />
                                 ) : (
@@ -684,7 +685,7 @@ export default function EditRoutePage() {
                                   <input
                                     type="text"
                                     value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
-                                    onChange={(e) => handleUpdateCustomBookTitle(index, subIdx, 'B', e.target.value)}
+                                    onChange={(e) => handleUpdateCustomBookTitle(index, 'B', e.target.value, subIdx)}
                                     className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-300 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
                                   />
                                 ) : (
