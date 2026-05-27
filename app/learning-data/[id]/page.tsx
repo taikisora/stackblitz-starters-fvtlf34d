@@ -378,90 +378,72 @@ export default function RouteDetailPage() {
                         <h3 className="font-black text-[10px] md:text-xs text-slate-700 tracking-tight truncate">{item.title}</h3>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 items-start">
-                        
-                        {/* 左側の箱 (A) */}
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/40 space-y-1.5 min-h-[70px] shadow-3xs shadow-slate-100/50">
-                          <span className="text-[8px] font-black tracking-wider text-blue-600 uppercase text-center block border-b border-slate-50 pb-0.5">
-                            {item.label_A || (item.type === 'branch' ? '選択 A' : '並行 A')}
-                          </span>
-                          <div className="space-y-1 py-0.5">
-                          {(item.route_A || []).map((sub: any, subIdx: number) => (
-  <div key={subIdx} className="flex items-center bg-slate-50 border border-gray-100 rounded-xl p-1.5 gap-2 relative group/sub">
-    
-    {/* 💡 修正：本が指定されている時だけ画像やタイトルを表示 */}
-    {sub.book ? (
-      <>
-        <div className="w-6 h-9 bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs">
-          {sub.book.cover_url ? <img src={sub.book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
-        </div>
-        <div className="min-w-0 flex-1">
-          {sub.book_id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
-            <input
-              type="text"
-              value={sub.custom_title || ''}
-              onChange={(e) => handleUpdateCustomBookTitle(index, 'A', e.target.value, subIdx)} // ※右の箱なら 'B'
-              placeholder="カスタム参考書名を入力"
-              className="w-full bg-white border border-gray-200 rounded px-1.5 py-0.5 text-[10px] font-black text-slate-800 focus:outline-none focus:border-blue-500"
-            />
-          ) : (
-            <h4 className="font-black text-[10px] text-slate-800 line-clamp-2 leading-tight">
-              {sub.book.title}
-            </h4>
-          )}
-        </div>
-      </>
-    ) : (
-      /* 💡 修正：本がまだ指定されていない場合は、消去せずに「＋本を指定」ボタンの受け皿を表示し続ける */
-      <button
-        type="button"
-        onClick={() => {
-          // 本を選択するモーダル等を開く既存の処理
-        }}
-        className="w-full text-[10px] font-bold text-blue-600 py-2 border border-dashed border-blue-200 rounded-lg bg-blue-50/30 hover:bg-blue-50 text-center cursor-pointer transition-colors"
-      >
-        ＋ 本を指定
-      </button>
-    )}
-
-    {/* 削除用ボタンなどがあればここにそのまま配置 */}
-  </div>
-))}
-                          </div>
-                        </div>
-
-                        {/* 右側の箱 (B) */}
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/40 space-y-1.5 min-h-[70px] shadow-3xs shadow-slate-100/50">
-                          <span className="text-[8px] font-black tracking-wider text-indigo-600 uppercase text-center block border-b border-slate-50 pb-0.5">
-                            {item.label_B || (item.type === 'branch' ? '選択 B' : '並行 B')}
-                          </span>
-                          <div className="space-y-1 py-0.5">
-                            {(item.route_B || []).map((sub: any, subIdx: number) => sub.book && (
-                              <div 
-                                key={subIdx} 
-                                onClick={() => {
-                                  if (sub.book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
-                                    router.push(`/books/${sub.book.id}`);
-                                  }
-                                }} 
-                                className={`flex items-center bg-slate-50 border border-gray-100 rounded-lg hover:bg-white hover:border-blue-100 shadow-3xs transition-all group/sub ${
-                                  sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "cursor-default" : "cursor-pointer"
-                                } ${isScreenshotMode ? 'p-1 gap-1.5' : 'p-1.5 gap-2'}`}
-                              >
-                                <div className={`bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs transition-all ${isScreenshotMode ? 'w-5 h-7' : 'w-6 h-9'}`}>
-                                  {sub.book.cover_url ? <img src={sub.book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <h4 className="font-black text-[10px] text-slate-800 line-clamp-2 leading-tight group-hover/sub:text-blue-600 transition-colors">
-                                    {sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (sub.custom_title || sub.book.title) : sub.book.title}
-                                  </h4>
-                                </div>
+                     {/* 💡 修正：詳細画面は閲覧専用なので、input要素を排除し、正しい表示専用テキストに戻します */}
+                    <div className="grid grid-cols-2 gap-2 items-start">
+                      
+                      {/* 左側の箱 (A) */}
+                      <div className="bg-white p-2 rounded-xl border border-slate-200/40 space-y-1.5 min-h-[70px] shadow-3xs shadow-slate-100/50">
+                        <span className="text-[8px] font-black tracking-wider text-blue-600 uppercase text-center block border-b border-slate-50 pb-0.5">
+                          {item.label_A || (item.type === 'branch' ? '選択 A' : '並行 A')}
+                        </span>
+                        <div className="space-y-1 py-0.5">
+                          {(item.route_A || []).map((sub: any, subIdx: number) => sub.book && (
+                            <div 
+                              key={subIdx} 
+                              onClick={() => {
+                                if (sub.book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
+                                  router.push(`/books/${sub.book.id}`);
+                                }
+                              }} 
+                              className={`flex items-center bg-slate-50 border border-gray-100 rounded-lg hover:bg-white hover:border-blue-100 shadow-3xs transition-all group/sub ${
+                                sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "cursor-default" : "cursor-pointer"
+                              } ${isScreenshotMode ? 'p-1 gap-1.5' : 'p-1.5 gap-2'}`}
+                            >
+                              <div className={`bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs transition-all ${isScreenshotMode ? 'w-5 h-7' : 'w-6 h-9'}`}>
+                                {sub.book.cover_url ? <img src={sub.book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
                               </div>
-                            ))}
-                          </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-black text-[10px] text-slate-800 line-clamp-2 leading-tight group-hover/sub:text-blue-600 transition-colors">
+                                  {sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (sub.custom_title || sub.book.title) : sub.book.title}
+                                </h4>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-
                       </div>
+
+                      {/* 右側の箱 (B) */}
+                      <div className="bg-white p-2 rounded-xl border border-slate-200/40 space-y-1.5 min-h-[70px] shadow-3xs shadow-slate-100/50">
+                        <span className="text-[8px] font-black tracking-wider text-indigo-600 uppercase text-center block border-b border-slate-50 pb-0.5">
+                          {item.label_B || (item.type === 'branch' ? '選択 B' : '並行 B')}
+                        </span>
+                        <div className="space-y-1 py-0.5">
+                          {(item.route_B || []).map((sub: any, subIdx: number) => sub.book && (
+                            <div 
+                              key={subIdx} 
+                              onClick={() => {
+                                if (sub.book.id !== "b2531a01-d6ea-47ad-ae84-3fac68cf3c81") {
+                                  router.push(`/books/${sub.book.id}`);
+                                }
+                              }} 
+                              className={`flex items-center bg-slate-50 border border-gray-100 rounded-lg hover:bg-white hover:border-blue-100 shadow-3xs transition-all group/sub ${
+                                sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "cursor-default" : "cursor-pointer"
+                              } ${isScreenshotMode ? 'p-1 gap-1.5' : 'p-1.5 gap-2'}`}
+                            >
+                              <div className={`bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs transition-all ${isScreenshotMode ? 'w-5 h-7' : 'w-6 h-9'}`}>
+                                {sub.book.cover_url ? <img src={sub.book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-black text-[10px] text-slate-800 line-clamp-2 leading-tight group-hover/sub:text-blue-600 transition-colors">
+                                  {sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (sub.custom_title || sub.book.title) : sub.book.title}
+                                </h4>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                    </div>
                     </div>
                   )}
 
