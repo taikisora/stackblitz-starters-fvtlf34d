@@ -491,8 +491,8 @@ export default function NewRoutePage() {
                   {(!item.type || item.type === 'single') ? (
                     <div className="w-full bg-slate-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-200 transition-all">
                       <div className="flex items-center gap-2 min-w-0">
-                        {/* 💡 修正：本番環境の白飛びを防ぐため、数字サークルの背景色を bg-slate-800、テキスト色を text-white に完全強化 */}
-                        <span className="w-5 h-5 rounded-full bg-slate-800 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-xs">
+                        {/* 💡 修正：メインタイムラインの通常カードには、クッキリした白文字で正しい通し番号を表示 */}
+                        <span className="w-5 h-5 rounded-md bg-slate-800 text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs">
                           {index + 1}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -523,8 +523,8 @@ export default function NewRoutePage() {
                       
                       <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2">
                         <div className="flex items-center gap-1 flex-1 min-w-0">
-                          {/* 💡 修正：数字の視認性強化 */}
-                          <span className="w-5 h-5 rounded-full bg-slate-800 text-white font-black text-[10px] flex items-center justify-center shrink-0 shadow-xs">
+                          {/* 💡 修正：分岐・並行ブロックのヘッダー左側にも、エラーを起こさない形で番号をクッキリ表示 */}
+                          <span className="w-5 h-5 rounded-md bg-slate-700 text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs">
                             {index + 1}
                           </span>
                           <input
