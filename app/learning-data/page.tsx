@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Route as RouteIcon, Plus, Lock, Globe, BookOpen, Trash2, Edit2, AlertCircle, ChevronRight, User, LogIn } from 'lucide-react';
+import { Route as RouteIcon, Plus, Lock, Globe, BookOpen, Trash2, Edit2, AlertCircle, ChevronRight, User, LogIn, ChevronLeft } from 'lucide-react';
 
 export default function LearningDataPage() {
   const router = useRouter();
@@ -11,7 +11,7 @@ export default function LearningDataPage() {
   const [routes, setRoutes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🎯 修正：作成上限を 15 から 30 に増やしました！（50 などお好きな数字に変えてもOKです）
+  // 🎯 作成上限数
   const MAX_ROUTES = 30;
 
   useEffect(() => {
@@ -27,7 +27,6 @@ export default function LearningDataPage() {
       
       setUser(session.user);
 
-      // 💡 修正：flow_structure構造から、一本道・分岐内すべての参考書数を正確に合算カウントする最新ロジック
       const { data, error } = await supabase
         .from('study_routes')
         .select('*')
@@ -40,7 +39,6 @@ export default function LearningDataPage() {
         const routesWithBookCount = data.map((route) => {
           let totalBooks = 0;
 
-          // 新しい flow_structure (JSON) が入っている場合は、その中の全書籍をカウント
           if (route.flow_structure && Array.isArray(route.flow_structure)) {
             route.flow_structure.forEach((node: any) => {
               if (!node.type || node.type === 'single') {
@@ -54,7 +52,7 @@ export default function LearningDataPage() {
 
           return {
             ...route,
-            book_count: totalBooks // ➔ これで「参考書 5冊」などと正しい総数がカードに即時反映されます
+            book_count: totalBooks
           };
         });
 
@@ -97,7 +95,6 @@ export default function LearningDataPage() {
               マイ参考書ルートの管理にはログインが必要です
             </h4>
             <p className="text-gray-400 font-bold text-xs max-w-md leading-relaxed">
-              {/* 💡 案内文の表記も上限に合わせて自動で変わるようにテンプレートリテラル化しました */}
               アカウントを作成またはログインすると、志望校合格に向けた自分だけのオリジナル参考書ルートを最大{MAX_ROUTES}個まで自由に作成・保存できます。
             </p>
           </div>
@@ -119,13 +116,21 @@ export default function LearningDataPage() {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gray-50 min-h-screen pb-24 pt-6">
       
+      {/* 💡 修正：重複をきれいに削除し、戻るボタンとタイトルを1列にすっきり配置しました */}
       <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-2xs border border-gray-100">
         <div className="flex items-center gap-2.5 text-slate-800">
+          <button 
+            onClick={() => router.push('/search')} 
+            className="p-1.5 hover:bg-slate-50 border border-gray-200/60 rounded-xl transition-all cursor-pointer mr-1 text-slate-500"
+          >
+            <ChevronLeft size={18} />
+          </button>
           <div className="bg-blue-600 p-2 rounded-xl text-white shadow-md">
             <RouteIcon size={20} />
           </div>
           <h1 className="text-lg md:text-xl font-black tracking-tight">マイ参考書ルート</h1>
         </div>
+        
         <div className="text-right shrink-0">
           <span className="text-[10px] md:text-xs font-bold text-gray-400 block mb-0.5">保存枠</span>
           <span className={`text-xs md:text-sm font-black px-2.5 py-1 rounded-md ${isLimitReached ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-slate-100 text-slate-700'}`}>

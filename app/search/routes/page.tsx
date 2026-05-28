@@ -19,18 +19,36 @@ export default function RouteSearchPage() {
   const searchParams = useSearchParams();
   const [publicRoutes, setPublicRoutes] = useState<any[]>([]);
   const [routesLoading, setRoutesLoading] = useState(true);
-  const [routeSearchQuery, setRouteSearchQuery] = useState('');
-  const [selectedRouteSubject, setSelectedRouteSubject] = useState('すべて');
-  const [activeRouteTab, setActiveRouteTab] = useState('all');
-  const [user, setUser] = useState<any>(null);
 
-  // ページネーション用の状態
-  const [currentPage, setCurrentPage] = useState(1);
+  // 💡 修正：ブラウザバックで戻った際、URLパラメータから状態を100%綺麗に復元します
+  const [routeSearchQuery, setRouteSearchQuery] = useState(searchParams.get('q') || '');
+  const [selectedRouteSubject, setSelectedRouteSubject] = useState(searchParams.get('subject') || 'すべて');
+  const [activeRouteTab, setActiveRouteTab] = useState(searchParams.get('tab') || 'all');
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+  
+  const [user, setUser] = useState<any>(null);
   const [totalItems, setTotalItems] = useState(0);
 
+  // 💡 修正：状態が変化した際に、URLのクエリ文字列を自動生成してバックグラウンドで同期
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (routeSearchQuery.trim()) params.set('q', routeSearchQuery);
+      if (activeRouteTab !== 'all') params.set('tab', activeRouteTab);
+      if (selectedRouteSubject !== 'すべて') params.set('subject', selectedRouteSubject);
+      if (currentPage > 1) params.set('page', String(currentPage));
+
+      // { scroll: false } でスクロール位置の勝手なトップ移動を防ぎます
+      router.replace(`/search/routes?${params.toString()}`, { scroll: false });
+    }, 300); // 300msのデバウンスを挟むことで文字入力の負荷を軽減
+
+    return () => clearTimeout(handler);
+  }, [routeSearchQuery, activeRouteTab, selectedRouteSubject, currentPage, router]);
+
+  // タブや選択教科が変わった時は安全に1ページ目にリセット
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchParams, activeRouteTab, selectedRouteSubject, routeSearchQuery]);
+  }, [activeRouteTab, selectedRouteSubject]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -49,13 +67,11 @@ export default function RouteSearchPage() {
         setUser(null);
       }
 
-      // 1. ベースクエリを構築
       let query = supabase
         .from('study_routes')
         .select('*, profiles ( username, avatar_color )', { count: 'exact' })
         .eq('is_public', true);
 
-      // タブと教科による絞り込みの適用
       if (activeRouteTab !== 'all') {
         if (selectedRouteSubject === '未選択') {
           const allowedCategories = SUBJECT_DATA[activeRouteTab as keyof typeof SUBJECT_DATA] || [];
@@ -65,7 +81,6 @@ export default function RouteSearchPage() {
         }
       }
 
-      // 文字列検索の適用
       if (routeSearchQuery.trim() !== '') {
         const q = routeSearchQuery.toLowerCase();
         query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%,subject.ilike.%${q}%`);
@@ -123,7 +138,7 @@ export default function RouteSearchPage() {
               const { data: fetchedBooks } = await supabase
                 .from('books')
                 .select('id, title')
-                .in('id', bookIds.slice(0, 3)); // プレビュー上限用に少し多めに取得
+                .in('id', bookIds.slice(0, 3));
               
               if (fetchedBooks) {
                 displayBooks = fetchedBooks.map((b, idx) => {
@@ -145,7 +160,6 @@ export default function RouteSearchPage() {
             if (oldBooks) {
               totalCount = oldBooks.length;
               displayBooks = oldBooks.map(ob => {
-                // 💡 修正：TypeScriptの配列誤認による型エラーを回避するため、安全にキャストを挟みます
                 const bookData = ob.books as any;
                 return {
                   sort_order: ob.sort_order,
@@ -155,7 +169,6 @@ export default function RouteSearchPage() {
             }
           }
 
-          // 💡 修正：詳細画面と完全に同じ方法！route_commentsテーブルから直接、このルートのコメント実数を数えて取得します
           const { count: realCommentCount } = await supabase
             .from('route_comments')
             .select('*', { count: 'exact', head: true })
@@ -165,7 +178,6 @@ export default function RouteSearchPage() {
             ...route,
             computed_total_books: totalCount,
             computed_display_books: displayBooks,
-            // 💡 取得した実数をそのまま流し込みます。JSX側（spanの中）は {route.comments_count} のままでOKです！
             comments_count: realCommentCount || 0
           };
         }));
@@ -293,6 +305,7 @@ export default function RouteSearchPage() {
           <Search className="absolute left-4 text-gray-400" size={16} />
         </div>
 
+        {/* 大カテゴリタブ */}
         <div className="overflow-x-auto -mx-4 px-4 scrollbar-none flex gap-1.5 border-b border-gray-100 pb-2">
           {[{ id: 'all', name: 'すべて' }, ...Object.keys(SUBJECT_DATA).map(k => ({ id: k, name: k }))].map((tab) => {
             const isSelected = activeRouteTab === tab.id;
@@ -303,6 +316,7 @@ export default function RouteSearchPage() {
                 onClick={() => {
                   setActiveRouteTab(tab.id);
                   setSelectedRouteSubject(tab.id === 'all' ? 'すべて' : '未選択');
+                  setCurrentPage(1); // 💡 タブ切り替え時にページをリセット
                 }}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold shrink-0 transition-colors border ${
                   isSelected ? 'bg-gray-800 text-white border-gray-800 shadow-2xs' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -314,11 +328,15 @@ export default function RouteSearchPage() {
           })}
         </div>
 
+        {/* 詳細小カテゴリ子要素 */}
         {activeRouteTab !== 'all' && (
           <div className="bg-white p-2.5 rounded-2xl border border-gray-100 shadow-2xs flex flex-wrap gap-1.5 animate-fade-in">
             <button
               type="button"
-              onClick={() => setSelectedRouteSubject('未選択')}
+              onClick={() => {
+                setSelectedRouteSubject('未選択');
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
                 selectedRouteSubject === '未選択' ? 'bg-gray-800 text-white border-gray-800' : 'bg-gray-50 text-gray-600 border-gray-200/60'
               }`}
@@ -332,7 +350,10 @@ export default function RouteSearchPage() {
                 <button
                   key={sub}
                   type="button"
-                  onClick={() => setSelectedRouteSubject(sub)}
+                  onClick={() => {
+                    setSelectedRouteSubject(sub);
+                    setCurrentPage(1); // 💡 詳細教科切り替え時もページをリセット
+                  }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors border ${
                     isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-600 border-gray-200/60 hover:bg-gray-100'
                   }`}
@@ -344,6 +365,7 @@ export default function RouteSearchPage() {
           </div>
         )}
 
+        {/* ルート検索結果リスト */}
         <div className="space-y-3.5 pt-0.5">
           {routesLoading ? (
             <div className="text-center py-20 text-gray-400 font-bold animate-pulse text-sm">ルートを読み込み中...</div>
@@ -408,12 +430,10 @@ export default function RouteSearchPage() {
                   </div>
 
                   <div>
-                    {/* 💡 変更：タイトルと解説欄の行間・マージンを小さく引き締め */}
                     <h3 className="font-black text-slate-900 text-base leading-snug mb-1 group-hover:text-blue-600 transition-colors flex items-center justify-between gap-2">
                       <span>{route.title}</span>
                       <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 shrink-0 transition-colors" />
                     </h3>
-                    {/* 💡 修正：説明欄を最大2行まで表示し、長すぎる場合は自動で「...」と省略するように調整しました */}
                     {route.description && (
                       <p className="text-xs text-slate-500 font-medium line-clamp-2 leading-relaxed break-all">
                         {route.description}
@@ -421,16 +441,13 @@ export default function RouteSearchPage() {
                     )}
                   </div>
 
-                  {/* 🗺️ 参考書プレビュー箱エリア */}
-                  {/* 💡 変更：内側の余白を圧縮（p-4 ➔ p-2.5）、下部の余白も（space-y-2 ➔ space-y-1）へギチギチに引き締め */}
+                  {/* 参考書プレビュー箱エリア */}
                   <div className="bg-slate-50/70 p-2.5 rounded-xl border border-gray-100/70 space-y-1">
                     <p className="text-[10px] font-black text-slate-400 tracking-wide mb-1.5 flex items-center gap-1.5 border-b border-slate-200/40 pb-1">
                       <BookOpen size={12} strokeWidth={2.5} /> ルートの構成（全 {totalCount} 冊）
                     </p>
                     
-                    {/* 💡 変更：表示上限を「最初の2冊（slice(0, 2)）」に変更！これで縦幅が一気に激減します */}
-                    {/* 💡 修正：idx に : number 型をカチッと明示して TypeScript の型エラーを完全解決しました */}
-                     {sortedBooks.slice(0, 2).map((rb: any, idx: number) => (
+                    {sortedBooks.slice(0, 2).map((rb: any, idx: number) => (
                       <div key={idx} className="flex flex-col items-center w-full">
                         <div className="w-full flex items-center gap-2 text-xs text-slate-700 min-w-0 py-0.5">
                           <span className="w-4 h-4 bg-slate-400/90 text-white font-black text-[9px] rounded-full flex items-center justify-center shrink-0 shadow-3xs">
@@ -438,19 +455,16 @@ export default function RouteSearchPage() {
                           </span>
                           <span className="font-bold truncate flex-1 text-slate-800">{rb.title}</span>
                         </div>
-                        {/* 💡 変更：2冊を繋ぐミニ矢印の上下マージンを限界までゼロに接近 */}
                         {idx < sortedBooks.slice(0, 2).length - 1 && <ArrowDown size={10} className="text-slate-300 my-0.5" strokeWidth={3} />}
                       </div>
                     ))}
                     
-                    {/* 💡 変更：他に見切れている冊数案内もプレビュー数変更（3冊 ➔ 2冊）に合わせて正確に補正 */}
                     {totalCount > 2 && (
                       <p className="text-[10px] text-slate-400 font-bold pl-6 pt-0.5">他 {totalCount - 2} 冊の参考書...</p>
                     )}
                   </div>
 
                   {/* いいね・コメントエリア */}
-                  {/* 💡 変更：上部の区切り線のマージンを削り、アイコンまわりのパディングをタイト化 */}
                   <div className="flex items-center gap-4 pt-1.5 border-t border-gray-100/50">
                     <button
                       onClick={(e) => {

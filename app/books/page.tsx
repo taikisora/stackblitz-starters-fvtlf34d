@@ -12,16 +12,33 @@ export default function BooksPage() {
   const router = useRouter();
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('saved_count_desc');  
   const [user, setUser] = useState<any>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchParams, sortBy]);
+  // 💡 変更：URLのパラメータ（?sort=...）から直接初期値を取得し、なければデフォルトにする
+  const sortBy = searchParams.get('sort') || 'saved_count_desc';
+  // 💡 変更：URLのパラメータ（?page=...）から現在のページ数を復元、なければ1ページ目にする
+  const currentPage = Number(searchParams.get('page')) || 1;
 
+  // 💡 状態が変化した時にURLへ静かに同期するヘルパー関数
+  const updateUrlParams = (newSort: string, newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('sort', newSort);
+    params.set('page', String(newPage));
+    // { scroll: false } をつけることで、画面のガタつきや余計なスクロールを防ぎます
+    router.replace(`/books?${params.toString()}`, { scroll: false });
+  };
+
+  const handleSortChange = (newSort: string) => {
+    updateUrlParams(newSort, 1); // 並び替えを変えたら1ページ目に戻す
+  };
+
+  const handlePageChange = (newPage: number) => {
+    updateUrlParams(sortBy, newPage);
+  };
+
+  // ページ変更時に最上部へスクロール
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
@@ -35,15 +52,13 @@ export default function BooksPage() {
       const q = searchParams.get('q');
       const target = searchParams.get('target');
 
-      // ─── 🔍 修正：届いたキーワードをスペースで分解してAND検索をかける ───
       if (q) {
         const keywords = q
-          .replace(/ /g, ' ') // 全角スペースを半角に
+          .replace(/ /g, ' ') 
           .trim()
-          .split(/\s+/)      // スペースで配列に分解
-          .filter(Boolean);  // 空の文字列を除去
+          .split(/\s+/)      
+          .filter(Boolean);  
 
-        // 💡 分解したすべてのキーワードが含まれるタイトルを探す（AND条件の連鎖）
         keywords.forEach((keyword) => {
           query = query.ilike('title', `%${keyword}%`);
         });
@@ -75,6 +90,7 @@ export default function BooksPage() {
         if (publishers.length > 0) query = query.in('publisher', publishers);
       }
 
+      // 💡 選択された並び替え条件（URL由来）を適用
       if (sortBy === 'saved_count_desc') query = query.order('saved_count', { ascending: false });
       else if (sortBy === 'published_date_desc') query = query.order('published_date', { ascending: false });
       else if (sortBy === 'used_count_desc') query = query.order('used_count', { ascending: false });
@@ -203,13 +219,13 @@ export default function BooksPage() {
             onClick={() => {
               const target = searchParams.get('target');
               if (target === 'regular') {
-                router.push(`/search?step=subject&${searchParams.toString()}`);
+                router.push(`/search/subject?${searchParams.toString()}`);
               } else if (target === 'publisher') {
-                router.push(`/search?step=publisher&${searchParams.toString()}`);
+                router.push(`/search/publisher?${searchParams.toString()}`);
               } else if (target === 'textbook') {
-                router.push(`/search?step=textbook_subject&${searchParams.toString()}`);
+                router.push(`/search/textbook_subject?${searchParams.toString()}`);
               } else if (target === 'exam') {
-                router.push(`/search?step=exam_filter&${searchParams.toString()}`);
+                router.push(`/search/exam_filter?${searchParams.toString()}`);
               } else {
                 router.push('/search');
               }
@@ -229,7 +245,7 @@ export default function BooksPage() {
             {!loading && totalPages > 1 && (
               <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200/60">
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
                   disabled={currentPage === 1}
                   className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform cursor-pointer"
                 >
@@ -239,7 +255,7 @@ export default function BooksPage() {
                   {currentPage}/{totalPages}
                 </span>
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="p-1 rounded-md bg-white border border-gray-200/40 text-slate-700 disabled:opacity-40 disabled:bg-transparent disabled:border-transparent active:scale-90 transition-transform cursor-pointer"
                 >
@@ -250,14 +266,14 @@ export default function BooksPage() {
 
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-                className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-500 font-bold shadow-sm cursor-pointer"
-              >
-                <option value="saved_count_desc">いいね数が多い順</option>
-                <option value="used_count_desc">使用者が多い順</option>
-                <option value="published_date_desc">新着順</option>
-                <option value="title_asc">五十音順</option>
-              </select>
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 focus:outline-none focus:border-blue-500 font-bold shadow-sm cursor-pointer"
+            >
+              <option value="saved_count_desc">いいね数が多い順</option>
+              <option value="used_count_desc">使用者が多い順</option>
+              <option value="published_date_desc">新着順</option>
+              <option value="title_asc">五十音順</option>
+            </select>
             </div>
           </div>
         </div>
@@ -322,7 +338,7 @@ export default function BooksPage() {
                         onClick={(e) => handleToggle(e, book.id, 'used')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 border cursor-pointer ${
                           book.user_status?.is_used 
-                            ? 'bg-green-50 text-green-700 border border-green-200 shadow-3xs' 
+                            ? 'bg-green-50 text-green-700 border-green-200 shadow-3xs' 
                             : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
                         }`}
                       >
@@ -353,7 +369,7 @@ export default function BooksPage() {
       {!loading && books.length > 0 && (
         <div className="mt-8 flex items-center justify-center gap-6 bg-white py-5 border-t border-gray-200 shadow-2xs w-full max-w-7xl mx-auto px-4 rounded-b-2xl">
           <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
             className="flex items-center gap-1 px-4 py-2 text-xs font-black rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-40 disabled:active:scale-100 disabled:bg-gray-50 cursor-pointer"
           >
@@ -365,7 +381,7 @@ export default function BooksPage() {
           </span>
 
           <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
             disabled={currentPage === totalPages}
             className="flex items-center gap-1 px-4 py-2 text-xs font-black rounded-xl border border-gray-200 bg-white text-slate-700 hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-40 disabled:active:scale-100 disabled:bg-gray-50 cursor-pointer"
           >
