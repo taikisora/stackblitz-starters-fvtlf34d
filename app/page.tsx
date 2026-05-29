@@ -302,7 +302,7 @@ export default function HomePage() {
                 {[...Array(3)].map((_, i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse" />)}
               </div>
             ) : newRoutes.length === 0 ? (
-              <p className="text-[11px] text-gray-400 text-center py-4 font-bold">新着ルートはありません。</p>
+              <p className="text-[11px] text-gray-400 text-center py-4 font-bold">参考書ルートを見るにはログインが必要です。</p>
             ) : (
               <div className="space-y-1">
                 {newRoutes.map((routeItem) => (
