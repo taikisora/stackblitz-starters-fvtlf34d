@@ -366,7 +366,7 @@ export default function EditRoutePage() {
 
   return (
     /* 💡 修正：本番環境でのカラー消滅を防ぐため、インラインスタイルで背景を薄灰色に100%絶対固定します */
-    <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24" style={{ backgroundColor: '#f1f5f9' }}>
+    <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24 text-slate-900 light select-none" style={{ backgroundColor: '#f1f5f9', color: '#1e293b' }}>
       
       <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
         <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-3xs hover:bg-gray-50 transition-all">
