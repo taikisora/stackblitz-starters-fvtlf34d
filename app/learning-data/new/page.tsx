@@ -292,7 +292,7 @@ export default function NewRoutePage() {
 
   return (
     /* 💡 修正：本番環境でのカラー消滅を防ぐため、インラインスタイルで背景を薄灰色に100%絶対固定します */
-    <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24" style={{ backgroundColor: '#f1f5f9' }}>
+    <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24 text-slate-900 light select-none" style={{ backgroundColor: '#f1f5f9', color: '#1e293b' }}>
       
       <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
         <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-bold bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-3xs hover:bg-gray-50 transition-all">
@@ -523,17 +523,18 @@ export default function NewRoutePage() {
                     /* 🟡 パターンB：特殊コマンド（分岐 or 並行ブロック）の2列レンダリング */
                     <div className="w-full bg-slate-100 border border-gray-200 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block">
                       
-                      <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2">
+                      <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2" style={{ borderColor: '#e2e8f0' }}>
                         <div className="flex items-center gap-1 flex-1 min-w-0">
-                          {/* 💡 修正：こちらもインラインスタイルでダークグレー（#475569）のサークル色を強制固定します */}
-                          <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#475569' }}>
+                          {/* 💡 修正：サークル色を一本道と同じ青（#2563eb）に統一し、タイトル色も強制固定 */}
+                          <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
                             {index + 1}
                           </span>
                           <input
                             type="text"
                             value={item.title}
                             onChange={(e) => handleUpdateBlockTitle(index, 'title', e.target.value)}
-                            className="bg-transparent font-black text-xs text-slate-800 border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full py-0.5 truncate"
+                            className="bg-transparent font-black text-xs border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full py-0.5 truncate"
+                            style={{ color: '#2563eb' }}
                           />
                         </div>
                         <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-200 p-0.5 rounded-lg shadow-3xs">
@@ -600,7 +601,7 @@ export default function NewRoutePage() {
 
                         {/* 右側の箱 (B) */}
                         <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
-                          <input
+                        <input
                             type="text"
                             value={item.label_B === undefined ? (item.type === 'branch' ? '選択 B' : '並行 B') : item.label_B}
                             onChange={(e) => handleUpdateBlockTitle(index, 'label_B', e.target.value)}
@@ -609,7 +610,9 @@ export default function NewRoutePage() {
                                 handleUpdateBlockTitle(index, 'label_B', item.type === 'branch' ? '選択 B' : '並行 B');
                               }
                             }}
-                            className="text-[9px] font-black tracking-wider text-slate-500 uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
+                            /* 💡 修正：右側のB面入力文字色も、正常に見える左側と同じ青色に強制固定 */
+                            className="text-[9px] font-black tracking-wider uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
+                            style={{ color: '#2563eb' }}
                           />
                           <div className="space-y-1 flex-1 py-1">
                           {(item.route_B || []).map((subBook: any, subIdx: number) => (
