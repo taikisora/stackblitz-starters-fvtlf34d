@@ -379,33 +379,47 @@ export default function HomePage() {
 
       {/* ─── 📺 ＆ 🐦 クリエイター「あるた」公式SNS告知セクション ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+        
+        {/* 左側：YouTubeチャンネルプロモーション */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-950 text-white rounded-3xl p-4 border border-slate-800 flex flex-col justify-between gap-3">
           <div className="flex items-center gap-3 text-left">
+            {/* 💡 修正：親枠のサイズ（w-10 h-10）を絶対厳守させ、画像がはみ出さないよう shrink-0 を追加 */}
             <div className="bg-white p-2 w-10 h-10 rounded-xl shadow-inner shrink-0 flex items-center justify-center overflow-hidden border border-white/10">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/960px-YouTube_full-color_icon_%282017%29.svg.png" alt="YouTube" className="w-full h-full object-contain" />
+              <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/960px-YouTube_full-color_icon_%282017%29.svg.png" 
+                alt="YouTube" 
+                className="w-full h-full max-w-full max-h-full object-contain shrink-0" 
+              />
             </div>
-            <div>
-              <h4 className="font-black text-xs tracking-wide">管理人のYouTubeチャンネルをチェック</h4>
-              <p className="text-[10px] text-slate-300 font-medium">受験対策や参考書比較動画を配信中！</p>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-black text-xs tracking-wide truncate">管理人のYouTubeチャンネルをチェック</h4>
+              <p className="text-[10px] text-slate-300 font-medium truncate">受験対策や参考書比較動画を配信中！</p>
               <p className="text-[9px] text-red-400 font-bold">@Aruta_study</p>
             </div>
           </div>
           <a href="https://www.youtube.com/@Aruta_study" target="_blank" rel="noopener noreferrer" className="w-full text-center bg-red-600 text-white font-black text-xs py-2.5 rounded-xl shadow-md hover:bg-red-700 transition-all active:scale-98">YouTubeをチェック</a>
         </div>
 
+        {/* 右側：公式Xアカウントプロモーション */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-950 text-white rounded-3xl p-4 border border-slate-800 flex flex-col justify-between gap-3">
           <div className="flex items-center gap-3 text-left">
+            {/* 💡 修正：こちらも同様に shrink-0 と画像サイズ上限を設定 */}
             <div className="bg-white p-2 w-10 h-10 rounded-xl shadow-inner shrink-0 flex items-center justify-center overflow-hidden border border-white/10">
-              <img src="https://img.icons8.com/ios_filled/1200/twitterx.jpg" alt="X" className="w-full h-full object-contain" />
+              <img 
+                src="https://img.icons8.com/ios_filled/1200/twitterx.jpg" 
+                alt="X" 
+                className="w-full h-full max-w-full max-h-full object-contain shrink-0" 
+              />
             </div>
-            <div>
-              <h4 className="font-black text-xs tracking-wide">管理人のXアカウントをフォロー</h4>
-              <p className="text-[10px] text-slate-300 font-medium">アプリの裏側や、更新情報を発信中！</p>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-black text-xs tracking-wide truncate">管理人のXアカウントをフォロー</h4>
+              <p className="text-[10px] text-slate-300 font-medium truncate">アプリの裏側や、更新情報を発信中！</p>
               <p className="text-[9px] text-sky-400 font-bold">@Aruta_study</p>
             </div>
           </div>
           <a href="https://x.com/Aruta_study" target="_blank" rel="noopener noreferrer" className="w-full text-center bg-white text-slate-900 font-black text-xs py-2.5 rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-98">Xアカウントをチェック</a>
         </div>
+
       </div>
 
     </div>
