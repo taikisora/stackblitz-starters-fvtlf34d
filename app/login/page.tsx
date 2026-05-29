@@ -18,8 +18,15 @@ export default function LoginPage() {
   // 新規登録
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setMessage('');
+
+    {/* 💡 修正：メールかパスワードが空っぽなら、Supabaseを呼び出さずにここで即座に終了させる */}
+    if (!email.trim() || !password.trim()) {
+      setMessage('メールアドレスとパスワードを入力してから新規登録ボタンを押してください（そのままアカウント設定になります）。');
+      return; // 👈 ここで処理を止めるので、絶対にあの英語エラーは発生しなくなります！
+    }
+
+    setLoading(true);
     
     const { error } = await supabase.auth.signUp({
       email,
