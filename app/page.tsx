@@ -185,27 +185,27 @@ export default function HomePage() {
       <div className="space-y-2.5">
         
         {/* ① いいね（保存）数順ランキング */}
-        {/* 💡 修正：カード内パディングを p-5 ➔ p-3.5 にカット、下部スクロール余白を pb-2 ➔ pb-0.5 に完全緊縮 */}
+        {/* 💡 修正：横スクロールの余白を見直し、右端を少しはみ出させて4冊目をチラ見せ！ */}
         <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100">
           <div className="flex items-center gap-1.5 border-b border-gray-50 pb-1.5 mb-2">
             <Heart size={14} className="text-rose-500 fill-current" />
             <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">受験生が注目！いいね数ランキング</h3>
           </div>
           
-          <div className="flex gap-3.5 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none snap-x snap-mandatory">
+          {/* 💡 修正：snap-x などの強制整列クラスを完全消去！-mx-3.5 px-3.5 にして右側のチラ見せを確定 */}
+          <div className="flex gap-3.5 overflow-x-auto pb-1 -mx-3.5 px-3.5 scrollbar-none">
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="w-24 h-36 bg-gray-100 rounded-2xl animate-pulse shrink-0" />)
             ) : savedRanking.map((book, index) => (
               <button
                 key={book.id}
                 onClick={() => router.push(`/books/${book.id}`)}
-                className="w-24 shrink-0 block group text-left relative snap-start active:scale-98 transition-all"
+                className="w-24 shrink-0 block group text-left relative active:scale-98 transition-all"
               >
                 {renderRankBadge(index)}
                 <div className="w-full h-32 bg-gray-50 rounded-xl overflow-hidden border border-gray-200 shadow-3xs flex items-center justify-center text-gray-400 text-[9px] font-bold">
                   {book.cover_url ? <img src={book.cover_url} alt="cover" className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-200" /> : 'NO IMAGE'}
                 </div>
-                {/* 💡 修正：画像サイズやフォントサイズは変えず、テキストブロックの上余白 mt-1.5 ➔ mt-1 に詰め、行間を極限までタイト化 */}
                 <div className="mt-1 px-0.5">
                   <p className="text-[8px] text-gray-400 font-bold truncate leading-none">{book.publisher}</p>
                   <p className="font-extrabold text-[11px] text-gray-800 line-clamp-2 leading-tight mt-0.5 h-7 group-hover:text-blue-600 transition-colors">{book.title}</p>
@@ -225,14 +225,15 @@ export default function HomePage() {
             <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">受験生が絶賛！高評価ランキング</h3>
           </div>
           
-          <div className="flex gap-3.5 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none snap-x snap-mandatory">
+          {/* 💡 修正：ここも無段階スクロール＋チラ見せに修正 */}
+          <div className="flex gap-3.5 overflow-x-auto pb-1 -mx-3.5 px-3.5 scrollbar-none">
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="w-24 h-36 bg-gray-100 rounded-2xl animate-pulse shrink-0" />)
             ) : ratingRanking.map((book, index) => (
               <button
                 key={book.id}
                 onClick={() => router.push(`/books/${book.id}`)}
-                className="w-24 shrink-0 block group text-left relative snap-start active:scale-98 transition-all"
+                className="w-24 shrink-0 block group text-left relative active:scale-98 transition-all"
               >
                 {renderRankBadge(index)}
                 <div className="w-full h-32 bg-gray-50 rounded-xl overflow-hidden border border-gray-200 shadow-3xs flex items-center justify-center text-gray-400 text-[9px] font-bold">
@@ -259,14 +260,15 @@ export default function HomePage() {
             <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">受験生が愛用！使用者数ランキング</h3>
           </div>
           
-          <div className="flex gap-3.5 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none snap-x snap-mandatory">
+          {/* 💡 修正：ここも無段階スクロール＋チラ見せに修正 */}
+          <div className="flex gap-3.5 overflow-x-auto pb-1 -mx-3.5 px-3.5 scrollbar-none">
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="w-24 h-36 bg-gray-100 rounded-2xl animate-pulse shrink-0" />)
             ) : usedRanking.map((book, index) => (
               <button
                 key={book.id}
                 onClick={() => router.push(`/books/${book.id}`)}
-                className="w-24 shrink-0 block group text-left relative snap-start active:scale-98 transition-all"
+                className="w-24 shrink-0 block group text-left relative active:scale-98 transition-all"
               >
                 {renderRankBadge(index)}
                 <div className="w-full h-32 bg-gray-50 rounded-xl overflow-hidden border border-gray-200 shadow-3xs flex items-center justify-center text-gray-400 text-[9px] font-bold">
