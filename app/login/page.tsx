@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
+// 💡 修正：パスワードの表示・非表示を切り替える目のアイコン（Eye, EyeOff）をインポート
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,13 +12,15 @@ export default function LoginPage() {
   const [message, setMessage] = useState('');
   const [isResetMode, setIsResetMode] = useState(false); // パスワードリセット画面との切り替え用
 
+  // 💡 修正：パスワードの表示状態を管理するStateを追加（false = 非表示, true = 表示）
+  const [showPassword, setShowPassword] = useState(false);
+
   // 新規登録
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
     
-    // 💡 修正箇所：options を追加し、メールクリック後に直接マイページへ自動ログイン＆ジャンプさせる設定を仕込みました！
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -51,7 +55,6 @@ export default function LoginPage() {
     }
 
     if (data?.user) {
-      // ログイン成功時、プロフィール（status）が未設定ならオンボーディング画面へ、設定済ならホームへ
       const { data: profile } = await supabase
         .from('profiles')
         .select('status')
@@ -72,7 +75,6 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
     
-    // メールのリンクをクリックしたときに戻ってくるURLを指定
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
@@ -86,7 +88,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+    <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 light select-none text-slate-900" style={{ color: '#1e293b' }}>
       <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">参考書ドットコム</h1>
       
       <form onSubmit={isResetMode ? handleResetPasswordEmail : handleLogin} className="space-y-4">
@@ -96,7 +98,6 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            // 💡 修正：text-slate-800 font-bold を追加
             className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-slate-800 font-bold"
             required
           />
@@ -106,14 +107,25 @@ export default function LoginPage() {
         {!isResetMode && (
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">パスワード</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              // 💡 修正：text-slate-800 font-bold を追加
-              className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-slate-800 font-bold"
-              required
-            />
+            {/* 💡 修正：右端に目のマークを綺麗に重ねるため、親要素に relative を配置 */}
+            <div className="relative flex items-center">
+              <input
+                type={showPassword ? "text" : "password"} // 💡 修正：目のマークの状態に合わせてタイプを動的に切り替え
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 pr-11 focus:outline-none focus:border-blue-500 text-slate-800 font-bold"
+                required
+              />
+              {/* 💡 修正：パスワード入力欄の右側にぴったり配置する切り替えアイコンボタン */}
+              <button
+                type="button" // フォーム送信の誤作動を防ぐために絶対に button タイプにする
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg cursor-pointer"
+                title={showPassword ? "パスワードを非表示" : "パスワードを表示"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
         )}
 
@@ -153,7 +165,6 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={() => { setIsResetMode(!isResetMode); setMessage(''); }}
-          // 💡 修正：text-slate-500 font-bold に変更し、リンク部分を目立たせました
           className="text-xs text-slate-500 hover:text-blue-600 font-bold hover:underline transition-colors"
         >
           {isResetMode ? "ログイン画面に戻る" : "パスワードを忘れた方はこちら"}
