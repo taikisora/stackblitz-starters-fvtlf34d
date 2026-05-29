@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     
     {
-       url: 'https://sanko-sho.com//search',
+       url: 'https://sanko-sho.com/search',
        lastModified: new Date(),
        changeFrequency: 'monthly',
        priority: 0.8,
