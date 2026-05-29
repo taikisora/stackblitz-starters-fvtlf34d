@@ -372,10 +372,10 @@ export default function RouteDetailPage() {
                     <div className={`w-full bg-slate-100/60 border border-slate-200/40 rounded-3xl shadow-3xs relative transition-all ${isScreenshotMode ? 'p-2 space-y-1.5' : 'p-3.5 space-y-3'}`}>
                       
                       <div className="flex items-center gap-2 border-b border-slate-200/50 pb-1">
-                        <span className={`rounded-full bg-slate-800 text-white font-black flex items-center justify-center shrink-0 transition-all ${isScreenshotMode ? 'w-3.5 h-3.5 text-[8px]' : 'w-5 h-5 text-[10px]'}`}>
+                        <span className={`rounded-full bg-blue-600 text-white font-black flex items-center justify-center shrink-0 transition-all ${isScreenshotMode ? 'w-3.5 h-3.5 text-[8px]' : 'w-5 h-5 text-[10px]'}`}>
                           {index + 1}
                         </span>
-                        <h3 className="font-black text-[10px] md:text-xs text-slate-700 tracking-tight truncate">{item.title}</h3>
+                        <h3 className="font-black text-[10px] md:text-xs text-slate-800 tracking-tight truncate">{item.title}</h3>
                       </div>
 
                      {/* 💡 修正：詳細画面は閲覧専用なので、input要素を排除し、正しい表示専用テキストに戻します */}
@@ -414,9 +414,9 @@ export default function RouteDetailPage() {
 
                       {/* 右側の箱 (B) */}
                       <div className="bg-white p-2 rounded-xl border border-slate-200/40 space-y-1.5 min-h-[70px] shadow-3xs shadow-slate-100/50">
-                        <span className="text-[8px] font-black tracking-wider text-indigo-600 uppercase text-center block border-b border-slate-50 pb-0.5">
-                          {item.label_B || (item.type === 'branch' ? '選択 B' : '並行 B')}
-                        </span>
+                      <span className="text-[8px] font-black tracking-wider text-blue-600 uppercase text-center block border-b border-slate-50 pb-0.5">
+                        {item.label_B || (item.type === 'branch' ? '選択 B' : '並行 B')}
+                      </span>
                         <div className="space-y-1 py-0.5">
                           {(item.route_B || []).map((sub: any, subIdx: number) => sub.book && (
                             <div 

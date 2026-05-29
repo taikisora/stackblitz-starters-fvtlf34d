@@ -595,139 +595,141 @@ export default function EditRoutePage() {
                       </div>
                     </div>
                   ) : (
-                    /* 🟡 パターンB：特殊コマンドブロック */
-                    <div className="w-full bg-slate-100 border border-gray-200 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block">
+                   /* 🟡 パターンB：特殊コマンドブロック */
+                   <div className="w-full bg-slate-100 border border-gray-200 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block" style={{ backgroundColor: '#f1f5f9', borderColor: '#e2e8f0' }}>
                       
-                      <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2">
-                        <div className="flex items-center gap-1 flex-1 min-w-0">
-                          {/* 💡 修正：インラインスタイルでダークグレー（#475569）のサークル色を強制固定 */}
-                          <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#475569' }}>
-                            {index + 1}
-                          </span>
-                          <input
-                            type="text"
-                            value={item.title}
-                            onChange={(e) => handleUpdateBlockTitle(index, 'title', e.target.value)}
-                            className="bg-transparent font-black text-xs text-slate-800 border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full py-0.5 truncate"
-                          />
-                        </div>
-                        <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-200 p-0.5 rounded-lg shadow-3xs">
-                          <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▲</button>
-                          <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▼</button>
-                          <button type="button" onClick={() => handleRemoveBook(index, undefined, 'main')} className="p-1 text-slate-400 hover:text-red-500 rounded ml-0.5"><Trash2 size={13} /></button>
-                        </div>
-                      </div>
+                   <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2" style={{ borderColor: '#e2e8f0' }}>
+                     <div className="flex items-center gap-1 flex-1 min-w-0">
+                       {/* 💡 修正：サークルの色を一本道と完全に同じ王道の青背景（#2563eb）に統一してバグを回避 */}
+                       <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
+                         {index + 1}
+                       </span>
+                       <input
+                         type="text"
+                         value={item.title}
+                         onChange={(e) => handleUpdateBlockTitle(index, 'title', e.target.value)}
+                         className="bg-transparent font-black text-xs border-b border-transparent hover:border-slate-300 focus:border-blue-500 focus:outline-none w-full py-0.5 truncate"
+                         style={{ color: '#1e293b' }}
+                       />
+                     </div>
+                     <div className="flex items-center gap-0.5 shrink-0 bg-white border border-gray-200 p-0.5 rounded-lg shadow-3xs" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
+                       <button type="button" onClick={() => moveUp(index)} disabled={index === 0} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▲</button>
+                       <button type="button" onClick={() => moveDown(index)} disabled={index === selectedBooks.length - 1} className="px-1.5 py-0.5 text-slate-500 hover:text-blue-600 disabled:opacity-20 text-[10px] font-black">▼</button>
+                       <button type="button" onClick={() => handleRemoveBook(index, undefined, 'main')} className="p-1 text-slate-400 hover:text-red-500 rounded ml-0.5"><Trash2 size={13} /></button>
+                     </div>
+                   </div>
 
-                      <div className="grid grid-cols-2 gap-2.5 items-start">
-                        
-                        {/* 左側の箱 (A) */}
-                        <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
-                          <input
-                            type="text"
-                            value={item.label_A === undefined ? (item.type === 'branch' ? '選択 A' : '並行 A') : item.label_A}
-                            onChange={(e) => handleUpdateBlockTitle(index, 'label_A', e.target.value)}
-                            onBlur={() => {
-                              if (!item.label_A || !item.label_A.trim()) {
-                                handleUpdateBlockTitle(index, 'label_A', item.type === 'branch' ? '選択 A' : '並行 A');
-                              }
-                            }}
-                            className="text-[9px] font-black tracking-wider text-slate-500 uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
-                          />
-                          <div className="space-y-1 flex-1 py-1">
-                            {(item.route_A || []).map((subBook: any, subIdx: number) => (
-                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-200 rounded-lg relative group/sub w-full">
-                                {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
-                                  <input
-                                    type="text"
-                                    value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
-                                    onChange={(e) => handleUpdateCustomBookTitle(index, 'A', e.target.value, subIdx)}
-                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-400 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
-                                  />
-                                ) : (
-                                  <span className="text-[10px] font-extrabold text-slate-800 truncate flex-1 pl-0.5">{subBook.title}</span>
-                                )}
-                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'A')} className="text-slate-400 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          {/* 💡 修正：「指定を解除」ボタンのスタイルをインラインで絶対保護 */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (activeTarget?.index === index && activeTarget?.slot === 'A') {
-                                setActiveTarget(null);
-                              } else {
-                                setActiveTarget({ index, slot: 'A' });
-                              }
-                            }}
-                            className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
-                            style={
-                              activeTarget?.index === index && activeTarget?.slot === 'A'
-                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
-                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
-                            }
-                          >
-                            <Plus size={10} />
-                            <span>{activeTarget?.index === index && activeTarget?.slot === 'A' ? '指定を解除' : '本を指定'}</span>
-                          </button>
-                        </div>
+                   <div className="grid grid-cols-2 gap-2.5 items-start">
+                     
+                     {/* 左側の箱 (A) */}
+                     <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
+                       <input
+                         type="text"
+                         value={item.label_A === undefined ? (item.type === 'branch' ? '選択 A' : '並行 A') : item.label_A}
+                         onChange={(e) => handleUpdateBlockTitle(index, 'label_A', e.target.value)}
+                         onBlur={() => {
+                           if (!item.label_A || !item.label_A.trim()) {
+                             handleUpdateBlockTitle(index, 'label_A', item.type === 'branch' ? '選択 A' : '並行 A');
+                           }
+                         }}
+                         className="text-[9px] font-black tracking-wider uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
+                         style={{ color: '#2563eb', borderBottomColor: '#f1f5f9' }}
+                       />
+                       <div className="space-y-1 flex-1 py-1">
+                         {(item.route_A || []).map((subBook: any, subIdx: number) => (
+                           <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-200 rounded-lg relative group/sub w-full" style={{ backgroundColor: '#f8fafc', borderColor: '#f1f5f9' }}>
+                             {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
+                               <input
+                                 type="text"
+                                 value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
+                                 onChange={(e) => handleUpdateCustomBookTitle(index, 'A', e.target.value, subIdx)}
+                                 className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-400 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
+                               />
+                             ) : (
+                               <span className="text-[10px] font-extrabold truncate flex-1 pl-0.5" style={{ color: '#1e293b' }}>{subBook.title}</span>
+                             )}
+                             <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'A')} className="text-slate-400 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
+                           </div>
+                         ))}
+                       </div>
+                       
+                       <button
+                         type="button"
+                         onClick={() => {
+                           if (activeTarget?.index === index && activeTarget?.slot === 'A') {
+                             setActiveTarget(null);
+                           } else {
+                             setActiveTarget({ index, slot: 'A' });
+                           }
+                         }}
+                         className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
+                         style={
+                           activeTarget?.index === index && activeTarget?.slot === 'A'
+                             ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
+                             : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
+                         }
+                       >
+                         <Plus size={10} />
+                         <span>{activeTarget?.index === index && activeTarget?.slot === 'A' ? '指定を解除' : '本を指定'}</span>
+                       </button>
+                     </div>
 
-                        {/* 右側の箱 (B) */}
-                        <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
-                          <input
-                            type="text"
-                            value={item.label_B === undefined ? (item.type === 'branch' ? '選択 B' : '並行 B') : item.label_B}
-                            onChange={(e) => handleUpdateBlockTitle(index, 'label_B', e.target.value)}
-                            onBlur={() => {
-                              if (!item.label_B || !item.label_B.trim()) {
-                                handleUpdateBlockTitle(index, 'label_B', item.type === 'branch' ? '選択 B' : '並行 B');
-                              }
-                            }}
-                            className="text-[9px] font-black tracking-wider text-slate-500 uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
-                          />
-                          <div className="space-y-1 flex-1 py-1">
-                          {(item.route_B || []).map((subBook: any, subIdx: number) => (
-                              <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-200 rounded-lg relative group/sub w-full">
-                                {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
-                                  <input
-                                    type="text"
-                                    value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
-                                    onChange={(e) => handleUpdateCustomBookTitle(index, 'B', e.target.value, subIdx)}
-                                    className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-400 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
-                                  />
-                                ) : (
-                                  <span className="text-[10px] font-extrabold text-slate-800 truncate flex-1 pl-0.5">{subBook.title}</span>
-                                )}
-                                <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'B')} className="text-slate-400 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
-                              </div>
-                            ))}
-                          </div>
-                          
-                          {/* 💡 修正：「指定を解除」ボタンのスタイルをインラインで絶対保護 */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (activeTarget?.index === index && activeTarget?.slot === 'B') {
-                                setActiveTarget(null);
-                              } else {
-                                setActiveTarget({ index, slot: 'B' });
-                              }
-                            }}
-                            className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
-                            style={
-                              activeTarget?.index === index && activeTarget?.slot === 'B'
-                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
-                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
-                            }
-                          >
-                            <Plus size={10} />
-                            <span>{activeTarget?.index === index && activeTarget?.slot === 'B' ? '指定を解除' : '本を指定'}</span>
-                          </button>
-                        </div>
+                     {/* 右側の箱 (B) */}
+                     <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
+                       <input
+                         type="text"
+                         value={item.label_B === undefined ? (item.type === 'branch' ? '選択 B' : '並行 B') : item.label_B}
+                         onChange={(e) => handleUpdateBlockTitle(index, 'label_B', e.target.value)}
+                         onBlur={() => {
+                           if (!item.label_B || !item.label_B.trim()) {
+                             handleUpdateBlockTitle(index, 'label_B', item.type === 'branch' ? '選択 B' : '並行 B');
+                           }
+                         }}
+                         /* 💡 修正：B側の文字色も、正常に見えるA側と「完全に同じ色（#2563eb）」に統一指定 */
+                         className="text-[9px] font-black tracking-wider uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
+                         style={{ color: '#2563eb', borderBottomColor: '#f1f5f9' }}
+                       />
+                       <div className="space-y-1 flex-1 py-1">
+                       {(item.route_B || []).map((subBook: any, subIdx: number) => (
+                           <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-200 rounded-lg relative group/sub w-full" style={{ backgroundColor: '#f8fafc', borderColor: '#f1f5f9' }}>
+                             {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
+                               <input
+                                 type="text"
+                                 value={subBook.custom_title === undefined ? 'カスタム参考書' : subBook.custom_title}
+                                 onChange={(e) => handleUpdateCustomBookTitle(index, 'B', e.target.value, subIdx)}
+                                 className="bg-transparent font-extrabold text-[10px] text-blue-600 border-b border-dashed border-blue-400 focus:border-blue-500 focus:outline-none flex-1 py-0 px-0.5"
+                               />
+                             ) : (
+                               <span className="text-[10px] font-extrabold truncate flex-1 pl-0.5" style={{ color: '#1e293b' }}>{subBook.title}</span>
+                             )}
+                             <button type="button" onClick={() => handleRemoveBook(index, subIdx, 'B')} className="text-slate-400 hover:text-red-500 p-0.5 shrink-0"><Trash2 size={11} /></button>
+                           </div>
+                         ))}
+                       </div>
+                       
+                       <button
+                         type="button"
+                         onClick={() => {
+                           if (activeTarget?.index === index && activeTarget?.slot === 'B') {
+                             setActiveTarget(null);
+                           } else {
+                             setActiveTarget({ index, slot: 'B' });
+                           }
+                         }}
+                         className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
+                         style={
+                           activeTarget?.index === index && activeTarget?.slot === 'B'
+                             ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
+                             : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
+                         }
+                       >
+                         <Plus size={10} />
+                         <span>{activeTarget?.index === index && activeTarget?.slot === 'B' ? '指定を解除' : '本を指定'}</span>
+                       </button>
+                     </div>
 
-                      </div>
-                    </div>
+                   </div>
+                 </div>
                   )}
 
                   {/* 矢印 */}
