@@ -14,9 +14,9 @@ export default function EditRoutePage() {
   const [loading, setLoading] = useState(true);
 
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('英単語');
+  const [subject, setSubject] = useState(''); // デフォルトを未選択に変更！
   const [description, setDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(false);
+  const [isPublic, setIsPublic] = useState(true); // デフォルトを公開に変更！
 
   const [selectedBooks, setSelectedBooks] = useState<any[]>([]);
 
@@ -435,6 +435,9 @@ export default function EditRoutePage() {
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs cursor-pointer transition-all"
               >
+                {/* 💡 他の項目と完全に同じトーンで「選択してください」を配置 */}
+                <option value="" hidden>選択してください</option>
+
                 <optgroup label="英語">
                   <option value="英語（総合）">英語（総合）</option>
                   <option value="英単語">英単語</option>
@@ -483,20 +486,41 @@ export default function EditRoutePage() {
 
             <div>
               <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">公開設定</label>
-              <button
-                type="button"
-                onClick={() => setIsPublic(!isPublic)}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-black border transition-all active:scale-[0.98] shadow-3xs ${
-                  isPublic 
-                    ? 'bg-green-50 border-green-300 text-green-700 font-extrabold' 
-                    : 'bg-white border-gray-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {isPublic ? <Globe size={16} strokeWidth={2.5} /> : <Lock size={16} strokeWidth={2.5} />}
-                {isPublic ? '全体に公開する' : '非公開にする'}
-              </button>
+              
+              {/* 💡 誤操作を完全に防ぐ2連セレクトスイッチ */}
+              <div className="w-full bg-slate-100 p-1 rounded-xl flex border border-gray-200/60 shadow-inner">
+                
+                {/* 🟢 全体に公開 ボタン */}
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(true)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    isPublic 
+                      ? 'bg-green-500 text-white shadow-xs font-extrabold scale-[1.02]' 
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                  }`}
+                >
+                  <Globe size={14} strokeWidth={isPublic ? 3 : 2} />
+                  <span>全体に公開</span>
+                </button>
+
+                {/* 🔒 非公開 ボタン */}
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(false)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    !isPublic 
+                      ? 'bg-slate-700 text-white shadow-xs font-extrabold scale-[1.02]' 
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
+                  }`}
+                >
+                  <Lock size={14} strokeWidth={!isPublic ? 3 : 2} />
+                  <span>非公開にする</span>
+                </button>
+
+              </div>
             </div>
-          </div>
+          </div> {/* 💡 忘れ去られていた「教科と公開設定」をまとめる閉じタグ */}
 
           <div>
             <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">説明・備考</label>
@@ -508,7 +532,7 @@ export default function EditRoutePage() {
               className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50 focus:outline-none focus:border-blue-500 focus:bg-white font-bold text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
             />
           </div>
-        </div>
+        </div> {/* 💡 左カラム全体を美しく締めくくる最後の閉じタグ */}
 
         {/* 右カラム */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 relative">
