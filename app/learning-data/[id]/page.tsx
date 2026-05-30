@@ -244,22 +244,11 @@ export default function RouteDetailPage() {
 
         {/* 親ルート解説カード */}
         <div className={`rounded-3xl p-5 border transition-all mb-5 relative ${isScreenshotMode ? 'bg-slate-50/50 border-none p-3 mb-4 text-center' : 'bg-white border-gray-100 shadow-xs'}`}>
-          
-          {/* 魔法のトリガー（💡 修正：色調は変えず、opacity-30を削除してクッキリ濃く固定） */}
-          {isScreenshotMode && (
-            <button 
-              type="button" 
-              onClick={() => setIsScreenshotMode(false)}
-              className="absolute -top-1 left-1/2 -translate-x-1/2 bg-rose-50 border border-rose-200 text-rose-500 rounded-full px-4 py-1 text-[9px] font-black tracking-widest hover:scale-105 active:scale-95 transition-all shadow-3xs"
-            >
-              通常表示に戻す
-            </button>
-          )}
 
           {!isScreenshotMode && (
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-50 pb-3 mb-3">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                {/* 💡 修正：シルエットだった箇所に、検索画面と同じカラーグラデーションアバターを適用 */}
+                {/* 💡 作成者のカラーグラデーションアバター */}
                 <div 
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-white shrink-0 border border-black/5 shadow-3xs overflow-hidden ${
                     route.profiles?.avatar_color === 'red' ? 'bg-red-500' :
@@ -295,8 +284,25 @@ export default function RouteDetailPage() {
             </div>
           )}
 
-          <div>
-            <h1 className={`font-black text-slate-900 leading-snug transition-all ${isScreenshotMode ? 'text-lg' : 'text-xl md:text-2xl mb-2'}`}>{route.title}</h1>
+          <div className={isScreenshotMode ? "text-center" : ""}>
+            {/* 題名 */}
+            <h1 className={`font-black text-slate-900 leading-snug transition-all ${isScreenshotMode ? 'text-lg' : 'text-xl md:text-2xl mb-2'}`}>
+              {route.title}
+            </h1>
+            
+            {/* 💡 検索画面と同じ、シンプルで綺麗な「戻る」のテキストリンク形式 */}
+            {isScreenshotMode && (
+              <div className="mt-1 flex justify-center">
+                <button 
+                  type="button" 
+                  onClick={() => setIsScreenshotMode(false)}
+                  className="inline-flex items-center gap-0.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={14} strokeWidth={2.5} /> 通常表示に戻す
+                </button>
+              </div>
+            )}
+
             {!isScreenshotMode && (
               <div className="bg-slate-50/60 p-4 rounded-2xl border border-gray-100/60 shadow-inner mt-4">
                 <ExpandableDescription text={route.description} />
