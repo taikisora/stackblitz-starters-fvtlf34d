@@ -421,18 +421,20 @@ export default function NewRoutePage() {
             <div>
               <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">公開設定</label>
               
-              {/* 💡 誤操作を完全に防ぐ2連セレクトスイッチ */}
+              {/* 土台の背景 */}
               <div className="w-full bg-slate-100 p-1 rounded-xl flex border border-gray-200/60 shadow-inner">
                 
                 {/* 🟢 全体に公開 ボタン */}
                 <button
                   type="button"
                   onClick={() => setIsPublic(true)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer"
+                  // 💡 修正：インラインスタイルで、本番環境の消去バグから緑色を100%絶対死守します
+                  style={
                     isPublic 
-                      ? 'bg-green-500 text-white shadow-xs font-extrabold scale-[1.02]' 
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
-                  }`}
+                      ? { backgroundColor: '#16a34a', color: '#ffffff', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' } 
+                      : { color: '#64748b' }
+                  }
                 >
                   <Globe size={14} strokeWidth={isPublic ? 3 : 2} />
                   <span>全体に公開</span>
@@ -442,11 +444,13 @@ export default function NewRoutePage() {
                 <button
                   type="button"
                   onClick={() => setIsPublic(false)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer"
+                  // 💡 修正：同じく黒（ダークグレー）の背景をインラインで強制固定します
+                  style={
                     !isPublic 
-                      ? 'bg-slate-700 text-white shadow-xs font-extrabold scale-[1.02]' 
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/50'
-                  }`}
+                      ? { backgroundColor: '#334155', color: '#ffffff', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' } 
+                      : { color: '#64748b' }
+                  }
                 >
                   <Lock size={14} strokeWidth={!isPublic ? 3 : 2} />
                   <span>非公開にする</span>
