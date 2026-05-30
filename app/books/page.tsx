@@ -68,8 +68,12 @@ export default function BooksPage() {
         const subject = searchParams.get('subject');
         const types = searchParams.get('types')?.split(',').filter(Boolean) || [];
         const examSubjects = searchParams.get('exam_subjects')?.split(',').filter(Boolean) || [];
+        const university = searchParams.get('university'); // 💡 修正：URLから大学名（早稲田大学など）を取得
 
         if (subject) query = query.eq('subject', subject); 
+        
+        // 💡 修正：もし大学名が指定されていたら、その大学名と完全に一致するデータだけを狙い撃ち！
+        if (university) query = query.eq('university', university);
 
         if (types.length > 0) query = query.or(types.map(t => `category.ilike.%${t}%`).join(','));
         if (examSubjects.length > 0) query = query.or(examSubjects.map(s => `category.ilike.%${s}%`).join(','));
