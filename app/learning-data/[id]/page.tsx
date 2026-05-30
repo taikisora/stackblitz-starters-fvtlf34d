@@ -323,7 +323,7 @@ export default function RouteDetailPage() {
           {!isScreenshotMode && (
             <div className="flex justify-between items-center border-b border-gray-50 pb-2 relative z-10">
               <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <BookOpen size={15} strokeWidth={2.5} /> ルートのロードマップ（全 {books.length} 冊）
+                <BookOpen size={15} strokeWidth={2.5} /> 参考書ルート（全 {books.length} 冊）
               </h2>
               <button
                 type="button"
