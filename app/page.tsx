@@ -40,6 +40,7 @@ export default function HomePage() {
           .from('books')
           .select('id, title, publisher, cover_url, average_rating, review_count')
           .order('average_rating', { ascending: false })
+          .order('review_count', { ascending: false })
           .limit(10);
 
         // 4. 使用本棚に登録されている順ランキング（最大10件）
@@ -49,14 +50,14 @@ export default function HomePage() {
           .order('used_count', { ascending: false })
           .limit(10);
 
-        // 5. 新着参考書ルート（直近3件）
+        // 5. 新着参考書ルート（直近10件）
         const fetchNewRoutes = supabase
           .from('study_routes')
           .select('id, title, subject, created_at, profiles(username)')
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(10);
 
-        // 💡 修正：星評価レビューを完全に排除し、「質問・議論（type: question）」のコメントだけを直近3件狙い撃ち
+        // 6. 新着参考書コメント（直近10件）
         const fetchNewComments = supabase
           .from('book_comments')
           .select(`
@@ -65,11 +66,11 @@ export default function HomePage() {
             content, 
             created_at, 
             books(title), 
-            profiles(username)
+            profiles:user_id(username) 
           `)
-          .eq('type', 'question') // 💡 これでレビューを排除して質問・議論だけに絞り込みます
+          .eq('type', 'question')
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(10);
 
         // すべてのクエリを同時に並列実行
         const [announceRes, savedRes, ratingRes, usedRes, routesRes, commentsRes] = await Promise.all([
@@ -82,16 +83,16 @@ export default function HomePage() {
         if (usedRes.data) setUsedRanking(usedRes.data);
         if (routesRes.data) setNewRoutes(routesRes.data);
         
-        // 💡 修正：もし!inner結合で1件も引けない特殊なバグが出た場合のフォールバック付き
         if (commentsRes.data && commentsRes.data.length > 0) {
           setNewComments(commentsRes.data);
         } else if (commentsRes.error) {
-          // 結合なしのプレーンなクエリで再挑戦して、確実にコメントテキストだけは出す
+          // 💡 修正：予備クエリの制限数も一貫して 10 件に増やしてバグを防ぎます
           const { data: fallbackComments } = await supabase
             .from('book_comments')
             .select('id, book_id, content, created_at')
+            .eq('type', 'question')
             .order('created_at', { ascending: false })
-            .limit(3);
+            .limit(10);
           if (fallbackComments) setNewComments(fallbackComments);
         }
 
@@ -131,7 +132,6 @@ export default function HomePage() {
       </div>
 
       {/* 📢 お知らせセクション */}
-      {/* 💡 修正：スマホ縦長画面での縦伸びを防ぐため、p-5→p-3.5へ、余白を mb-4→mb-2 へ超圧縮 */}
       <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-2 border-b border-gray-50 pb-2">
           <div className="flex items-center gap-1.5">
@@ -156,7 +156,6 @@ export default function HomePage() {
           <p className="text-[11px] text-gray-400 text-center py-2 font-bold">現在、お知らせはありません。</p>
         ) : (
           <div>
-            {/* 💡 修正：縦に間延びしないよう、gap-1に詰め、各お知らせのパディングをp-3→p-1.5にして高さを極限までスリム化 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
               {announcements.map((announcement) => (
                 <button 
@@ -180,19 +179,16 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* ─── 📊 3大ランキング（全体の余白をぎゅっとスリム化） ─── */}
-      {/* 💡 修正：塊ごとの隙間を space-y-6 から space-y-2.5 に詰めて無駄なスクロールを削減 */}
+      {/* ─── 📊 3大ランキング ─── */}
       <div className="space-y-2.5">
         
         {/* ① いいね（保存）数順ランキング */}
-        {/* 💡 修正：横スクロールの余白を見直し、右端を少しはみ出させて4冊目をチラ見せ！ */}
-        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100 relative">
           <div className="flex items-center gap-1.5 border-b border-gray-50 pb-1.5 mb-2">
             <Heart size={14} className="text-rose-500 fill-current" />
             <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">受験生が注目！いいね数ランキング</h3>
           </div>
           
-          {/* 💡 修正：snap-x などの強制整列クラスを完全消去！-mx-3.5 px-3.5 にして右側のチラ見せを確定 */}
           <div className="flex gap-3.5 overflow-x-auto pb-1 -mx-3.5 px-3.5 scrollbar-none">
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="w-24 h-36 bg-gray-100 rounded-2xl animate-pulse shrink-0" />)
@@ -215,17 +211,17 @@ export default function HomePage() {
                 </div>
               </button>
             ))}
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-white pointer-events-none rounded-r-3xl"></div>
           </div>
         </div>
 
         {/* ② 評価（星）順ランキング */}
-        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100 relative">
           <div className="flex items-center gap-1.5 border-b border-gray-50 pb-1.5 mb-2">
             <Crown size={14} className="text-amber-500 fill-current" />
             <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">受験生が絶賛！高評価ランキング</h3>
           </div>
           
-          {/* 💡 修正：ここも無段階スクロール＋チラ見せに修正 */}
           <div className="flex gap-3.5 overflow-x-auto pb-1 -mx-3.5 px-3.5 scrollbar-none">
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="w-24 h-36 bg-gray-100 rounded-2xl animate-pulse shrink-0" />)
@@ -250,17 +246,17 @@ export default function HomePage() {
                 </div>
               </button>
             ))}
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-white pointer-events-none rounded-r-3xl"></div>
           </div>
         </div>
 
         {/* ③ 使用中（本棚登録）順ランキング */}
-        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-3xl p-3.5 shadow-sm border border-gray-100 relative">
           <div className="flex items-center gap-1.5 border-b border-gray-50 pb-1.5 mb-2">
             <BookOpen size={14} className="text-emerald-500" />
             <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">受験生が愛用！使用者数ランキング</h3>
           </div>
           
-          {/* 💡 修正：ここも無段階スクロール＋チラ見せに修正 */}
           <div className="flex gap-3.5 overflow-x-auto pb-1 -mx-3.5 px-3.5 scrollbar-none">
             {loading ? (
               [...Array(4)].map((_, i) => <div key={i} className="w-24 h-36 bg-gray-100 rounded-2xl animate-pulse shrink-0" />)
@@ -283,12 +279,13 @@ export default function HomePage() {
                 </div>
               </button>
             ))}
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-r from-transparent to-white pointer-events-none rounded-r-3xl"></div>
           </div>
         </div>
 
       </div>
 
-      {/* ─── 💡 新着ルート＆新着コメントセクション（コンパクト最適化仕様） ─── */}
+      {/* ─── 💡 新着ルート＆新着コメントセクション ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
         
         {/* 左側：新着参考書ルート */}
@@ -339,7 +336,8 @@ export default function HomePage() {
           <div>
             <div className="flex items-center gap-1.5 mb-2 border-b border-gray-50 pb-1.5">
               <MessageSquare size={14} className="text-indigo-600" />
-              <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">最新のレビュー・コメント</h3>
+              {/* 💡 修正：タイトルを「新着の質問・議論」に変更 */}
+              <h3 className="font-black text-gray-800 text-xs md:text-sm tracking-wide">新着の質問・議論</h3>
             </div>
 
             {loading ? (
@@ -362,6 +360,7 @@ export default function HomePage() {
                           {com.books?.title || '参考書詳細'}
                         </span>
                         <span className="text-[9px] text-gray-400 font-semibold truncate">
+                          {/* 💡 修正：結合エイリアス名に合わせて、ユーザー名を正しく取得するように変更 */}
                           by {com.profiles?.username || '名無し'}
                         </span>
                       </div>
@@ -382,10 +381,8 @@ export default function HomePage() {
       {/* ─── 📺 ＆ 🐦 クリエイター「あるた」公式SNS告知セクション ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
         
-        {/* 左側：YouTubeチャンネルプロモーション */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-950 text-white rounded-3xl p-4 border border-slate-800 flex flex-col justify-between gap-3 overflow-hidden">
           <div className="flex items-center gap-3 text-left min-w-0">
-            {/* 💡 修正：インラインスタイルで40px×40pxを絶対固定し、高解像度画像の暴走を物理的に阻止します */}
             <div className="bg-white rounded-xl shadow-inner shrink-0 flex items-center justify-center overflow-hidden border border-white/10" style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}>
               <img 
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/960px-YouTube_full-color_icon_%282017%29.svg.png" 
@@ -402,10 +399,8 @@ export default function HomePage() {
           <a href="https://www.youtube.com/@Aruta_study" target="_blank" rel="noopener noreferrer" className="w-full text-center bg-red-600 text-white font-black text-xs py-2.5 rounded-xl shadow-md hover:bg-red-700 transition-all active:scale-98 block">YouTubeをチェック</a>
         </div>
 
-        {/* 右側：公式Xアカウントプロモーション */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-950 text-white rounded-3xl p-4 border border-slate-800 flex flex-col justify-between gap-3 overflow-hidden">
           <div className="flex items-center gap-3 text-left min-w-0">
-            {/* 💡 修正：Xのロゴも同様に40pxの枠内にインラインでガチガチに閉じ込めます */}
             <div className="bg-white rounded-xl shadow-inner shrink-0 flex items-center justify-center overflow-hidden border border-white/10" style={{ width: '40px', height: '40px', minWidth: '40px', minHeight: '40px' }}>
               <img 
                 src="https://img.icons8.com/ios_filled/1200/twitterx.jpg" 
