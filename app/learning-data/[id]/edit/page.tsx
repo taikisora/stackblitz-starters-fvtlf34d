@@ -350,15 +350,52 @@ export default function EditRoutePage() {
 
     if (realBooksForStatus.length > 0) {
       const uniqueBookIds = Array.from(new Set(realBooksForStatus.map(b => b.id)));
+
+      // 💡 修正①：二重カウントを防ぐため、このユーザーが現在「すでに使用中（is_used）」にしている本のIDを事前に取得
+      const { data: alreadyUsedData } = await supabase
+        .from('user_book_status')
+        .select('book_id')
+        .eq('user_id', user.id)
+        .eq('is_used', true)
+        .in('book_id', uniqueBookIds);
+
+      const alreadyUsedSet = new Set(alreadyUsedData?.map(d => d.book_id) || []);
+
+      // 💡 修正②：まだ使用中にしていなかった（今回初めて使用中になる）本だけのIDリストを作成
+      const newIncrementBookIds = uniqueBookIds.filter(bId => !alreadyUsedSet.has(bId));
+
+      // ステータスを「使用中」に更新（ここは既存のまま安全にUpsert）
       const userBookStatusData = uniqueBookIds.map((bId) => ({
         user_id: user.id,
         book_id: bId,
         is_used: true
       }));
       await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
+
+      // 💡 修正③：今回初めて使用中になった本がある場合のみ、booksテーブルの used_count を確実に「+1」する！
+      if (newIncrementBookIds.length > 0) {
+        // RPC（データベース関数）を使わずに、安全に1つずつカウントアップを実行します
+        for (const bId of newIncrementBookIds) {
+          // 現在の used_count を取得
+          const { data: currentBook } = await supabase
+            .from('books')
+            .select('used_count')
+            .eq('id', bId)
+            .single();
+          
+          if (currentBook) {
+            const nextCount = (currentBook.used_count || 0) + 1;
+            // カウンターを上書き更新
+            await supabase
+              .from('books')
+              .update({ used_count: nextCount })
+              .eq('id', bId);
+          }
+        }
+      }
     }
 
-    alert('参考書ルートを更新しました！');
+    alert('参考書ルートを保存しました！');
     router.push('/learning-data');
   };
 
