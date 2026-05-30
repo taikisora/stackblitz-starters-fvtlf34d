@@ -215,9 +215,11 @@ export default function BooksPage() {
       <div>
         {/* 上部固定ヘッダー */}
         <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3 shadow-sm flex flex-col gap-2 mb-4">
-          <button 
+        <button 
             onClick={() => {
               const target = searchParams.get('target');
+              const subject = searchParams.get('subject'); // 💡 判定用に科目（subject）を取得
+
               if (target === 'regular') {
                 router.push(`/search/subject?${searchParams.toString()}`);
               } else if (target === 'publisher') {
@@ -225,7 +227,13 @@ export default function BooksPage() {
               } else if (target === 'textbook') {
                 router.push(`/search/textbook_subject?${searchParams.toString()}`);
               } else if (target === 'exam') {
-                router.push(`/search/exam_filter?${searchParams.toString()}`);
+                // 💡 修正：「私大・2次」から来た検索結果なら、作ったばかりの専用ページへ安全に戻す！
+                if (subject === '私大・2次') {
+                  router.push(`/search/secondary?${searchParams.toString()}`);
+                } else {
+                  // それ以外の共通テストなどの場合は、元の正しいexam検索画面に戻す
+                  router.push(`/search/exam?${searchParams.toString()}`);
+                }
               } else {
                 router.push('/search');
               }

@@ -124,7 +124,7 @@ export default function SearchPage() {
               <h3 className="font-bold text-lg text-gray-800">私大・2次試験対策</h3>
               <p className="text-xs text-gray-400 leading-relaxed">大学別過去問（赤本）や、二次試験レベルの記述対策問題集。</p>
             </div>
-            <button onClick={() => router.push('/search/exam?type=secondary')} className="mt-6 w-full bg-rose-50 text-rose-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors cursor-pointer">
+            <button onClick={() => router.push('/search/secondary')} className="mt-6 w-full bg-rose-50 text-rose-700 font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors cursor-pointer">
               2次対策を開く <ChevronRight size={16} />
             </button>
           </div>
