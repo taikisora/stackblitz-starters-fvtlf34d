@@ -423,6 +423,13 @@ export default function BookDetailPage() {
       {/* 参考書の説明セクション */}
       <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/80 mb-6">
         <h2 className="font-black text-sm md:text-base text-slate-800 mb-2.5">参考書の説明</h2>
+        
+        {/* 💡 著作権リスク回避のため、紹介文を一旦非表示にし、案内メッセージに差し替え */}
+        <p className="text-sm md:text-base text-gray-400 italic leading-relaxed">
+          ※現在、参考書の紹介文は一時的に非表示にしております。恐れ入りますが、詳細な内容は各公式サイトやECサイト等をご確認ください。
+        </p>
+
+        {/* 💡 元の表示処理は安全のために一旦コメントアウト（非表示化）しておきます
         <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
           {isDescExpanded ? (book.description || 'この参考書の説明はまだ登録されていません。') : (shortDescription || 'この参考書の説明はまだ登録されていません。')}
         </p>
@@ -434,6 +441,7 @@ export default function BookDetailPage() {
             {isDescExpanded ? "閉じる" : "もっと見る"}
           </button>
         )}
+        */}
       </div>
 
       {/* 同じシリーズの参考書横スクロールUI */}
