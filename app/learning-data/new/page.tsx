@@ -11,9 +11,9 @@ export default function NewRoutePage() {
   const [loading, setLoading] = useState(true);
 
   const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState(''); // デフォルトを未選択に変更！
+  const [subject, setSubject] = useState(''); 
   const [description, setDescription] = useState('');
-  const [isPublic, setIsPublic] = useState(true); // デフォルトを公開に変更！
+  const [isPublic, setIsPublic] = useState(true); 
 
   const [selectedBooks, setSelectedBooks] = useState<any[]>([]);
 
@@ -25,7 +25,6 @@ export default function NewRoutePage() {
   const [modalBooks, setModalBooks] = useState<any[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
-  // 💡 どの分岐ブロックのどのスロット（メイン/Aルート/Bルート）を操作しているかを管理
   const [activeTarget, setActiveTarget] = useState<{ index: number; slot: 'main' | 'A' | 'B' } | null>(null);
 
   useEffect(() => {
@@ -91,7 +90,6 @@ export default function NewRoutePage() {
     setIsSearching(false);
   };
 
-  // 💡 タイムラインに「分岐」または「並行」の2列の箱を新規挿入する
   const handleAddSpecialBlock = (type: 'branch' | 'parallel') => {
     if (selectedBooks.length >= 30) {
       alert('登録数が上限を超えています。');
@@ -110,12 +108,10 @@ export default function NewRoutePage() {
     setSelectedBooks((prev) => [...prev, newBlock]);
   };
 
-  // 💡 ブロック全体のタイトル、または左右の箱のラベルをリアルタイム編集する
   const handleUpdateBlockTitle = (index: number, field: 'title' | 'label_A' | 'label_B', newTitle: string) => {
     setSelectedBooks((prev) => prev.map((item, idx) => idx === index ? { ...item, [field]: newTitle } : item));
   };
 
-  // 💡 カスタム参考書のタイトルを自由に入力・書き換えする関数
   const handleUpdateCustomBookTitle = (index: number, slot: 'main' | 'A' | 'B', newTitle: string, subIndex?: number) => {
     setSelectedBooks((prev) => prev.map((item, idx) => {
       if (idx !== index) return item;
@@ -131,7 +127,6 @@ export default function NewRoutePage() {
     }));
   };
 
-  // 💡 メインタイムライン、または分岐ルート内に書籍を充填する
   const handleAddBook = (book: any) => {
     if (selectedBooks.length >= 30) {
       alert('参考書の登録数が上限（30冊）を超えています。');
@@ -170,7 +165,6 @@ export default function NewRoutePage() {
     setActiveTarget(null);
   };
 
-  // 💡 メイン、または分岐ルート内から特定の書籍・ブロックを削除する
   const handleRemoveBook = (index: number, subIndex?: number, slot: 'main' | 'A' | 'B' = 'main') => {
     if (slot === 'main') {
       setSelectedBooks((prev) => prev.filter((_, idx) => idx !== index));
@@ -212,7 +206,6 @@ export default function NewRoutePage() {
       return;
     }
     
-    // 💡 修正：教科が未選択（空文字）のままなら保存をブロックする
     if (!subject) {
       alert('対象の教科を選択してください。');
       return;
@@ -244,6 +237,7 @@ export default function NewRoutePage() {
       }
     });
 
+    // 🟢 ルートの保存
     const { data: routeData, error: routeError } = await supabase
       .from('study_routes')
       .insert({
@@ -284,20 +278,7 @@ export default function NewRoutePage() {
     if (realBooksForStatus.length > 0) {
       const uniqueBookIds = Array.from(new Set(realBooksForStatus.map(b => b.id)));
 
-      // 💡 修正①：二重カウントを防ぐため、このユーザーが現在「すでに使用中（is_used）」にしている本のIDを事前に取得
-      const { data: alreadyUsedData } = await supabase
-        .from('user_book_status')
-        .select('book_id')
-        .eq('user_id', user.id)
-        .eq('is_used', true)
-        .in('book_id', uniqueBookIds);
-
-      const alreadyUsedSet = new Set(alreadyUsedData?.map(d => d.book_id) || []);
-
-      // 💡 修正②：まだ使用中にしていなかった（今回初めて使用中になる）本だけのIDリストを作成
-      const newIncrementBookIds = uniqueBookIds.filter(bId => !alreadyUsedSet.has(bId));
-
-      // ステータスを「使用中」に更新（ここは既存のまま安全にUpsert）
+      // ユーザー個人のステータスを「使用中」として安全にUpsert
       const userBookStatusData = uniqueBookIds.map((bId) => ({
         user_id: user.id,
         book_id: bId,
@@ -305,27 +286,8 @@ export default function NewRoutePage() {
       }));
       await supabase.from('user_book_status').upsert(userBookStatusData, { onConflict: 'user_id,book_id' });
 
-      // 💡 修正③：今回初めて使用中になった本がある場合のみ、booksテーブルの used_count を確実に「+1」する！
-      if (newIncrementBookIds.length > 0) {
-        // RPC（データベース関数）を使わずに、安全に1つずつカウントアップを実行します
-        for (const bId of newIncrementBookIds) {
-          // 現在の used_count を取得
-          const { data: currentBook } = await supabase
-            .from('books')
-            .select('used_count')
-            .eq('id', bId)
-            .single();
-          
-          if (currentBook) {
-            const nextCount = (currentBook.used_count || 0) + 1;
-            // カウンターを上書き更新
-            await supabase
-              .from('books')
-              .update({ used_count: nextCount })
-              .eq('id', bId);
-          }
-        }
-      }
+      // 💡 安全化：ここに元々あった「本の used_count を1冊ずつ直接ループ上書き(update)していた重くて危ない処理（約30行分）」を、綺麗さっぱりすべて撤去しました！
+      // これによりNext.jsからbooksテーブルへの直接のUPDATE干渉は完全にゼロになります。
     }
 
     alert('参考書ルートを保存しました！');
@@ -335,7 +297,6 @@ export default function NewRoutePage() {
   if (loading && !user) return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">読み込み中...</div>;
 
   return (
-    /* 💡 修正：本番環境でのカラー消滅を防ぐため、インラインスタイルで背景を薄灰色に100%絶対固定します */
     <div className="p-4 md:p-6 max-w-5xl mx-auto min-h-screen pb-24 text-slate-900 light select-none" style={{ backgroundColor: '#f1f5f9', color: '#1e293b' }}>
       
       <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
@@ -369,9 +330,7 @@ export default function NewRoutePage() {
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 focus:bg-white text-sm font-bold text-slate-800 shadow-3xs cursor-pointer transition-all"
               >
-                {/* 💡 他の項目と完全に同じトーンで「選択してください」を配置 */}
                 <option value="" hidden>選択してください</option>
-
                 <optgroup label="英語">
                   <option value="英語（総合）">英語（総合）</option>
                   <option value="英単語">英単語</option>
@@ -420,45 +379,28 @@ export default function NewRoutePage() {
 
             <div>
               <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">公開設定</label>
-              
-              {/* 土台の背景 */}
               <div className="w-full bg-slate-100 p-1 rounded-xl flex border border-gray-200/60 shadow-inner">
-                
-                {/* 🟢 全体に公開 ボタン */}
                 <button
                   type="button"
                   onClick={() => setIsPublic(true)}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer"
-                  // 💡 修正：インラインスタイルで、本番環境の消去バグから緑色を100%絶対死守します
-                  style={
-                    isPublic 
-                      ? { backgroundColor: '#16a34a', color: '#ffffff', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' } 
-                      : { color: '#64748b' }
-                  }
+                  style={isPublic ? { backgroundColor: '#16a34a', color: '#ffffff', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' } : { color: '#64748b' }}
                 >
                   <Globe size={14} strokeWidth={isPublic ? 3 : 2} />
                   <span>全体に公開</span>
                 </button>
-
-                {/* 🔒 非公開 ボタン */}
                 <button
                   type="button"
                   onClick={() => setIsPublic(false)}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all cursor-pointer"
-                  // 💡 修正：同じく黒（ダークグレー）の背景をインラインで強制固定します
-                  style={
-                    !isPublic 
-                      ? { backgroundColor: '#334155', color: '#ffffff', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' } 
-                      : { color: '#64748b' }
-                  }
+                  style={!isPublic ? { backgroundColor: '#334155', color: '#ffffff', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' } : { color: '#64748b' }}
                 >
                   <Lock size={14} strokeWidth={!isPublic ? 3 : 2} />
                   <span>非公開にする</span>
                 </button>
-
               </div>
             </div>
-          </div> {/* 💡 忘れ去られていた「教科と公開設定」をまとめる閉じタグ */}
+          </div>
 
           <div>
             <label className="text-xs font-black text-slate-500 mb-2 block uppercase tracking-wider">説明・備考</label>
@@ -470,7 +412,7 @@ export default function NewRoutePage() {
               className="w-full text-sm border border-gray-200 rounded-xl p-3 bg-slate-50 focus:outline-none focus:border-blue-500 focus:bg-white font-bold text-slate-800 min-h-[140px] shadow-3xs transition-all leading-relaxed"
             />
           </div>
-        </div> {/* 💡 左カラム全体を美しく締めくくる最後の閉じタグ */}
+        </div>
 
         {/* 右カラム */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 relative">
@@ -489,12 +431,11 @@ export default function NewRoutePage() {
             >
               <Heart size={14} className="fill-current" /> いいねから追加
             </button>
-            {/* 💡 修正：使用中から追加ボタンも本番のPurgeから守るため、緑色のスタイルをインラインでガチ固定します */}
             <button
               type="button"
               onClick={() => openBooksModal('status')}
               className="flex items-center justify-center gap-1.5 py-2.5 px-3 border text-emerald-800 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
-              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }} // bg-emerald-100, border-emerald-200 相当
+              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }}
             >
               <BookOpen size={14} /> 使用中から追加
             </button>
@@ -561,11 +502,9 @@ export default function NewRoutePage() {
               selectedBooks.map((item, index) => (
                 <div key={index} className="flex flex-col items-center w-full animate-fade-in">
                   
-                  {/* 🟢 パターンA：通常の一本道参考書 */}
                   {(!item.type || item.type === 'single') ? (
                     <div className="w-full bg-slate-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-200 transition-all">
                       <div className="flex items-center gap-2 min-w-0">
-                        {/* 💡 修正：本番最適化での色消滅を防ぐため、インラインスタイルで青背景（#2563eb）を絶対固定します */}
                         <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
                           {index + 1}
                         </span>
@@ -592,12 +531,9 @@ export default function NewRoutePage() {
                       </div>
                     </div>
                   ) : (
-                    /* 🟡 パターンB：特殊コマンド（分岐 or 並行ブロック）の2列レンダリング */
                     <div className="w-full bg-slate-100 border border-gray-200 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block">
-                      
                       <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2" style={{ borderColor: '#e2e8f0' }}>
                         <div className="flex items-center gap-1 flex-1 min-w-0">
-                          {/* 💡 修正：サークル色を一本道と同じ青（#2563eb）に統一し、タイトル色も強制固定 */}
                           <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
                             {index + 1}
                           </span>
@@ -617,17 +553,14 @@ export default function NewRoutePage() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-2.5 items-start">
-                        
-                        {/* 左側の箱 (A) */}
+                        {/* 左箱 */}
                         <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
                           <input
                             type="text"
                             value={item.label_A === undefined ? (item.type === 'branch' ? '選択 A' : '並行 A') : item.label_A}
                             onChange={(e) => handleUpdateBlockTitle(index, 'label_A', e.target.value)}
                             onBlur={() => {
-                              if (!item.label_A || !item.label_A.trim()) {
-                                handleUpdateBlockTitle(index, 'label_A', item.type === 'branch' ? '選択 A' : '並行 A');
-                              }
+                              if (!item.label_A || !item.label_A.trim()) handleUpdateBlockTitle(index, 'label_A', item.type === 'branch' ? '選択 A' : '並行 A');
                             }}
                             className="text-[9px] font-black tracking-wider text-slate-500 uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
                           />
@@ -648,46 +581,34 @@ export default function NewRoutePage() {
                               </div>
                             ))}
                           </div>
-                          
-                          {/* 💡 修正：「指定を解除」の赤色（#dc2626）ボタンをインラインスタイルで本番サイト用に絶対保護！ */}
                           <button
                             type="button"
                             onClick={() => {
-                              if (activeTarget?.index === index && activeTarget?.slot === 'A') {
-                                setActiveTarget(null);
-                              } else {
-                                setActiveTarget({ index, slot: 'A' });
-                              }
+                              if (activeTarget?.index === index && activeTarget?.slot === 'A') setActiveTarget(null);
+                              else setActiveTarget({ index, slot: 'A' });
                             }}
                             className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
-                            style={
-                              activeTarget?.index === index && activeTarget?.slot === 'A'
-                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
-                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
-                            }
+                            style={activeTarget?.index === index && activeTarget?.slot === 'A' ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' } : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }}
                           >
                             <Plus size={10} />
                             <span>{activeTarget?.index === index && activeTarget?.slot === 'A' ? '指定を解除' : '本を指定'}</span>
                           </button>
                         </div>
 
-                        {/* 右側の箱 (B) */}
+                        {/* 右箱 */}
                         <div className="bg-white p-2 rounded-xl border border-gray-200 space-y-2 min-h-[90px] flex flex-col justify-between shadow-3xs">
-                        <input
+                          <input
                             type="text"
                             value={item.label_B === undefined ? (item.type === 'branch' ? '選択 B' : '並行 B') : item.label_B}
                             onChange={(e) => handleUpdateBlockTitle(index, 'label_B', e.target.value)}
                             onBlur={() => {
-                              if (!item.label_B || !item.label_B.trim()) {
-                                handleUpdateBlockTitle(index, 'label_B', item.type === 'branch' ? '選択 B' : '並行 B');
-                              }
+                              if (!item.label_B || !item.label_B.trim()) handleUpdateBlockTitle(index, 'label_B', item.type === 'branch' ? '選択 B' : '並行 B');
                             }}
-                            /* 💡 修正：右側のB面入力文字色も、正常に見える左側と同じ青色に強制固定 */
                             className="text-[9px] font-black tracking-wider uppercase text-center block border-b border-gray-100 pb-0.5 bg-transparent focus:outline-none focus:text-blue-600 focus:border-blue-300 w-full"
                             style={{ color: '#2563eb' }}
                           />
                           <div className="space-y-1 flex-1 py-1">
-                          {(item.route_B || []).map((subBook: any, subIdx: number) => (
+                            {(item.route_B || []).map((subBook: any, subIdx: number) => (
                               <div key={subIdx} className="flex items-center gap-1 p-1.5 bg-slate-50 border border-gray-200 rounded-lg relative group/sub w-full">
                                 {subBook.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
                                   <input
@@ -703,52 +624,39 @@ export default function NewRoutePage() {
                               </div>
                             ))}
                           </div>
-                          
-                          {/* 💡 修正：「指定を解除」の赤色（#dc2626）ボタンをインラインスタイルで本番サイト用に絶対保護！ */}
                           <button
                             type="button"
                             onClick={() => {
-                              if (activeTarget?.index === index && activeTarget?.slot === 'B') {
-                                setActiveTarget(null);
-                              } else {
-                                setActiveTarget({ index, slot: 'B' });
-                              }
+                              if (activeTarget?.index === index && activeTarget?.slot === 'B') setActiveTarget(null);
+                              else setActiveTarget({ index, slot: 'B' });
                             }}
                             className="w-full border py-1.5 rounded-lg text-[9px] font-black flex items-center justify-center gap-0.5 transition-all cursor-pointer shadow-3xs"
-                            style={
-                              activeTarget?.index === index && activeTarget?.slot === 'B'
-                                ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' }
-                                : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
-                            }
+                            style={activeTarget?.index === index && activeTarget?.slot === 'B' ? { backgroundColor: '#dc2626', borderColor: '#dc2626', color: '#ffffff' } : { backgroundColor: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }}
                           >
                             <Plus size={10} />
                             <span>{activeTarget?.index === index && activeTarget?.slot === 'B' ? '指定を解除' : '本を指定'}</span>
                           </button>
                         </div>
-
                       </div>
                     </div>
                   )}
 
-                  {/* 次の要素へ繋ぐ下矢印 */}
                   {index < selectedBooks.length - 1 && (
                     <div className="my-1.5 text-blue-500/80 animate-pulse">
                       <ArrowDown size={14} className="stroke-[2.5]" />
                     </div>
                   )}
-
                 </div>
               ))
             )}
           </div>
 
-          {/* 💡 修正：本番ビルドで削られないよう、背景色と枠線色を確実なカラーコード（黄・緑）で直書き指定します */}
           <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200">
             <button
               type="button"
               onClick={() => handleAddSpecialBlock('branch')}
               className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black text-amber-800 border transition-all active:scale-95 cursor-pointer shadow-3xs"
-              style={{ backgroundColor: '#fef3c7', borderColor: '#fde68a' }} // bg-amber-100, border-amber-200
+              style={{ backgroundColor: '#fef3c7', borderColor: '#fde68a' }}
             >
               <Plus size={12} strokeWidth={2.5} /> 分岐ルートを挿入
             </button>
@@ -756,7 +664,7 @@ export default function NewRoutePage() {
               type="button"
               onClick={() => handleAddSpecialBlock('parallel')}
               className="flex items-center justify-center gap-1 py-2 rounded-xl text-[11px] font-black text-emerald-800 border transition-all active:scale-95 cursor-pointer shadow-3xs"
-              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }} // bg-emerald-100, border-emerald-200
+              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }}
             >
               <Plus size={12} strokeWidth={2.5} /> 並行ルートを挿入
             </button>
@@ -770,22 +678,13 @@ export default function NewRoutePage() {
                     {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
                     {modalType === 'likes' ? 'いいねした参考書' : '使用した参考書'}
                   </h4>
-                  <button
-                    type="button"
-                    onClick={() => setModalType(null)}
-                    className="p-1.5 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-xs font-bold cursor-pointer"
-                  >
-                    閉じる
-                  </button>
+                  <button type="button" onClick={() => setModalType(null)} className="p-1.5 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-xs font-bold cursor-pointer">閉じる</button>
                 </div>
-                
                 <div className="p-2 overflow-y-auto divide-y divide-slate-100 flex-1 min-h-[200px]">
                   {modalLoading ? (
                     <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
                   ) : modalBooks.length === 0 ? (
-                    <div className="text-center py-16 text-xs font-black text-slate-400 leading-relaxed">
-                      該当する参考書がありません。
-                    </div>
+                    <div className="text-center py-16 text-xs font-black text-slate-400 leading-relaxed">該当する参考書がありません。</div>
                   ) : (
                     modalBooks.map((book) => {
                       const isAdded = selectedBooks.some(b => b.id === book.id);
@@ -802,11 +701,7 @@ export default function NewRoutePage() {
                               handleAddBook(book);
                               setModalType(null); 
                             }}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide border transition-all shrink-0 active:scale-95 cursor-pointer ${
-                              isAdded 
-                                ? 'bg-slate-50 border-slate-200 text-slate-400 font-bold' 
-                                : 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white'
-                            }`}
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide border transition-all shrink-0 active:scale-95 cursor-pointer ${isAdded ? 'bg-slate-50 border-slate-200 text-slate-400 font-bold' : 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white'}`}
                           >
                             {isAdded ? '追加済み' : 'ルートへ追加'}
                           </button>

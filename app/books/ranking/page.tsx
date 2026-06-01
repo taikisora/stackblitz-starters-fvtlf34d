@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../../lib/supabase';
-import { ChevronLeft, ChevronRight, Trophy, Medal, BookOpen, Users, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trophy, Medal, BookOpen, Users } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -304,16 +304,7 @@ function RankingContent() {
                       </p>
                     </div>
 
-                    {/* 💡 ランキングリスト内からも、直接いいねトグル＆同期を可能に */}
-                    <button
-                      onClick={(e) => handleToggle(e, book.id, 'saved')}
-                      className={`p-2 rounded-xl transition-colors shrink-0 flex items-center gap-1 text-xs font-bold border ${
-                        isBookSaved ? 'bg-pink-50 text-pink-600 border-pink-200' : 'bg-white text-gray-400 hover:text-pink-500 border-gray-200/60'
-                      }`}
-                    >
-                      <Heart size={14} fill={isBookSaved ? "currentColor" : "none"} strokeWidth={2.5} />
-                      <span>{book.saved_count || 0}</span>
-                    </button>
+                    
                   </div>
                 );
               })}

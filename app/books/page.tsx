@@ -16,29 +16,24 @@ export default function BooksPage() {
 
   const [totalItems, setTotalItems] = useState(0);
 
-  // 💡 変更：URLのパラメータ（?sort=...）から直接初期値を取得し、なければデフォルトにする
   const sortBy = searchParams.get('sort') || 'saved_count_desc';
-  // 💡 変更：URLのパラメータ（?page=...）から現在のページ数を復元、なければ1ページ目にする
   const currentPage = Number(searchParams.get('page')) || 1;
 
-  // 💡 状態が変化した時にURLへ静かに同期するヘルパー関数
   const updateUrlParams = (newSort: string, newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sort', newSort);
     params.set('page', String(newPage));
-    // { scroll: false } をつけることで、画面のガタつきや余計なスクロールを防ぎます
     router.replace(`/books?${params.toString()}`, { scroll: false });
   };
 
   const handleSortChange = (newSort: string) => {
-    updateUrlParams(newSort, 1); // 並び替えを変えたら1ページ目に戻す
+    updateUrlParams(newSort, 1);
   };
 
   const handlePageChange = (newPage: number) => {
     updateUrlParams(sortBy, newPage);
   };
 
-  // ページ変更時に最上部へスクロール
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
@@ -68,11 +63,9 @@ export default function BooksPage() {
         const subject = searchParams.get('subject');
         const types = searchParams.get('types')?.split(',').filter(Boolean) || [];
         const examSubjects = searchParams.get('exam_subjects')?.split(',').filter(Boolean) || [];
-        const university = searchParams.get('university'); // 💡 修正：URLから大学名（早稲田大学など）を取得
+        const university = searchParams.get('university');
 
         if (subject) query = query.eq('subject', subject); 
-        
-        // 💡 修正：もし大学名が指定されていたら、その大学名と完全に一致するデータだけを狙い撃ち！
         if (university) query = query.eq('university', university);
 
         if (types.length > 0) query = query.or(types.map(t => `category.ilike.%${t}%`).join(','));
@@ -94,7 +87,6 @@ export default function BooksPage() {
         if (publishers.length > 0) query = query.in('publisher', publishers);
       }
 
-      // 💡 選択された並び替え条件（URL由来）を適用
       if (sortBy === 'saved_count_desc') query = query.order('saved_count', { ascending: false });
       else if (sortBy === 'published_date_desc') query = query.order('published_date', { ascending: false });
       else if (sortBy === 'used_count_desc') query = query.order('used_count', { ascending: false });
@@ -191,16 +183,18 @@ export default function BooksPage() {
     const currentStatus = type === 'saved' ? book.user_status.is_saved : book.user_status.is_used;
     const nextStatus = !currentStatus;
 
+    // 安全に個人のステータスをUpsert
     await supabase.from('user_book_status').upsert({
       user_id: user.id,
       book_id: bookId,
       [type === 'saved' ? 'is_saved' : 'is_used']: nextStatus
     }, { onConflict: 'user_id,book_id' });
 
+    // 💡 安全化：ここに潜んでいた `supabase.from('books').update` を削除しました！
+    // 画面側のステータスと表示用カウンターのみを安全に即時計算して書き換えます。
     const countColumn = type === 'saved' ? 'saved_count' : 'used_count';
     const currentCount = book[countColumn] || 0;
     const nextCount = nextStatus ? currentCount + 1 : Math.max(0, currentCount - 1);
-    await supabase.from('books').update({ [countColumn]: nextCount }).eq('id', bookId);
 
     const newBooks = [...books];
     newBooks[bookIndex] = {
@@ -222,7 +216,7 @@ export default function BooksPage() {
         <button 
             onClick={() => {
               const target = searchParams.get('target');
-              const subject = searchParams.get('subject'); // 💡 判定用に科目（subject）を取得
+              const subject = searchParams.get('subject');
 
               if (target === 'regular') {
                 router.push(`/search/subject?${searchParams.toString()}`);
@@ -231,11 +225,9 @@ export default function BooksPage() {
               } else if (target === 'textbook') {
                 router.push(`/search/textbook_subject?${searchParams.toString()}`);
               } else if (target === 'exam') {
-                // 💡 修正：「私大・2次」から来た検索結果なら、作ったばかりの専用ページへ安全に戻す！
                 if (subject === '私大・2次') {
                   router.push(`/search/secondary?${searchParams.toString()}`);
                 } else {
-                  // それ以外の共通テストなどの場合は、元の正しいexam検索画面に戻す
                   router.push(`/search/exam?${searchParams.toString()}`);
                 }
               } else {
