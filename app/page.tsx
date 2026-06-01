@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // 💡 追加：利用規約への移動に必要です
 import { supabase } from '../lib/supabase';
 import { Megaphone, Heart, Star, BookOpen, Crown, Route, MessageSquare } from 'lucide-react';
 
@@ -417,6 +418,19 @@ export default function HomePage() {
           <a href="https://x.com/Aruta_study" target="_blank" rel="noopener noreferrer" className="w-full text-center bg-white text-slate-900 font-black text-xs py-2.5 rounded-xl shadow-md hover:bg-slate-100 transition-all active:scale-98 block">Xアカウントをチェック</a>
         </div>
 
+      </div>
+
+      {/* 💡 追加：未ログインでも必ず確認できる「利用規約フッター」 */}
+      <div className="pt-8 pb-2 border-t border-gray-200/60 text-center">
+        <Link 
+          href="/terms" 
+          className="text-xs text-gray-400 font-bold hover:text-blue-500 hover:underline transition-colors inline-flex items-center gap-1"
+        >
+          利用規約・プライバシーポリシーを確認する
+        </Link>
+        <p className="text-[10px] text-gray-300 font-medium mt-1.5">
+          © {new Date().getFullYear()} 参考書ドットコム. All rights reserved.
+        </p>
       </div>
 
     </div>
