@@ -305,7 +305,7 @@ export default function RouteDetailPage() {
 
             {!isScreenshotMode && (
               <div className="bg-slate-50/60 p-4 rounded-2xl border border-gray-100/60 shadow-inner mt-4">
-                <ExpandableDescription text={route.description} />
+                <ExpandableCommentText text={route.description} />
               </div>
             )}
           </div>
@@ -507,7 +507,7 @@ export default function RouteDetailPage() {
                           <span className="font-extrabold text-slate-700">{comment.profiles?.username || '名無しユーザー'}</span>
                           <span className="text-[9px] text-slate-400 font-bold">{new Date(comment.created_at).toLocaleDateString('ja-JP')}</span>
                         </div>
-                        <p className="text-slate-700 font-bold leading-relaxed break-words whitespace-pre-wrap">{comment.content}</p>
+                        <ExpandableCommentText text={comment.content} />
                       </div>
                       {isMyComment && (
                         <button onClick={() => handleCommentDelete(comment.id)} className="text-slate-300 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors shrink-0 -mt-0.5 -mr-0.5 opacity-0 group-hover/comment:opacity-100">
@@ -520,18 +520,20 @@ export default function RouteDetailPage() {
               )}
             </div>
 
-            <form onSubmit={handleCommentSubmit} className="flex gap-2 pt-2 border-t border-gray-50 mt-1 relative z-10">
-              <input
-                type="text"
+            <form onSubmit={handleCommentSubmit} className="flex flex-col gap-2 pt-2 border-t border-gray-50 mt-1 relative z-10 w-full">
+              <textarea
                 placeholder={user ? "このルートへの感想や質問を入力..." : "ログインするとコメントできます"}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 disabled={!user || isSubmitting}
-                className="flex-1 bg-slate-50 border border-gray-200/60 shadow-inner rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-100 disabled:opacity-50 transition-all placeholder:text-slate-400 placeholder:font-bold"
+                rows={2}
+                className="w-full bg-slate-50 border border-gray-200/60 shadow-inner rounded-xl p-3 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-1 focus:ring-blue-100 disabled:opacity-50 transition-all placeholder:text-slate-400 placeholder:font-bold resize-none min-h-[50px]"
               />
-              <button type="submit" disabled={!user || !newComment.trim() || isSubmitting} className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 disabled:bg-slate-200 shrink-0 cursor-pointer transition-colors active:scale-95 shadow-3xs shadow-blue-200">
-                <Send size={14} strokeWidth={2.5} />
-              </button>
+              <div className="flex justify-end">
+                <button type="submit" disabled={!user || !newComment.trim() || isSubmitting} className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 disabled:bg-slate-200 shrink-0 cursor-pointer transition-colors active:scale-95 shadow-3xs shadow-blue-200 flex items-center justify-center">
+                  <Send size={14} strokeWidth={2.5} />
+                </button>
+              </div>
             </form>
           </div>
         )}
@@ -539,31 +541,30 @@ export default function RouteDetailPage() {
       </div>
     </>
   );
+}
 
-  // 💡 文字数で自動的に「もっと見る」を出すための部品です
-  function ExpandableDescription({ text }: { text: string }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const MAX_CHARS = 100; // 途中まで表示する文字数
-    const isLong = text.length > MAX_CHARS;
+// 💡 ルート説明やコメントを「4行」を超えたら自動的に折りたたむコンポーネント（クッキリ仕様）
+function ExpandableCommentText({ text }: { text: string }) {
+  const [isOpen, setIsOpen] = useState(false);
 
-    if (!text) return <p className="text-sm text-slate-400">説明はありません。</p>;
+  if (!text) return null;
 
-    return (
-      <div className="text-sm text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">
-        <p className={`${isOpen ? '' : 'line-clamp-3'}`}>
-          {text}
-        </p>
-        {isLong && (
-          <button
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-xs font-black text-blue-600 mt-2 hover:text-blue-700 cursor-pointer"
-          >
-            {isOpen ? '▲ 折りたたむ' : '...もっと見る'}
-          </button>
-        )}
-      </div>
-    );
-  }
-
+  return (
+    <div className="mt-1">
+      <p 
+        className={`text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold ${
+          isOpen ? '' : 'line-clamp-4'
+        }`}
+      >
+        {text}
+      </p>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
+      >
+        {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
+      </button>
+    </div>
+  );
 }

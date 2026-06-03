@@ -532,7 +532,6 @@ export default function BookDetailPage() {
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder={activeTab === 'review' ? 'この参考書の感想・おすすめの使い方は？' : 'この参考書について質問や議論したいことを書き込みましょう。'}
-            // 💡 修正：text-slate-800 font-bold を追加し、入力文字の白化を防ぎました
             className="w-full text-sm md:text-base border border-gray-200 rounded-lg p-3 bg-white focus:outline-none focus:border-blue-400 transition-colors min-h-[90px] mb-2.5 shadow-3xs text-slate-800 font-bold"
           />
           <button 
@@ -595,10 +594,7 @@ export default function BookDetailPage() {
                     </div>
                   )}
                   {comment.content && (
-                    // 💡 修正：text-slate-700 ➔ text-slate-800 font-bold に変更し、くっきり表示に
-                    <p className="text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed mt-1 font-bold">
-                      {comment.content}
-                    </p>
+                    <ExpandableCommentText text={comment.content} />
                   )}
                   
                   <div className="flex justify-between items-center mt-3 border-b border-gray-100/60 pb-2 mb-2">
@@ -705,22 +701,23 @@ export default function BookDetailPage() {
                           );
                         })}
 
-{replyingToId === comment.id && (
-                        <div className="flex gap-2 pt-1">
-                          <input
-                            type="text"
+                      {replyingToId === comment.id && (
+                        <div className="flex flex-col gap-2 pt-1 w-full">
+                          <textarea
                             value={newReply}
                             onChange={(e) => setNewReply(e.target.value)}
                             placeholder="返信を入力..."
-                            // 💡 修正：入力欄に text-slate-800 font-bold を追加して、打ち込んだ文字をクッキリ化
-                            className="flex-1 text-xs md:text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-blue-400 transition-colors shadow-3xs text-slate-800 font-bold"
+                            rows={2}
+                            className="w-full text-xs md:text-sm border border-gray-200 rounded-lg p-2.5 bg-white focus:outline-none focus:border-blue-400 transition-colors shadow-3xs text-slate-800 font-bold resize-none min-h-[44px]"
                           />
-                          <button
-                            onClick={() => handleSubmitReply(comment.id)}
-                            className="bg-blue-600 text-white font-black text-xs md:text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shrink-0 shadow-sm cursor-pointer active:scale-95"
-                          >
-                            送信
-                          </button>
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => handleSubmitReply(comment.id)}
+                              className="bg-blue-600 text-white font-black text-xs md:text-sm px-4 py-1.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm cursor-pointer active:scale-95"
+                            >
+                              送信
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -733,6 +730,33 @@ export default function BookDetailPage() {
         </div>
         
       </div>
+    </div>
+  );
+}
+
+// 💡 レビューや質問を「4行」を超えたら自動的に折りたたむコンポーネント（デザイン完全維持版）
+function ExpandableCommentText({ text }: { text: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!text) return null;
+
+  return (
+    <div className="mt-1">
+      <p 
+        className={`text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold ${
+          isOpen ? '' : 'line-clamp-4'
+        }`}
+      >
+        {text}
+      </p>
+      {/* 💡 行数が本当に4行を超えている場合、Tailwindのline-clampにより自動で三点リーダーがつき、下のボタンで展開できます */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
+      >
+        {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
+      </button>
     </div>
   );
 }

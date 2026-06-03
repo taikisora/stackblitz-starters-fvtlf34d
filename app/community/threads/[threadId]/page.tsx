@@ -332,9 +332,7 @@ export default function ThreadDetailPage() {
             </div>
 
             {/* 本文 */}
-            <p className="text-xs md:text-sm text-slate-800 font-medium leading-relaxed whitespace-pre-wrap break-words">
-              {renderFormattedContent(comment.content, comment.id)}
-            </p>
+            <ExpandableCommentText content={renderFormattedContent(comment.content, comment.id)} />
 
             {/* ボタンエリア */}
             <div className="flex items-center justify-between pt-1">
@@ -426,28 +424,53 @@ export default function ThreadDetailPage() {
       </div>
 
       {/* ── コメント投稿フッター ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 p-3 z-40 shadow-lg">
-        <form onSubmit={handlePostComment} className="max-w-3xl mx-auto flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="text"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder={user ? "内容を入力、または上の「返信」をタップ..." : "ログインすると書き込みできます"}
-            disabled={!user || isSubmitting}
-            maxLength={400}
-            className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 text-xs md:text-sm font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white shadow-3xs transition-all disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={!user || !newComment.trim() || isSubmitting}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-all active:scale-95 disabled:opacity-30 disabled:scale-100 shrink-0 cursor-pointer shadow-sm"
-          >
-            <Send size={16} />
-          </button>
-        </form>
-      </div>
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 p-3 z-40 shadow-lg">
+          <div className="max-w-3xl mx-auto flex items-end gap-2">
+            {/* textarea化のためにformタグをinputRef対応に変更しています */}
+            <textarea
+              ref={inputRef as any}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder={user ? "内容を入力、または上の「返信」をタップ..." : "ログインすると書き込みできます"}
+              disabled={!user || isSubmitting}
+              maxLength={400}
+              rows={1}
+              className="flex-1 bg-slate-50 border border-gray-200 rounded-xl px-4 py-3 text-xs md:text-sm font-bold text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white shadow-3xs transition-all disabled:opacity-50 resize-none min-h-[44px] max-h-[120px]"
+            />
+            <button
+              onClick={handlePostComment}
+              disabled={!user || !newComment.trim() || isSubmitting}
+              className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-all active:scale-95 disabled:opacity-30 disabled:scale-100 shrink-0 cursor-pointer shadow-sm h-[44px] w-[44px] flex items-center justify-center"
+            >
+              <Send size={16} />
+            </button>
+          </div>
+        </div>
 
-    </div>
-  );
-}
+      </div>
+    );
+  }
+
+  // 💡 掲示板のコメントを「4行」を超えたら自動的に折りたたむコンポーネント（クッキリ仕様）
+  function ExpandableCommentText({ content }: { content: any }) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <div>
+        <p 
+          className={`text-xs md:text-sm text-slate-800 font-bold leading-relaxed whitespace-pre-wrap break-words ${
+            isOpen ? '' : 'line-clamp-4'
+          }`}
+        >
+          {content}
+        </p>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
+        >
+          {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
+        </button>
+      </div>
+    );
+  }
