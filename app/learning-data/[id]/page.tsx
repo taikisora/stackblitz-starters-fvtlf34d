@@ -454,8 +454,8 @@ export default function RouteDetailPage() {
                   )}
 
                   {index < books.length - 1 && !isScreenshotMode && (
-                    <div className="text-blue-500/60 p-0.5 bg-blue-50 rounded-full border border-blue-100 my-1.5 relative z-0 animate-pulse">
-                      <ArrowDown size={14} strokeWidth={3} />
+                    <div className="text-blue-500 dark:text-blue-400 my-2 relative z-0">
+                      <ArrowDown size={16} strokeWidth={2.5} />
                     </div>
                   )}
                 </div>
