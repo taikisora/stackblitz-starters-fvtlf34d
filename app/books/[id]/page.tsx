@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link'; 
 import { supabase } from '../../../lib/supabase';
@@ -693,7 +693,7 @@ export default function BookDetailPage() {
                                   </button>
                                 )}
                               </div>
-                              <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed font-medium">{reply.content}</p>
+                              <ExpandableCommentText text={reply.content} />
                               <p className="text-[8px] text-gray-400 text-right mt-1 font-medium">
                                 {new Date(reply.created_at).toLocaleString('ja-JP')}
                               </p>
@@ -736,13 +736,23 @@ export default function BookDetailPage() {
 
 function ExpandableCommentText({ text }: { text: string }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLongText, setIsLongText] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (textRef.current) {
+      // 実際の全体の高さが、表示されている高さ（4行分）より大きければ5行目突入と判定
+      const hasMore = textRef.current.scrollHeight > textRef.current.clientHeight;
+      setIsLongText(hasMore);
+    }
+  }, [text]);
 
   if (!text) return null;
 
   return (
     <div className="mt-1">
-      {/* 💡 style属性（インライン・スタイル）で直接指定。これならTailwindのバグに関係なく100%絶対に4行で止まります */}
       <p 
+        ref={textRef}
         className="text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold"
         style={
           isOpen 
@@ -757,13 +767,17 @@ function ExpandableCommentText({ text }: { text: string }) {
       >
         {text}
       </p>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
-      >
-        {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
-      </button>
+
+      {/* 💡 5行目に突入している場合のみ「もっと見る」を表示 */}
+      {isLongText && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
+        >
+          {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
+        </button>
+      )}
     </div>
   );
 }

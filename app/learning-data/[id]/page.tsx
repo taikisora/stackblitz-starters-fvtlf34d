@@ -545,6 +545,16 @@ export default function RouteDetailPage() {
 
 function ExpandableCommentText({ text }: { text: string }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLongText, setIsLongText] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (textRef.current) {
+      // 実際の全体の高さ（scrollHeight）が、表示されている高さ（clientHeight: 4行分）を超えたら5行目突入と判定
+      const hasMore = textRef.current.scrollHeight > textRef.current.clientHeight;
+      setIsLongText(hasMore);
+    }
+  }, [text]);
 
   if (!text) return null;
 
@@ -552,6 +562,7 @@ function ExpandableCommentText({ text }: { text: string }) {
     <div className="mt-1">
       {/* 💡 style属性（インライン・スタイル）で直接指定。これならTailwindのバグに関係なく100%絶対に4行で止まります */}
       <p 
+        ref={textRef}
         className="text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold"
         style={
           isOpen 
@@ -566,13 +577,17 @@ function ExpandableCommentText({ text }: { text: string }) {
       >
         {text}
       </p>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
-      >
-        {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
-      </button>
+
+      {/* 💡 5行目に突入している場合のみ「もっと見る」ボタンを表示 */}
+      {isLongText && (
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
+        >
+          {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
+        </button>
+      )}
     </div>
   );
 }

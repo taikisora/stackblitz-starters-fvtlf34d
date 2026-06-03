@@ -451,26 +451,44 @@ export default function ThreadDetailPage() {
     );
   }
 
-  // 💡 掲示板のコメントを「4行」を超えたら自動的に折りたたむコンポーネント（クッキリ仕様）
+  // 💡 掲示板のコメントを「4行」を超えたら自動的に折りたたむコンポーネント（5行目突入判定版）
   function ExpandableCommentText({ content }: { content: any }) {
     const [isOpen, setIsOpen] = useState(false);
+    const [isLongText, setIsLongText] = useState(false);
+    const textRef = useRef<HTMLParagraphElement>(null);
+
+    useEffect(() => {
+      if (textRef.current) {
+        // 実際の全体の高さ（scrollHeight）が、表示されている高さ（clientHeight: 4行分）を超えたら5行目突入と判定
+        const hasMore = textRef.current.scrollHeight > textRef.current.clientHeight;
+        setIsLongText(hasMore);
+      }
+    }, [content]);
+
+    // 文字が入っていない場合は何も表示しない安全処理
+    if (!content) return null;
 
     return (
       <div>
         <p 
+          ref={textRef}
           className={`text-xs md:text-sm text-slate-800 font-bold leading-relaxed whitespace-pre-wrap break-words ${
             isOpen ? '' : 'line-clamp-4'
           }`}
         >
           {content}
         </p>
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
-        >
-          {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
-        </button>
+        
+        {/* 💡 5行目に突入している場合のみ「もっと見る」ボタンを表示 */}
+        {isLongText && (
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
+          >
+            {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
+          </button>
+        )}
       </div>
     );
   }
