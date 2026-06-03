@@ -550,11 +550,18 @@ function ExpandableCommentText({ text }: { text: string }) {
 
   return (
     <div className="mt-1">
+      {/* 💡 style属性（インライン・スタイル）で直接指定。これならTailwindのバグに関係なく100%絶対に4行で止まります */}
       <p 
-        className={
+        className="text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold"
+        style={
           isOpen 
-            ? "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold block" 
-            : "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold line-clamp-4"
+            ? {} 
+            : {
+                display: '-webkit-box',
+                WebkitLineClamp: 4,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }
         }
       >
         {text}
