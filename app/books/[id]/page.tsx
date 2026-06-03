@@ -741,10 +741,11 @@ function ExpandableCommentText({ text }: { text: string }) {
 
   return (
     <div className="mt-1">
+      {/* 💡 isOpenの状態に応じて、Tailwindが100%認識できる固定の文字列クラスをまるごと切り替えます */}
       <p 
         className={
           isOpen 
-            ? "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold" 
+            ? "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold block" 
             : "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold line-clamp-4"
         }
       >

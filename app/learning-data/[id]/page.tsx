@@ -553,7 +553,7 @@ function ExpandableCommentText({ text }: { text: string }) {
       <p 
         className={
           isOpen 
-            ? "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold" 
+            ? "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold block" 
             : "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold line-clamp-4"
         }
       >
