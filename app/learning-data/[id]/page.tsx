@@ -344,7 +344,7 @@ export default function RouteDetailPage() {
           {books.length === 0 ? (
             <p className="p-8 text-center text-sm font-bold text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-gray-100">参考書が登録されていません。</p>
           ) : (
-            <div className={`w-full transition-all ${isScreenshotMode ? 'columns-2 gap-4 space-y-2' : 'space-y-4'}`}>
+            <div className="w-full transition-all space-y-4">
               {books.map((item, index) => (
                 <div key={index} className={`flex flex-col items-center w-full animate-fade-in ${isScreenshotMode ? 'break-inside-avoid mb-2' : ''}`}>
                   
@@ -378,7 +378,7 @@ export default function RouteDetailPage() {
                     <div className={`w-full bg-slate-100/60 border border-slate-200/40 rounded-3xl shadow-3xs relative transition-all ${isScreenshotMode ? 'p-2 space-y-1.5' : 'p-3.5 space-y-3'}`}>
                       
                       <div className="flex items-center gap-2 border-b border-slate-200/50 pb-1">
-                        <span className={`rounded-full bg-blue-600 text-white font-black flex items-center justify-center shrink-0 transition-all ${isScreenshotMode ? 'w-3.5 h-3.5 text-[8px]' : 'w-5 h-5 text-[10px]'}`}>
+                        <span className={`rounded-full bg-blue-600 text-white font-black flex items-center justify-center shrink-0 transition-all ${isScreenshotMode ? 'w-4 h-4 text-[9px]' : 'w-7 h-7 text-xs'}`}>
                           {index + 1}
                         </span>
                         <h3 className="font-black text-[10px] md:text-xs text-slate-800 tracking-tight truncate">{item.title}</h3>
@@ -405,7 +405,7 @@ export default function RouteDetailPage() {
                                 sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "cursor-default" : "cursor-pointer"
                               } ${isScreenshotMode ? 'p-1 gap-1.5' : 'p-1.5 gap-2'}`}
                             >
-                              <div className={`bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs transition-all ${isScreenshotMode ? 'w-5 h-7' : 'w-6 h-9'}`}>
+                              <div className={`bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs transition-all ${isScreenshotMode ? 'w-8 h-11' : 'w-11 h-16'}`}>
                                 {sub.book.cover_url ? <img src={sub.book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
                               </div>
                               <div className="min-w-0 flex-1">
@@ -436,7 +436,7 @@ export default function RouteDetailPage() {
                                 sub.book.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? "cursor-default" : "cursor-pointer"
                               } ${isScreenshotMode ? 'p-1 gap-1.5' : 'p-1.5 gap-2'}`}
                             >
-                              <div className={`bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs transition-all ${isScreenshotMode ? 'w-5 h-7' : 'w-6 h-9'}`}>
+                              <div className={`bg-white rounded-md overflow-hidden border border-gray-200/60 flex-shrink-0 flex items-center justify-center text-gray-400 text-[6px] shadow-3xs transition-all ${isScreenshotMode ? 'w-8 h-11' : 'w-11 h-16'}`}>
                                 {sub.book.cover_url ? <img src={sub.book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
                               </div>
                               <div className="min-w-0 flex-1">
