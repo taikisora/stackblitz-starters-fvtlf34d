@@ -357,9 +357,9 @@ export default function HomePage() {
                   >
                     <div className="min-w-0 flex-1 pr-2">
                       <div className="flex items-center gap-1">
-                        <span className="text-[8px] font-black bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded scale-90 origin-left max-w-[120px] truncate">
-                          {com.books?.title || '参考書詳細'}
-                        </span>
+                      <span className="text-[8px] font-black bg-blue-50 text-blue-600 px-1 py-0.5 rounded scale-90 origin-left max-w-[120px] truncate">
+                        {com.books?.title || '参考書詳細'}
+                      </span>
                         <span className="text-[9px] text-gray-400 font-semibold truncate">
                           {/* 💡 修正：結合エイリアス名に合わせて、ユーザー名を正しく取得するように変更 */}
                           by {com.profiles?.username || '名無し'}
