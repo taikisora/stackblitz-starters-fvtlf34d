@@ -734,7 +734,6 @@ export default function BookDetailPage() {
   );
 }
 
-// 💡 レビューや質問を「4行」を超えたら自動的に折りたたむコンポーネント（デザイン完全維持版）
 function ExpandableCommentText({ text }: { text: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -743,13 +742,14 @@ function ExpandableCommentText({ text }: { text: string }) {
   return (
     <div className="mt-1">
       <p 
-        className={`text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold ${
-          isOpen ? '' : 'line-clamp-4'
-        }`}
+        className={
+          isOpen 
+            ? "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold" 
+            : "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold line-clamp-4"
+        }
       >
         {text}
       </p>
-      {/* 💡 行数が本当に4行を超えている場合、Tailwindのline-clampにより自動で三点リーダーがつき、下のボタンで展開できます */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}

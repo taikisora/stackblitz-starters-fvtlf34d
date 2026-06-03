@@ -543,7 +543,6 @@ export default function RouteDetailPage() {
   );
 }
 
-// 💡 ルート説明やコメントを「4行」を超えたら自動的に折りたたむコンポーネント（クッキリ仕様）
 function ExpandableCommentText({ text }: { text: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -552,9 +551,11 @@ function ExpandableCommentText({ text }: { text: string }) {
   return (
     <div className="mt-1">
       <p 
-        className={`text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold ${
-          isOpen ? '' : 'line-clamp-4'
-        }`}
+        className={
+          isOpen 
+            ? "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold" 
+            : "text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold line-clamp-4"
+        }
       >
         {text}
       </p>
