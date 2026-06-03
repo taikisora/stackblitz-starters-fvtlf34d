@@ -52,7 +52,7 @@ export default function BookDetailPage() {
             .select('*')
             .eq('series_name', bookData.series_name)
             .not('id', 'eq', bookId)
-            .limit(10);
+            .limit(40);
           
           if (relatedData) setSeriesBooks(relatedData);
         }
