@@ -87,10 +87,15 @@ export default function BooksPage() {
         if (publishers.length > 0) query = query.in('publisher', publishers);
       }
 
-      if (sortBy === 'saved_count_desc') query = query.order('saved_count', { ascending: false });
-      else if (sortBy === 'published_date_desc') query = query.order('published_date', { ascending: false });
-      else if (sortBy === 'used_count_desc') query = query.order('used_count', { ascending: false });
-      else if (sortBy === 'title_asc') query = query.order('title', { ascending: true });
+      if (sortBy === 'saved_count_desc') {
+        query = query.order('saved_count', { ascending: false }).order('id', { ascending: true });
+      } else if (sortBy === 'published_date_desc') {
+        query = query.order('published_date', { ascending: false }).order('id', { ascending: true });
+      } else if (sortBy === 'used_count_desc') {
+        query = query.order('used_count', { ascending: false }).order('id', { ascending: true });
+      } else if (sortBy === 'title_asc') {
+        query = query.order('title', { ascending: true }).order('id', { ascending: true });
+      }
 
       const from = (currentPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
