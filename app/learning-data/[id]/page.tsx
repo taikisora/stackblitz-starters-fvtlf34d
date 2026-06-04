@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
-import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff } from 'lucide-react';
+import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2 } from 'lucide-react';
 
 export default function RouteDetailPage() {
   const params = useParams();
@@ -22,6 +22,9 @@ export default function RouteDetailPage() {
 
   // スクショ専用全画面モードのON/OFF
   const [isScreenshotMode, setIsScreenshotMode] = useState(false);
+
+  // ✨ 新設：共有モーダルの開閉状態を管理（初期値は非表示：false）
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchRouteDetail = async () => {
@@ -331,13 +334,28 @@ export default function RouteDetailPage() {
               <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                 <BookOpen size={15} strokeWidth={2.5} /> 参考書ルート（全 {books.length} 冊）
               </h2>
-              <button
-                type="button"
-                onClick={() => setIsScreenshotMode(true)}
-                className="text-[11px] font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 py-1.5 rounded-xl shadow-3xs active:scale-95 transition-all cursor-pointer"
-              >
-                 一覧で表示
-              </button>
+              
+              {/* 💡 ボタンを横並びにするために flex と gap を指定 */}
+              <div className="flex items-center gap-2">
+                {/* ✨ 新設：ルートを共有するボタン */}
+                <button
+                  type="button"
+                  onClick={() => setIsShareModalOpen(true)} // 💡 alertからこれに書き換え
+                  className="text-[11px] font-black bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl active:scale-95 transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <Share2 size={13} strokeWidth={2.5} />
+                  共有する
+                </button>
+
+                {/* 既存の一覧で表示ボタン */}
+                <button
+                  type="button"
+                  onClick={() => setIsScreenshotMode(true)}
+                  className="text-[11px] font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-3 py-1.5 rounded-xl shadow-3xs active:scale-95 transition-all cursor-pointer"
+                >
+                  一覧表示
+                </button>
+              </div>
             </div>
           )}
 
@@ -535,6 +553,48 @@ export default function RouteDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+      {/* ✨ 新設：共有モーダル本体 */}
+      {isShareModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
+            {/* モーダルの白い箱 */}
+            <div className="bg-white rounded-[32px] p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
+              
+              {/* ヘッダー部分 */}
+              <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+                <h3 className="font-black text-slate-800 text-sm tracking-wide">ルートを保存・共有</h3>
+                <button 
+                  onClick={() => setIsShareModalOpen(false)}
+                  className="text-xs font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  閉じる
+                </button>
+              </div>
+
+              {/* 🎨 ここに後でパターンB（グラデーションカード）を入れます */}
+              <div className="bg-slate-50 border border-dashed border-gray-200 rounded-2xl p-8 text-center text-xs font-bold text-slate-400">
+                [ ここにSNS映えするカードのデザインが入ります ]
+              </div>
+
+              {/* アクションボタン */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button 
+                  onClick={() => alert('画像として保存します')}
+                  className="text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl transition-all active:scale-95"
+                >
+                  画像として保存
+                </button>
+                <button 
+                  onClick={() => alert('SNSにシェアします')}
+                  className="text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl transition-all shadow-md shadow-blue-100 active:scale-95"
+                >
+                  SNSに共有する
+                </button>
+              </div>
+
+            </div>
           </div>
         )}
 
