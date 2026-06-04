@@ -672,15 +672,22 @@ export default function NewRoutePage() {
 
           {modalType && (
             <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-              <div className="bg-white rounded-3xl border border-gray-200 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl">
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-slate-50 rounded-t-3xl">
+              
+              {/* 💡 修正①：overflow-hidden を追加し、80vhを突き抜けないように箱をガッチリ固定します */}
+              <div className="bg-white rounded-3xl border border-gray-200 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl overflow-hidden">
+                
+                {/* 💡 修正②：shrink-0 を追加し、ヘッダー（閉じるボタン）がスクロールに潰されないように死守します */}
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-slate-50 rounded-t-3xl shrink-0">
                   <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
                     {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
                     {modalType === 'likes' ? 'いいねした参考書' : '使用した参考書'}
                   </h4>
                   <button type="button" onClick={() => setModalType(null)} className="p-1.5 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-xs font-bold cursor-pointer">閉じる</button>
                 </div>
-                <div className="p-2 overflow-y-auto divide-y divide-slate-100 flex-1 min-h-[200px]">
+                
+                {/* 💡 修正③：min-h-0 に変更し、ブラウザに「この中で確実にスクロールさせる」ことを強制します */}
+                <div className="p-2 overflow-y-auto divide-y divide-slate-100 flex-1 min-h-0">
+                  
                   {modalLoading ? (
                     <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
                   ) : modalBooks.length === 0 ? (
