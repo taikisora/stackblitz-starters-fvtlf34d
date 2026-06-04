@@ -585,9 +585,9 @@ export default function NewRoutePage() {
                   {(!item.type || item.type === 'single') ? (
                     <div className="w-full bg-slate-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-3 shadow-3xs group hover:bg-white hover:border-blue-200 transition-all">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
-                          {index + 1}
-                        </span>
+                      <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-0" style={{ backgroundColor: '#2563eb' }}>
+                        {index + 1}
+                      </span>
                         <div className="min-w-0 flex-1">
                           {item.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (
                             <input
@@ -614,9 +614,9 @@ export default function NewRoutePage() {
                     <div className="w-full bg-slate-100 border border-gray-200 p-3.5 rounded-2xl space-y-3 shadow-3xs relative group/block">
                       <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 gap-2" style={{ borderColor: '#e2e8f0' }}>
                         <div className="flex items-center gap-1 flex-1 min-w-0">
-                          <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-10" style={{ backgroundColor: '#2563eb' }}>
-                            {index + 1}
-                          </span>
+                        <span className="w-5 h-5 rounded-md text-white font-black text-[11px] flex items-center justify-center shrink-0 shadow-xs relative z-0" style={{ backgroundColor: '#2563eb' }}>
+                          {index + 1}
+                        </span>
                           <input
                             type="text"
                             value={item.title}
