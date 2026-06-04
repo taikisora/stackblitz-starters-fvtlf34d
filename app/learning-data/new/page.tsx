@@ -480,7 +480,7 @@ export default function NewRoutePage() {
 
             {/* 💡 修正箇所：本番サイトで番号バッジ（z-10）に負けないよう、最前面の優先度 z-40 ＆ 完全な白背景（bg-white）を指定 */}
             {modalType && (
-              <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl flex flex-col overflow-hidden max-h-64 w-full">
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-64 w-full">
                 {/* 💡 ヘッダーエリア：本番サイトで潰れないように relative z-50 と明示的な高さを指定 */}
                 <div className="flex justify-between items-center px-4 h-10 bg-slate-50 border-b border-gray-100 text-[11px] font-black text-slate-500 relative z-50 shrink-0 select-none">
                   <span>{modalType === 'likes' ? '❤️ いいねした本から選択' : '📚 使用中の本から選択'}</span>
