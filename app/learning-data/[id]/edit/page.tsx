@@ -737,7 +737,21 @@ export default function EditRoutePage() {
             </button>
           </div>
 
-          {modalType && (
+        </div>
+
+        <div className="md:col-span-2 pt-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-md disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none transition-all active:scale-[0.99] text-base"
+          >
+            <Save size={18} className="stroke-[2.5]" />
+            {loading ? 'ルートを保存中...' : '参考書ルートを保存する'}
+          </button>
+        </div>
+
+      </form>
+      {modalType && (
             <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
               
               {/* 💡 修正①：overflow-hidden を追加し、80vhを突き抜けないように箱をガッチリ固定します */}
@@ -787,20 +801,6 @@ export default function EditRoutePage() {
               </div>
             </div>
           )}
-        </div>
-
-        <div className="md:col-span-2 pt-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-md disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none transition-all active:scale-[0.99] text-base"
-          >
-            <Save size={18} className="stroke-[2.5]" />
-            {loading ? 'ルートを保存中...' : '参考書ルートを保存する'}
-          </button>
-        </div>
-
-      </form>
     </div>
   );
 }
