@@ -489,7 +489,7 @@ export default function EditRoutePage() {
             </span>
           </div>
 
-          {/* 💡 修正①：ボタンとリストを一つの「relative」な箱にまとめ、検索窓と同じ挙動の土台を作ります */}
+          {/* 💡 ボタンとリストを一つの「relative」な箱にまとめ、検索窓と同じ挙動の土台を作ります */}
           <div className="relative space-y-2">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
@@ -544,26 +544,26 @@ export default function EditRoutePage() {
               </button>
             </div>
 
-            {/* 💡 修正②：検索窓のウインドウと全く同じ仕様の「スクロール式インライン・ドロップダウン」をここに配置 */}
+            {/* 💡 修正箇所：本番サイトで番号バッジ（z-10）に負けないよう、最前面の優先度 z-40 ＆ 完全な白背景（bg-white）を指定 */}
             {modalType && (
-              <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl flex flex-col overflow-hidden max-h-64">
-                {/* リストのヘッダー（今どちらを開いているか分かりやすくする案内バー） */}
-                <div className="flex justify-between items-center px-4 py-2 bg-slate-50 border-b border-gray-100 text-[11px] font-black text-slate-500">
+              <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl flex flex-col overflow-hidden max-h-64 w-full">
+                {/* 💡 ヘッダーエリア：本番サイトで潰れないように relative z-50 と明示的な高さを指定 */}
+                <div className="flex justify-between items-center px-4 h-10 bg-slate-50 border-b border-gray-100 text-[11px] font-black text-slate-500 relative z-50 shrink-0 select-none">
                   <span>{modalType === 'likes' ? '❤️ いいねした本から選択' : '📚 使用中の本から選択'}</span>
-                  <button type="button" onClick={() => setModalType(null)} className="text-blue-600 hover:underline cursor-pointer">閉じる</button>
+                  <button type="button" onClick={() => setModalType(null)} className="text-blue-600 hover:text-blue-700 hover:underline cursor-pointer bg-transparent border-none font-bold">閉じる</button>
                 </div>
                 
-                {/* スクロールする中身：検索窓と寸分違わぬ構造なので、本番サイトでも100%確実に収まってスクロールします */}
-                <ul className="overflow-y-auto divide-y divide-gray-100 bg-white flex-1">
+                {/* スクロールする中身 */}
+                <ul className="overflow-y-auto divide-y divide-gray-100 bg-white flex-1 relative z-40">
                   {modalLoading ? (
-                    <li className="p-3 text-xs text-slate-400 text-center font-bold animate-pulse">参考書を読み込み中...</li>
+                    <li className="p-4 text-xs text-slate-400 text-center font-bold animate-pulse bg-white">参考書を読み込み中...</li>
                   ) : modalBooks.length === 0 ? (
-                    <li className="p-3 text-xs text-slate-400 text-center font-black">該当する参考書がありません</li>
+                    <li className="p-4 text-xs text-slate-400 text-center font-black bg-white">該当する参考書がありません</li>
                   ) : (
                     modalBooks.map((book) => {
                       const isAdded = selectedBooks.some(b => b.id === book.id);
                       return (
-                        <li key={book.id}>
+                        <li key={book.id} className="bg-white">
                           <button
                             type="button"
                             disabled={isAdded}
@@ -572,7 +572,7 @@ export default function EditRoutePage() {
                               setModalType(null); 
                             }}
                             className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
-                              isAdded ? 'bg-slate-50 opacity-60 cursor-not-allowed' : 'hover:bg-blue-50'
+                              isAdded ? 'bg-slate-50 opacity-60 cursor-not-allowed' : 'hover:bg-blue-50 bg-white'
                             }`}
                           >
                             <div className="min-w-0 pr-2">
@@ -594,7 +594,7 @@ export default function EditRoutePage() {
             )}
           </div>
 
-          {/* 💡 修正③：検索窓のインプット側。これを開いた時は modalType（いいね/使用中）を閉じるようにハンドラーを上書き */}
+          {/* 💡 検索窓のインプット側 */}
           <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
               <Search size={16} strokeWidth={2.5} />
