@@ -414,7 +414,7 @@ export default function NewRoutePage() {
           </div>
         </div>
 
-        {/* 右カラム */}
+        {/* 右カラム：参考書ルートを組み立てる */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4 relative">
           <div className="flex justify-between items-center border-b border-slate-200 pb-1.5">
             <label className="text-xs font-black text-slate-500 block uppercase tracking-wider">参考書ルートを組み立てる</label>
@@ -423,37 +423,112 @@ export default function NewRoutePage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => openBooksModal('likes')}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 text-rose-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
-            >
-              <Heart size={14} className="fill-current" /> いいねから追加
-            </button>
-            <button
-              type="button"
-              onClick={() => openBooksModal('status')}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 border text-emerald-800 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
-              style={{ backgroundColor: '#d1fae5', borderColor: '#a7f3d0' }}
-            >
-              <BookOpen size={14} /> 使用中から追加
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                handleAddBook({
-                  id: "b2531a01-d6ea-47ad-ae84-3fac68cf3c81",
-                  title: "カスタム参考書",
-                  publisher: "※タイトルを変更できます"
-                });
-              }}
-              className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
-            >
-              <Plus size={14} strokeWidth={2.5} /> （参考書が見つからない場合）
-            </button>
+          {/* 💡 修正①：ボタンとリストを一つの「relative」な箱にまとめ、検索窓と同じ挙動の土台を作ります */}
+          <div className="relative space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery(''); // 検索窓を閉じる
+                  setSearchResults([]);
+                  if (modalType === 'likes') setModalType(null); // 既に開いてたら閉じる
+                  else openBooksModal('likes');
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2.5 px-3 border rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs ${
+                  modalType === 'likes' ? 'bg-rose-600 text-white border-rose-600' : 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100/80'
+                }`}
+              >
+                <Heart size={14} className={modalType === 'likes' ? 'fill-white' : 'fill-current'} />
+                <span>いいねから追加</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery(''); // 検索窓を閉じる
+                  setSearchResults([]);
+                  if (modalType === 'status') setModalType(null); // 既に開いてたら閉じる
+                  else openBooksModal('status');
+                }}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 border rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
+                style={
+                  modalType === 'status'
+                    ? { backgroundColor: '#059669', borderColor: '#059669', color: '#ffffff' }
+                    : { backgroundColor: '#d1fae5', borderColor: '#a7f3d0', color: '#065f46' }
+                }
+              >
+                <BookOpen size={14} />
+                <span>使用中から追加</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setModalType(null); // 他のリストを閉じる
+                  handleAddBook({
+                    id: "b2531a01-d6ea-47ad-ae84-3fac68cf3c81",
+                    title: "カスタム参考書",
+                    publisher: "※タイトルを変更できます"
+                  });
+                }}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-3xs"
+              >
+                <Plus size={14} strokeWidth={2.5} />
+                <span>カスタム参考書</span>
+              </button>
+            </div>
+
+            {/* 💡 修正②：検索窓のウインドウと全く同じ仕様の「スクロール式インライン・ドロップダウン」をここに配置 */}
+            {modalType && (
+              <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl flex flex-col overflow-hidden max-h-64">
+                {/* リストのヘッダー（今どちらを開いているか分かりやすくする案内バー） */}
+                <div className="flex justify-between items-center px-4 py-2 bg-slate-50 border-b border-gray-100 text-[11px] font-black text-slate-500">
+                  <span>{modalType === 'likes' ? '❤️ いいねした本から選択' : '📚 使用中の本から選択'}</span>
+                  <button type="button" onClick={() => setModalType(null)} className="text-blue-600 hover:underline cursor-pointer">閉じる</button>
+                </div>
+                
+                {/* スクロールする中身：検索窓と寸分違わぬ構造なので、本番サイトでも100%確実に収まってスクロールします */}
+                <ul className="overflow-y-auto divide-y divide-gray-100 bg-white flex-1">
+                  {modalLoading ? (
+                    <li className="p-3 text-xs text-slate-400 text-center font-bold animate-pulse">参考書を読み込み中...</li>
+                  ) : modalBooks.length === 0 ? (
+                    <li className="p-3 text-xs text-slate-400 text-center font-black">該当する参考書がありません</li>
+                  ) : (
+                    modalBooks.map((book) => {
+                      const isAdded = selectedBooks.some(b => b.id === book.id);
+                      return (
+                        <li key={book.id}>
+                          <button
+                            type="button"
+                            disabled={isAdded}
+                            onClick={() => {
+                              handleAddBook(book);
+                              setModalType(null); 
+                            }}
+                            className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors cursor-pointer ${
+                              isAdded ? 'bg-slate-50 opacity-60 cursor-not-allowed' : 'hover:bg-blue-50'
+                            }`}
+                          >
+                            <div className="min-w-0 pr-2">
+                              <p className="font-black text-xs text-slate-800 truncate">{book.title}</p>
+                              <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
+                            </div>
+                            {isAdded ? (
+                              <span className="text-[10px] font-bold text-slate-400 shrink-0">追加済み</span>
+                            ) : (
+                              <Plus size={16} className="text-blue-600 shrink-0 stroke-[2.5]" />
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
 
+          {/* 💡 修正③：検索窓のインプット側。これを開いた時は modalType（いいね/使用中）を閉じるようにハンドラーを上書き */}
           <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
               <Search size={16} strokeWidth={2.5} />
@@ -461,7 +536,10 @@ export default function NewRoutePage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => {
+                setModalType(null); // いいね/使用中ドロップダウンが開いていたら閉じる
+                handleSearch(e.target.value);
+              }}
               placeholder="参考書の名前で検索して追加..."
               className="w-full bg-slate-50 border border-gray-200 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-white text-xs font-black text-slate-800 shadow-3xs transition-all"
             />
@@ -492,6 +570,8 @@ export default function NewRoutePage() {
               </ul>
             )}
           </div>
+
+          {/* （この下にある selectedBooks.map などのルート表示部分はそのまま触らず残してください！） */}
 
           <div className="space-y-3 pt-1 max-h-[450px] overflow-y-auto pr-1 content-start scrollbar-none">
             {selectedBooks.length === 0 ? (
@@ -670,56 +750,6 @@ export default function NewRoutePage() {
             </button>
           </div>
 
-          {modalType && (
-            <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-              
-              {/* 💡 修正①：overflow-hidden を追加し、80vhを突き抜けないように箱をガッチリ固定します */}
-              <div className="bg-white rounded-3xl border border-gray-200 w-full max-w-md max-h-[80vh] flex flex-col shadow-xl overflow-hidden">
-                
-                {/* 💡 修正②：shrink-0 を追加し、ヘッダー（閉じるボタン）がスクロールに潰されないように死守します */}
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-slate-50 rounded-t-3xl shrink-0">
-                  <h4 className="font-black text-sm text-slate-800 flex items-center gap-1.5">
-                    {modalType === 'likes' ? <Heart size={15} className="text-rose-500 fill-current" /> : <BookOpen size={15} className="text-emerald-500" />}
-                    {modalType === 'likes' ? 'いいねした参考書' : '使用した参考書'}
-                  </h4>
-                  <button type="button" onClick={() => setModalType(null)} className="p-1.5 text-slate-500 hover:text-slate-700 rounded-xl hover:bg-slate-200 transition-colors text-xs font-bold cursor-pointer">閉じる</button>
-                </div>
-                
-                {/* 💡 修正③：min-h-0 に変更し、ブラウザに「この中で確実にスクロールさせる」ことを強制します */}
-                <div className="p-2 overflow-y-auto divide-y divide-slate-100 flex-1 min-h-0">
-                  
-                  {modalLoading ? (
-                    <div className="text-center py-12 text-xs font-bold text-slate-400 animate-pulse">参考書を読み込み中...</div>
-                  ) : modalBooks.length === 0 ? (
-                    <div className="text-center py-16 text-xs font-black text-slate-400 leading-relaxed">該当する参考書がありません。</div>
-                  ) : (
-                    modalBooks.map((book) => {
-                      const isAdded = selectedBooks.some(b => b.id === book.id);
-                      return (
-                        <div key={book.id} className="p-2 flex items-center justify-between gap-3 group">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-black text-xs text-slate-800 truncate leading-snug group-hover:text-blue-600 transition-colors">{book.title}</p>
-                            <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">{book.publisher}</p>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={isAdded}
-                            onClick={() => {
-                              handleAddBook(book);
-                              setModalType(null); 
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wide border transition-all shrink-0 active:scale-95 cursor-pointer ${isAdded ? 'bg-slate-50 border-slate-200 text-slate-400 font-bold' : 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white'}`}
-                          >
-                            {isAdded ? '追加済み' : 'ルートへ追加'}
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="md:col-span-2 pt-3">
