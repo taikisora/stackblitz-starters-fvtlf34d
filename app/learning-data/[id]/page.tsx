@@ -156,53 +156,61 @@ export default function RouteDetailPage() {
   }, [routeId]);
 
  
-  // 💡 写真アプリに保存（旧：SNSに共有する）のための画像生成ロジックに一本化
-  const handleShareImageForSave = async () => {
-    if (!cardRef.current) return;
-    try {
-      const dataUrl = await toPng(cardRef.current, { cacheBust: true });
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
+ // 💡 元のシンプルな挙動に完全復元：ルートをpngとしてブラウザにファイルダウンロードさせる（処理後に自動リロード）
+ const handleSaveAsPngFile = async () => {
+  if (!cardRef.current) return;
+  try {
+    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
+    const link = document.createElement('a');
+    link.download = `route-${route?.title || 'study'}.png`;
+    link.href = dataUrl;
+    link.click();
 
-      // iPhone純正の共有メニューを開き、ユーザーに「画像を保存（Save Image）」を選ばせる
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file] });
-      } else {
-        const link = document.createElement('a');
-        link.download = `route-${route?.title || 'study'}.png`;
-        link.href = dataUrl;
-        link.click();
-      }
+    // 🚀 画像生成が終わったら1秒後にページを自動でパッとリフレッシュ
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (error) {
+    console.error('画像処理エラー:', error);
+    alert('画像の生成に失敗しました。');
+  }
+};
 
-      setTimeout(() => { window.location.reload(); }, 1000);
-    } catch (error) {
-      console.error('画像処理エラー:', error);
-      alert('画像の準備に失敗しました。');
-    }
-  };
-
-  // 💡 新設：画像は一切送らず、URLリンクとテキストだけを100%確実に美しくシェアするロジック
-  const handleShareLink = async () => {
+// 💡 元のシンプルな挙動に完全復元：画像を自動生成し、文章とURLを乗せてシェアメニューを開く（処理後に自動リロード）
+const handleShareToSNS = async () => {
+  if (!cardRef.current) return;
+  try {
+    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
+    const blob = await (await fetch(dataUrl)).blob();
+    const file = new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
+    
     const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！ #参考書ドットコム`;
-    const shareUrl = window.location.href; // 今開いているこのルートのURLをそのまま取得
+    const shareUrl = window.location.href;
 
-    try {
-      if (navigator.share) {
-        // iPhone純正のメニューでURLリンクをきれいに飛ばす
-        await navigator.share({
-          title: route?.title,
-          text: shareText,
-          url: shareUrl
-        });
-      } else {
-        // PCなどのブラウザ用フォールバック（クリップボードにコピー）
-        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-        alert('リンクをクリップボードにコピーしました！SNSに貼り付けてシェアしてね。');
-      }
-    } catch (error) {
-      console.error('シェアエラー:', error);
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: route?.title,
+        text: shareText,
+        url: shareUrl
+      });
+    } else {
+      const link = document.createElement('a');
+      link.download = `route-${route?.title || 'study'}.png`;
+      link.href = dataUrl;
+      link.click();
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      alert('画像をダウンロードし、リンクをコピーしました！');
     }
-  };
+
+    // 🚀 シェアメニューが開いた後（またはダウンロード後）に1秒猶予を空けて自動リロード
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (error) {
+    console.error('共有エラー:', error);
+  }
+};
 
   const toggleRouteLike = async () => {
     if (!user) {
@@ -746,19 +754,19 @@ export default function RouteDetailPage() {
               </div> 
             </div> {/* <-- スクロール領域 終了 */}
 
-            {/* アクションボタン：太希さんのディレクション通り、役割と名前を正しくマッピング */}
+            {/* 元の仕様に復元：保存する（pngファイル化）と、SNSにシェアする（画像＋文章自動生成） */}
             <div className="grid grid-cols-2 gap-3 pt-4 mt-1 border-t border-gray-100 shrink-0">
               <button 
-                onClick={handleShareImageForSave} 
+                onClick={handleSaveAsPngFile} 
                 className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95"
               >
-                写真アプリに保存
+                保存する
               </button>
               <button 
-                onClick={handleShareLink} 
+                onClick={handleShareToSNS} 
                 className="text-xs font-black bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-all shadow-md active:scale-95"
               >
-                リンクをSNSにシェア
+                SNSにシェアする
               </button>
             </div>
 
