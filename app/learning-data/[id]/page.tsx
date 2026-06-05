@@ -624,10 +624,8 @@ export default function RouteDetailPage() {
             {/* 🎨 変更後：男女に響く、洗練されたニュアンス・グレージュデザイン（html-to-imageバグ対策済） */}
             <div 
                 ref={cardRef}
-                className="p-6 rounded-[28px] text-zinc-800 shadow-2xl relative overflow-hidden text-left border border-white/60"
-                style={{
-                  background: 'linear-gradient(135deg, #f5f5f4 0%, #e4e4e7 50%, #e2e8f0 100%)'
-                }}
+                className="p-6 rounded-[28px] text-zinc-800 shadow-2xl relative overflow-hidden text-left border border-white/60 bg-gradient-to-br from-stone-100 via-zinc-200 to-slate-200"
+                
               >
                 {/* 上品なエフェクト：blurではなく安全なラジアルグラデーションでオーロラ光を再現 */}
                 <div 
@@ -684,11 +682,11 @@ export default function RouteDetailPage() {
                       const isSuperDense = books.length > 12;
 
                       // 💡 潰しを無くすため、paddingとフォントサイズを10冊以上の時用に最適化
-                      const rowPadding = isSuperDense ? 'p-1 gap-1.5' : isDense ? 'p-1.5 gap-2' : 'p-2 gap-3';
-                      
-                      const imgSize = isSuperDense ? 'w-4 h-6' : isDense ? 'w-6 h-8' : 'w-7 h-10';
-                      const titleText = isSuperDense ? 'text-[8.5px]' : isDense ? 'text-[10px]' : 'text-xs';
-                      const badgeSize = isSuperDense ? 'w-3.5 h-3.5 text-[7px]' : 'w-4 h-4 text-[9px]';
+                     {/* 判定ごとにクラス名の文字列をバラさず、1つの固まりとして定義することで本番サイトでも100%適用されます */}
+                      const rowPadding = isSuperDense ? "p-1 gap-1.5" : isDense ? "p-1.5 gap-2" : "p-2 gap-3";
+                      const imgSize    = isSuperDense ? "w-4 h-6" : isDense ? "w-6 h-8" : "w-7 h-10";
+                      const titleText  = isSuperDense ? "text-[8.5px]" : isDense ? "text-[10px]" : "text-xs";
+                      const badgeSize  = isSuperDense ? "w-3.5 h-3.5 text-[7px]" : "w-4 h-4 text-[9px]";
 
                       const isSingle = !item.type || item.type === 'single';
 
