@@ -604,229 +604,164 @@ export default function RouteDetailPage() {
           </div>
         )}
 
-      {/* ✨ 新設：共有モーダル本体 */}
-      {isShareModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
-            {/* モーダルの白い箱 */}
-            <div className="bg-white rounded-[32px] p-6 max-w-md w-full shadow-2xl border border-gray-100 space-y-4">
-              
-              {/* ヘッダー部分 */}
-              <div className="flex justify-between items-center border-b border-gray-50 pb-2">
-                <h3 className="font-black text-slate-800 text-sm tracking-wide">ルートを保存・共有</h3>
-                <button 
-                  onClick={() => setIsShareModalOpen(false)}
-                  className="text-xs font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  閉じる
-                </button>
-              </div>
-
-            {/* 🎨 変更後：男女に響く、洗練されたニュアンス・グレージュデザイン（html-to-imageバグ対策済） */}
-            <div 
-                ref={cardRef}
-                className="p-6 rounded-[28px] text-zinc-800 shadow-2xl relative overflow-hidden text-left border border-white/60 bg-gradient-to-br from-stone-100 via-zinc-200 to-slate-200"
-                
+     {/* ✨ 新設：共有モーダル本体 */}
+     {isShareModalOpen && (
+        // 💡 修正①：モーダル自体を max-h-[90vh] にし、スマホ画面をはみ出さないように固定
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full shadow-2xl flex flex-col max-h-[90vh]">
+            
+            {/* ヘッダー部分（上に固定） */}
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-3 shrink-0">
+              <h3 className="font-black text-slate-800 text-sm tracking-wide">ルートを保存・共有</h3>
+              <button 
+                onClick={() => setIsShareModalOpen(false)}
+                className="text-xs font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                {/* 上品なエフェクト：blurではなく安全なラジアルグラデーションでオーロラ光を再現 */}
-                <div 
-                  className="absolute -top-40 -right-40 w-[350px] h-[350px] pointer-events-none opacity-40"
-                  style={{ background: 'radial-gradient(circle, rgba(165,180,252,1) 0%, rgba(165,180,252,0) 70%)' }}
-                ></div>
-                <div 
-                  className="absolute -bottom-40 -left-40 w-[350px] h-[350px] pointer-events-none opacity-30"
-                  style={{ background: 'radial-gradient(circle, rgba(fda4af,1) 0%, rgba(fda4af,0) 70%)' }}
-                ></div>
-                
-                {/* 繊細なアクセント：標準的な標準CSSのbackgroundプロパティに分解してストライプを再現 */}
-                <div 
-                  className="absolute inset-0 opacity-25 pointer-events-none"
-                  style={{
-                    backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)',
-                    backgroundSize: '24px 24px'
-                  }}
-                ></div>
+                閉じる
+              </button>
+            </div>
 
-                {/* 🎨 変更後：宣伝力をさらに強化した公式ヘッダー */}
-                <div className="flex items-center justify-between mb-4 border-b border-zinc-300/60 pb-3 relative z-10">
-                  {/* 左側：科目バッジと作成者情報 */}
+            {/* 💡 修正②：ここから「スクロール領域」。本が何冊あってもここだけがスクロールし、ボタンは隠れません */}
+            <div className="overflow-y-auto flex-1 min-h-0 -mx-1 px-1 pb-2 scrollbar-thin scrollbar-thumb-gray-200">
+              
+              {/* 🎨 画像化するターゲット（cardRef） */}
+              <div 
+                ref={cardRef}
+                // 💡 修正③：画像化バグやパージを100%防ぐため、最も安全な「ベタ塗りの薄いグレー（bg-slate-50）」に固定
+                className="p-5 rounded-2xl text-slate-800 relative overflow-hidden text-left border border-gray-200 bg-slate-50"
+              >
+                {/* 公式ヘッダー */}
+                <div className="flex items-center justify-between mb-4 border-b border-gray-200 pb-3 relative z-10">
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300/50">
+                    <span className="text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                       {route.subject}
                     </span>
-                    <span className="text-[9px] font-bold text-zinc-500">
+                    <span className="text-[9px] font-bold text-gray-500">
                       by {route.profiles?.username || '名無しユーザー'}
                     </span>
                   </div>
-
-                  {/* 右側 ✨ 新設：右上のアイキャッチロゴ */}
-                  <div className="flex items-center gap-1 text-zinc-500">
+                  <div className="flex items-center gap-1 text-gray-500">
                     <BookOpen size={11} strokeWidth={2.5} />
-                    <span className="text-[8px] font-black tracking-widest uppercase">
-                      参考書ドットコム
-                    </span>
+                    <span className="text-[8px] font-black tracking-widest uppercase">参考書ドットコム</span>
                   </div>
                 </div>
 
                 {/* ルートタイトル */}
-                <h4 className="font-black text-sm md:text-base text-zinc-800 tracking-tight leading-snug mb-4 relative z-10 line-clamp-1">
+                <h4 className="font-black text-sm md:text-base text-slate-800 tracking-tight leading-snug mb-4 relative z-10 line-clamp-2">
                   {route.title}
                 </h4>
 
-                  {/* 💡 変更後：固定高さをなくし、中身の要素に合わせて綺麗に縦に伸びる設計に変更（space-y で等間隔に並べます） */}
-                  <div className="relative z-10 min-h-[300px] flex flex-col space-y-1.5 mt-1">
-                    {/* 💡 縦線もカード全体の高さに合わせて自動で追従します */}
-                    <div className="absolute left-[7px] md:left-[8px] top-3 bottom-3 w-[2px] bg-white/10 z-0 pointer-events-none"></div>
+                {/* 本のリスト */}
+                <div className="relative z-10 flex flex-col space-y-2 mt-2">
+                  {/* 縦線 */}
+                  <div className="absolute left-[9px] top-3 bottom-3 w-[2px] bg-gray-200 z-0 pointer-events-none"></div>
 
-                    {books.slice(0, 20).map((item, index) => {
-                      const isDense = books.length > 8;
-                      const isSuperDense = books.length > 12;
+                  {books.map((item, index) => {
+                    const isSingle = !item.type || item.type === 'single';
 
-                      // 💡 潰しを無くすため、paddingとフォントサイズを10冊以上の時用に最適化
-                     {/* 判定ごとにクラス名の文字列をバラさず、1つの固まりとして定義することで本番サイトでも100%適用されます */}
-                      const rowPadding = isSuperDense ? "p-1 gap-1.5" : isDense ? "p-1.5 gap-2" : "p-2 gap-3";
-                      const imgSize    = isSuperDense ? "w-4 h-6" : isDense ? "w-6 h-8" : "w-7 h-10";
-                      const titleText  = isSuperDense ? "text-[8.5px]" : isDense ? "text-[10px]" : "text-xs";
-                      const badgeSize  = isSuperDense ? "w-3.5 h-3.5 text-[7px]" : "w-4 h-4 text-[9px]";
+                    return (
+                      // 💡 修正④：スクロールできるので文字を無理に潰す必要がなくなり、条件分岐のクラス（isDense等）を全廃止。
+                      <div key={index} className="flex items-center w-full relative z-10">
+                        
+                        {/* 番号バッジ */}
+                        <div className="w-5 h-5 text-[10px] rounded-full bg-blue-600 text-white font-black flex items-center justify-center shrink-0 shadow-sm mr-3 z-20">
+                          {index + 1}
+                        </div>
 
-                      const isSingle = !item.type || item.type === 'single';
-
-                      return (
-                        /* 💡 flex-1 と min-h-0 を削除し、各行が必要な高さをしっかり持てるように修正 */
-                        <div key={index} className="flex items-center w-full relative z-10 py-0.5">
-                          
-                          {/* 左側の番号バッジ */}
-                          <div className={`rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black flex items-center justify-center shrink-0 shadow-md border border-white/10 mr-2 relative z-20 ${badgeSize}`}>
-                            {index + 1}
+                        {/* 🟢 一本道ルート */}
+                        {isSingle ? (
+                          // 💡 透過やボカシをやめ、100%安全な白背景（bg-white）に変更
+                          <div className="flex-1 bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-3">
+                            <div className="w-8 h-11 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
+                              {item.book?.cover_url ? (
+                                <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.book.cover_url)}`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                              ) : (
+                                <span className="text-[5px] font-bold">NO IMG</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[8px] font-bold text-gray-400 truncate">
+                                {item.book?.publisher}
+                              </p>
+                              <p className="font-bold text-gray-800 leading-tight line-clamp-2 text-xs mt-0.5">
+                                {item.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.custom_title || item.book?.title) : item.book?.title}
+                              </p>
+                            </div>
                           </div>
-
-                          {/* 🟢 パターンA：一本道ルートの表示 */}
-                          {isSingle ? (
-                            <div className="flex-1 bg-white/70 backdrop-blur-md border border-zinc-200/50 rounded-xl flex items-center shadow-2xs min-w-0 p-2 gap-3">
-                              <div className={`bg-white rounded-md overflow-hidden border border-white/10 flex-shrink-0 flex items-center justify-center text-gray-400 shadow-3xs ${imgSize}`}>
-                                {item.book?.cover_url ? (
-                                  <img 
-                                  src={item.book.cover_url ? `https://images.weserv.nl/?url=${encodeURIComponent(item.book.cover_url)}` : ''} 
-                                  alt="cover" 
-                                  className="w-full h-full object-cover"
-                                  crossOrigin="anonymous" 
-                                />
+                        ) : (
+                          /* 🟡 分岐・並行ルート */
+                          <div className="flex-1 grid grid-cols-2 gap-1.5 min-w-0">
+                            {/* 左側ルート (A) */}
+                            <div className="bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-2">
+                              <div className="w-7 h-10 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
+                                {item.route_A?.[0]?.book?.cover_url ? (
+                                  <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                 ) : (
-                                  <span className="text-slate-400 text-[5px] font-bold">NO IMG</span>
+                                  <span className="text-[5px] font-bold">NO IMG</span>
                                 )}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-[7px] font-bold text-zinc-400 truncate">
-                                  {item.book?.publisher}
-                                </p>
-                                <p className="font-black text-zinc-800 leading-tight tracking-tight line-clamp-2 h-auto text-xs">
-                                  {item.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.custom_title || item.book?.title) : item.book?.title}
+                                <p className="font-bold text-gray-800 leading-tight line-clamp-2 text-[10px]">
+                                  {item.route_A?.[0]?.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.route_A[0].custom_title || item.route_A[0].book?.title) : item.route_A?.[0]?.book?.title || '未登録'}
                                 </p>
                               </div>
                             </div>
-                          ) : (
-                            /* 🟡 パターンB：分岐・並行ルートの表示 */
-                            <div className="flex-1 grid grid-cols-2 gap-1.5 min-w-0 h-full items-center">
-                              {/* 左側ルート (A) */}
-                              <div className="bg-white/70 backdrop-blur-md border border-zinc-200/50 rounded-xl flex items-center shadow-2xs min-w-0 h-full p-2 gap-3">
-                                <div className={`bg-white rounded-md overflow-hidden border border-white/10 flex-shrink-0 flex items-center justify-center text-gray-400 shadow-3xs ${imgSize}`}>
-                                {item.route_A?.[0]?.book?.cover_url ? (
-                                    <img 
-                                      src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} 
-                                      alt="cover" 
-                                      className="w-full h-full object-cover"
-                                      crossOrigin="anonymous" 
-                                    />
-                                  ) : (
-                                    <span className="text-slate-400 text-[5px] font-bold">NO IMG</span>
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  {!isSuperDense && (
-                                    <p className="text-[7px] font-bold text-white/40 truncate">
-                                      {item.route_A?.[0]?.book?.publisher}
-                                    </p>
-                                  )}
-                                  <p className="font-black text-zinc-800 leading-tight tracking-tight line-clamp-2 h-auto text-xs">
-                                    {item.route_A?.[0]?.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.route_A[0].custom_title || item.route_A[0].book?.title) : item.route_A?.[0]?.book?.title || '未登録'}
-                                  </p>
-                                </div>
-                              </div>
 
-                              {/* 右側ルート (B) */}
-                              <div className="bg-white/70 backdrop-blur-md border border-zinc-200/50 rounded-xl flex items-center shadow-2xs min-w-0 h-full p-2 gap-3">
-                                <div className={`bg-white rounded-md overflow-hidden border border-white/10 flex-shrink-0 flex items-center justify-center text-gray-400 shadow-3xs ${imgSize}`}>
+                            {/* 右側ルート (B) */}
+                            <div className="bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-2">
+                              <div className="w-7 h-10 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
                                 {item.route_B?.[0]?.book?.cover_url ? (
-                                    <img 
-                                      src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_B[0].book.cover_url)}&t=${index}-B`} 
-                                      alt="cover" 
-                                      className="w-full h-full object-cover"
-                                      crossOrigin="anonymous" 
-                                    />
-                                  ) : (
-                                    <span className="text-slate-400 text-[5px] font-bold">NO IMG</span>
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  {!isSuperDense && (
-                                    <p className="text-[7px] font-bold text-white/40 truncate">
-                                      {item.route_B?.[0]?.book?.publisher}
-                                    </p>
-                                  )}
-                                  <p className="font-black text-zinc-800 leading-tight tracking-tight line-clamp-2 h-auto text-xs">
-                                    {item.route_B?.[0]?.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.route_B[0].custom_title || item.route_B[0].book?.title) : item.route_B?.[0]?.book?.title || '未登録'}
-                                  </p>
-                                </div>
+                                  <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_B[0].book.cover_url)}&t=${index}-B`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                ) : (
+                                  <span className="text-[5px] font-bold">NO IMG</span>
+                                )}
                               </div>
-
+                              <div className="min-w-0 flex-1">
+                                <p className="font-bold text-gray-800 leading-tight line-clamp-2 text-[10px]">
+                                  {item.route_B?.[0]?.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.route_B[0].custom_title || item.route_B[0].book?.title) : item.route_B?.[0]?.book?.title || '未登録'}
+                                </p>
+                              </div>
                             </div>
-                          )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
 
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* ✨ 宣伝力強化：テックアプリ風の公式ブランドフッター */}
-                  <div className="flex items-center justify-between mt-6 border-t border-zinc-300/60 pt-4 relative z-10">
-                  {/* 左側：ヘッダーと同じアイコン＋少し大きめの公式ロゴ */}
-                  <div className="flex items-center gap-2 text-zinc-800">
+                {/* 公式ブランドフッター */}
+                <div className="flex items-center justify-between mt-6 border-t border-gray-200 pt-4 relative z-10">
+                  <div className="flex items-center gap-2 text-slate-800">
                     <BookOpen size={16} className="text-blue-600" strokeWidth={2.5} />
-                    <span className="text-xs font-black tracking-widest">
-                      参考書ドットコム
-                    </span>
+                    <span className="text-xs font-black tracking-widest">参考書ドットコム</span>
                   </div>
-                  
-                  {/* 右側：認知・検索させるためのURLとキャッチコピー */}
                   <div className="text-right">
-                    <p className="text-[10px] font-black tracking-wider text-blue-600">
-                      sanko-sho.com
-                    </p>
-                    <p className="text-[8px] font-bold text-zinc-500 -mt-0.5">
-                      ＼ 自分だけの最短合格ルートを作ろう ／
-                    </p>
+                    <p className="text-[10px] font-black tracking-wider text-blue-600">sanko-sho.com</p>
+                    <p className="text-[8px] font-bold text-gray-400 -mt-0.5">＼ 自分だけの最短合格ルートを作ろう ／</p>
                   </div>
                 </div>
               </div> 
+            </div> {/* <-- スクロール領域 終了 */}
 
-              {/* アクションボタン */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button 
-                  onClick={() => handleShareImage('save')} 
-                  className="text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl transition-all active:scale-95"
-                >
-                  画像として保存
-                </button>
-                <button 
-                  onClick={() => handleShareImage('share')} 
-                  className="text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl transition-all shadow-md shadow-blue-100 active:scale-95"
-                >
-                  SNSに共有する
-                </button>
-              </div>
-
+            {/* 💡 修正⑤：アクションボタンはスクロール領域の「外（下）」に配置。これによりスマホでも絶対に見切れません */}
+            <div className="grid grid-cols-2 gap-3 pt-4 mt-1 border-t border-gray-100 shrink-0">
+              <button 
+                onClick={() => handleShareImage('save')} 
+                className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95"
+              >
+                画像として保存
+              </button>
+              <button 
+                onClick={() => handleShareImage('share')} 
+                className="text-xs font-black bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-all shadow-md active:scale-95"
+              >
+                SNSに共有する
+              </button>
             </div>
+
           </div>
-        )}
+        </div>
+      )}
 
       </div>
     </>
@@ -840,7 +775,6 @@ function ExpandableCommentText({ text }: { text: string }) {
 
   useEffect(() => {
     if (textRef.current) {
-      // 実際の全体の高さ（scrollHeight）が、表示されている高さ（clientHeight: 4行分）を超えたら5行目突入と判定
       const hasMore = textRef.current.scrollHeight > textRef.current.clientHeight;
       setIsLongText(hasMore);
     }
@@ -850,31 +784,18 @@ function ExpandableCommentText({ text }: { text: string }) {
 
   return (
     <div className="mt-1">
-      {/* 💡 style属性（インライン・スタイル）で直接指定。これならTailwindのバグに関係なく100%絶対に4行で止まります */}
       <p 
         ref={textRef}
         className="text-sm md:text-base text-slate-800 whitespace-pre-wrap leading-relaxed font-bold"
         style={
-          isOpen 
-            ? {} 
-            : {
-                display: '-webkit-box',
-                WebkitLineClamp: 4,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }
+          isOpen ? {} : { display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }
         }
       >
         {text}
       </p>
 
-      {/* 💡 5行目に突入している場合のみ「もっと見る」ボタンを表示 */}
       {isLongText && (
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block"
-        >
+        <button type="button" onClick={() => setIsOpen(!isOpen)} className="text-xs font-black text-blue-600 mt-1.5 hover:text-blue-700 cursor-pointer block">
           {isOpen ? '▲ 折りたたむ' : 'もっと見る'}
         </button>
       )}
