@@ -604,11 +604,11 @@ export default function RouteDetailPage() {
           </div>
         )}
 
-     {/* ✨ 新設：共有モーダル本体 */}
-     {isShareModalOpen && (
-        // 💡 修正①：モーダル自体を max-h-[90vh] にし、スマホ画面をはみ出さないように固定
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full shadow-2xl flex flex-col max-h-[90vh]">
+            {/* ✨ 新設：共有モーダル本体 */}
+            {isShareModalOpen && (
+              /* 💡 構造の変更：外枠自体に overflow-y-auto を持たせ、中身の白箱は flex-col をやめて自然な縦伸びにします */
+              <div className="fixed inset-0 bg-black/60 overflow-y-auto z-50 p-4 md:p-6 flex justify-center items-start animate-fade-in">
+                <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full shadow-2xl relative my-auto">
             
             {/* ヘッダー部分（上に固定） */}
             <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-3 shrink-0">
