@@ -746,19 +746,19 @@ export default function RouteDetailPage() {
               </div> 
             </div> {/* <-- スクロール領域 終了 */}
 
-            {/* 💡 修正⑤：アクションボタンはスクロール領域の「外（下）」に配置。これによりスマホでも絶対に見切れません */}
+            {/* アクションボタン：太希さんのディレクション通り、役割と名前を正しくマッピング */}
             <div className="grid grid-cols-2 gap-3 pt-4 mt-1 border-t border-gray-100 shrink-0">
               <button 
-                onClick={() => handleShareImage('save')} 
+                onClick={handleShareImageForSave} 
                 className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95"
               >
-                画像として保存
+                写真アプリに保存
               </button>
               <button 
-                onClick={() => handleShareImage('share')} 
+                onClick={handleShareLink} 
                 className="text-xs font-black bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-all shadow-md active:scale-95"
               >
-                SNSに共有する
+                リンクをSNSにシェア
               </button>
             </div>
 
