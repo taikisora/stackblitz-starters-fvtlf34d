@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-import { LogOut, Edit2, Check, X, User, BookOpen, Heart, ChevronRight, Mail, Palette, Trash2, AlertTriangle } from 'lucide-react';
+import { LogOut, Edit2, Check, X, User, BookOpen, Heart, ChevronRight, Mail, Palette, Trash2, AlertTriangle, Bell, MessageCircle, Info, ThumbsUp } from 'lucide-react';
 import { UNIVERSITY_LIST } from '../../lib/universities';
 
 const COLOR_OPTIONS = [
@@ -52,6 +52,10 @@ export default function MyPage() {
   const [activeField, setActiveField] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  // 🔔 1. 通知データとタブを管理するState
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'main' | 'sub'>('main');
+
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -63,9 +67,7 @@ export default function MyPage() {
 
       const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       if (data) {
-        // 💡 修正：データベースの値が「未定」の時だけ、画面上のチェックボックスをONにして、入力欄を空文字にする
         const isUndecided = data.university === '未定';
-        // 💡 修正：データベースの値が「無し」の場合も、画面上では空欄（''）にしてあげる
         const isNone = data.university === '無し';
 
         const loadedProfile = {
@@ -80,12 +82,37 @@ export default function MyPage() {
         
         setProfile(loadedProfile);
         setEditData(loadedProfile);
-        setIsUniUndecided(isUndecided); // 👈 「未定」という意思表示がある場合のみON
+        setIsUniUndecided(isUndecided);
       }
+
+      // 🔔 2. ユーザーの通知データを取得
+      const { data: notifs } = await supabase
+        .from('notifications')
+        .select(`
+          *,
+          sender:sender_id ( username, avatar_color )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (notifs) setNotifications(notifs);
       setLoading(false);
     };
     fetchUserData();
   }, [router]);
+
+  // 🔔 3. 通知を既読にしてページへジャンプする処理
+  const handleNotificationClick = async (notif: any) => {
+    if (!notif.is_read) {
+      // 既読フラグを立てる（裏側で非同期更新）
+      await supabase.from('notifications').update({ is_read: true }).eq('id', notif.id);
+      
+      // 画面の見た目も既読に更新
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+    }
+    // 指定されたURLへジャンプ
+    router.push(notif.link_url);
+  };
 
   const handleUniversityChange = (field: string, value: string) => {
     setEditData({ ...editData, [field]: value });
@@ -121,11 +148,7 @@ export default function MyPage() {
       updateData.university2 = null;
       updateData.university3 = null;
     } else {
-      // 💡 修正：日本語に変換せず、editData.stream に入っている英語（'humanities' | 'sciences' | 'undecided'）をそのままDBへ保存する！
       updateData.stream = editData.stream || 'undecided';
-      
-      // 💡 修正：「まだ決めていない（未定）」にチェックがあれば、DBへ「未定」という固定文字を送る
-      // 💡 修正：もし入力欄に文字があればそれを優先。文字がなくて、かつ未定チェックがあれば「未定」にする
       const trimmedUni = editData.university.trim();
       updateData.university = trimmedUni ? trimmedUni : (isUniUndecided ? '未定' : null);
       updateData.university2 = editData.university2.trim() || null;
@@ -140,7 +163,6 @@ export default function MyPage() {
       setProfile({
         username: updateData.username,
         status: updateData.status,
-        // 💡 修正：DBに送った英語データをそのまま画面の表示状態にも反映する
         stream: updateData.stream,
         university: updateData.university || '',
         university2: updateData.university2 || '',
@@ -168,7 +190,6 @@ export default function MyPage() {
     }
   };
 
-  // 💡 修正：チェックが入っているか、入力文字が「未定」か、正式な大学名であれば保存ボタンを押せるようにする
   const isUni1Valid = isUniUndecided || editData.university.trim() === '未定' || UNIVERSITY_LIST.includes(editData.university.trim());
   const isUni2Valid = editData.university2.trim() === '' || UNIVERSITY_LIST.includes(editData.university2.trim());
   const isUni3Valid = editData.university3.trim() === '' || UNIVERSITY_LIST.includes(editData.university3.trim());
@@ -190,8 +211,14 @@ export default function MyPage() {
   const currentProfileColor = COLOR_OPTIONS.find(c => c.id === profile.avatar_color) || COLOR_OPTIONS[0];
   const currentEditColor = COLOR_OPTIONS.find(c => c.id === editData.avatar_color) || COLOR_OPTIONS[0];
 
+  // 通知の仕分け
+  const mainNotifications = notifications.filter(n => n.is_important);
+  const subNotifications = notifications.filter(n => !n.is_important);
+  const currentNotifications = activeTab === 'main' ? mainNotifications : subNotifications;
+  const unreadMainCount = mainNotifications.filter(n => !n.is_read).length;
+  const unreadSubCount = subNotifications.filter(n => !n.is_read).length;
+
   return (
-    // 💡 修正点： max-w-2xl（中くらいの広さ）に設定し、1列のまま綺麗な縦配列に統一しました
     <div className="max-w-2xl mx-auto my-6 px-4 space-y-6 pb-20">
       <h1 className="text-2xl font-bold text-gray-800 ml-2">マイページ</h1>
 
@@ -301,13 +328,11 @@ export default function MyPage() {
 
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1 block">ユーザーネーム</label>
-              {/* 💡 修正：text-slate-800 font-bold を追加 */}
               <input type="text" value={editData.username} onChange={(e) => setEditData({ ...editData, username: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold" />
             </div>
 
             <div>
               <label className="text-xs font-bold text-gray-600 mb-1 block">現在の状況</label>
-              {/* 💡 修正：text-slate-800 font-bold を追加 */}
               <select value={editData.status} onChange={(e) => setEditData({ ...editData, status: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold cursor-pointer" >
                 <option value="" disabled hidden>選択してください</option>
                 <option value="studying">これから大学受験に挑む</option>
@@ -320,7 +345,6 @@ export default function MyPage() {
               <>
                 <div>
                   <label className="text-xs font-bold text-gray-600 mb-1 block">文系 / 理系</label>
-                  {/* 💡 修正：text-slate-800 font-bold を追加 */}
                   <select value={editData.stream} onChange={(e) => setEditData({ ...editData, stream: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold cursor-pointer" >
                     <option value="" disabled hidden>選択してください</option>
                     <option value="humanities">文系</option>
@@ -332,7 +356,6 @@ export default function MyPage() {
                 <div className="space-y-4 pt-2 border-t border-gray-100">
                   <div className="relative">
                     <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第一志望校' : '大学名 (1)'}</label>
-                    {/* 💡 修正：text-slate-800 font-bold を追加 */}
                     <input type="text" placeholder="例: 東京大学" value={editData.university} disabled={isUniUndecided} onChange={(e) => handleUniversityChange('university', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold disabled:opacity-50" />
                     <label className="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
                       <input type="checkbox" checked={isUniUndecided} onChange={(e) => { setIsUniUndecided(e.target.checked); if (e.target.checked) setEditData({ ...editData, university: '' }); }} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
@@ -342,13 +365,11 @@ export default function MyPage() {
 
                   <div className="relative">
                     <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第二志望校 (任意)' : '大学名 (2) (任意)'}</label>
-                    {/* 💡 修正：text-slate-800 font-bold を追加 */}
                     <input type="text" placeholder="例: 早稲田大学" value={editData.university2} onChange={(e) => handleUniversityChange('university2', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university2'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold" />
                   </div>
 
                   <div className="relative">
                     <label className="text-xs font-bold text-gray-500 mb-1 block">{editData.status === 'studying' ? '第三志望校 (任意)' : '大学名 (3) (任意)'}</label>
-                    {/* 💡 修正：text-slate-800 font-bold を追加 */}
                     <input type="text" placeholder="例: 明治大学" value={editData.university3} onChange={(e) => handleUniversityChange('university3', e.target.value)} onFocus={() => { setShowSuggestions(true); setActiveField('university3'); }} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-sm text-slate-800 font-bold" />
                   </div>
 
@@ -373,7 +394,125 @@ export default function MyPage() {
         )}
       </div>
 
-      {/* ── 2. 参考書管理メニュー ── */}
+      {/* ── ✨ 2. 新着通知セクション ✨ ── */}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <Bell className="w-5 h-5 text-indigo-500 fill-current" />
+            お知らせ・通知
+          </h2>
+        </div>
+
+        {/* 🚨 アプリ誘導バナー */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 rounded-2xl text-white shadow-md mb-5 relative overflow-hidden group cursor-pointer transition-transform active:scale-[0.98]">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl transform translate-x-10 -translate-y-10"></div>
+          <div className="flex gap-3 items-center relative z-10">
+            <div className="bg-white/20 p-2.5 rounded-xl shrink-0">
+              <Bell className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm mb-1 leading-tight">スマホに通知が届く！</h3>
+              <p className="text-[11px] font-bold text-blue-100 leading-relaxed">
+                近日リリース予定のアプリ版を使えば、<br/>コメントをリアルタイムで受け取れます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* タブ切り替え（メイン・サブ） */}
+        <div className="flex border-b border-gray-100 mb-3">
+          <button
+            onClick={() => setActiveTab('main')}
+            className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-center font-black text-sm border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'main' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-500'
+            }`}
+          >
+            重要なお知らせ
+            {unreadMainCount > 0 && (
+              <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black shadow-3xs">{unreadMainCount}</span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('sub')}
+            className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-center font-black text-sm border-b-2 transition-colors cursor-pointer ${
+              activeTab === 'sub' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-500'
+            }`}
+          >
+            その他の通知
+            {unreadSubCount > 0 && (
+              <span className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black shadow-3xs">{unreadSubCount}</span>
+            )}
+          </button>
+        </div>
+
+        {/* 通知リスト本体 */}
+        <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200">
+          {currentNotifications.length === 0 ? (
+            <div className="py-10 text-center flex flex-col items-center justify-center gap-2 opacity-60">
+              <Info className="w-8 h-8 text-slate-300" />
+              <p className="text-xs font-bold text-slate-400">新しい通知はありません。</p>
+            </div>
+          ) : (
+            currentNotifications.map((notif) => (
+              <button
+                key={notif.id}
+                onClick={() => handleNotificationClick(notif)}
+                className={`w-full text-left p-4 rounded-2xl flex gap-3 transition-all active:scale-[0.98] border border-transparent ${
+                  notif.is_read 
+                    ? 'hover:bg-slate-50 opacity-70' 
+                    : 'bg-blue-50/50 border-blue-100 shadow-3xs hover:bg-blue-50'
+                }`}
+              >
+                {/* アイコン（匿名いいねかどうかで分岐） */}
+                <div className="shrink-0 pt-0.5">
+                  {notif.type === 'route_like' ? (
+                    <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center shadow-3xs border border-pink-200/50">
+                      <Heart className="w-4 h-4 text-pink-500 fill-current" />
+                    </div>
+                  ) : (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-3xs border border-black/5 overflow-hidden ${
+                      notif.sender?.avatar_color === 'red' ? 'bg-red-500' :
+                      notif.sender?.avatar_color === 'orange' ? 'bg-orange-500' :
+                      notif.sender?.avatar_color === 'amber' ? 'bg-amber-500' :
+                      notif.sender?.avatar_color === 'emerald' ? 'bg-emerald-500' :
+                      notif.sender?.avatar_color === 'sky' ? 'bg-sky-500' :
+                      notif.sender?.avatar_color === 'blue' ? 'bg-blue-500' :
+                      notif.sender?.avatar_color === 'indigo' ? 'bg-indigo-500' :
+                      notif.sender?.avatar_color === 'purple' ? 'bg-purple-500' :
+                      notif.sender?.avatar_color === 'pink' ? 'bg-pink-500' :
+                      'bg-gray-500'
+                    }`}>
+                      <User size={16} className="stroke-[2.5]" />
+                    </div>
+                  )}
+                </div>
+
+                {/* 通知内容 */}
+                <div className="flex-1 min-w-0 pr-1">
+                  <p className="text-[11px] text-slate-400 font-bold mb-0.5 flex justify-between items-center">
+                    <span>
+                      {notif.type === 'route_like' ? 'システム通知' : `${notif.sender?.username || '名無し'} さんより`}
+                    </span>
+                    <span>
+                      {new Date(notif.created_at).toLocaleDateString('ja-JP')}
+                    </span>
+                  </p>
+                  <p className={`text-xs md:text-sm font-black leading-snug line-clamp-2 ${notif.is_read ? 'text-slate-600' : 'text-slate-900'}`}>
+                    {notif.content_preview}
+                  </p>
+                </div>
+                
+                {/* 未読の赤い丸 */}
+                {!notif.is_read && (
+                  <div className="shrink-0 flex items-center justify-center w-2 h-2 mt-3.5 bg-blue-600 rounded-full shadow-sm"></div>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── 3. 参考書管理メニュー ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
         <Link href="/mypage/saved" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
@@ -394,11 +533,9 @@ export default function MyPage() {
           <ChevronRight className="w-5 h-5 text-gray-400" />
         </Link>
         
-        {/* 💡 追加：いいねしたルート（デザイン・枠・矢印のサイズを完全統一） */}
         <Link href="/mypage/saved-routes" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
             <div className="bg-amber-50 p-2 rounded-lg">
-              {/* ➔ ルートを象徴するオレンジ・イエロー基調のHeartアイコンを配置 */}
               <Heart className="w-5 h-5 text-amber-500 fill-current" />
             </div>
             <span className="font-bold text-gray-700">いいねしたルート</span>
@@ -407,7 +544,7 @@ export default function MyPage() {
         </Link>
       </div>
 
-      {/* ── 3. 運営へのリクエストメニュー ── */}
+      {/* ── 4. 運営へのリクエストメニュー ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <Link href="/request" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-3">
@@ -417,17 +554,16 @@ export default function MyPage() {
         </Link>
       </div>
 
-      {/* 💡 【修正点】リクエストのすぐ下に、全く同じ大きさ・仕様・デザインで「利用規約」を配置 */}
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mt-3">
-          <Link href="/terms" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <span className="font-bold text-gray-700">利用規約を確認する</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </Link>
-        </div>
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mt-3">
+        <Link href="/terms" className="flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-gray-700">利用規約を確認する</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </Link>
+      </div>
 
-      {/* ── 4. 各種設定・ログアウト・退会 ── */}
+      {/* ── 5. 各種設定・ログアウト・退会 ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
         <button onClick={handleLogout} className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors" >
           <div className="bg-gray-100 p-2 rounded-lg">
@@ -442,8 +578,6 @@ export default function MyPage() {
           <span className="font-bold text-red-600">アカウントを削除（退会）</span>
         </button>
       </div>
-
-      
 
       {/* アカウント削除ポップアップ */}
       {isDeleteModalOpen && (
