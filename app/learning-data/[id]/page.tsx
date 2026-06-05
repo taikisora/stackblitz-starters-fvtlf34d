@@ -621,17 +621,32 @@ export default function RouteDetailPage() {
                 </button>
               </div>
 
-             {/* 🎨 変更後：男女に響く、洗練されたニュアンス・グレージュデザイン */}
-             <div 
+            {/* 🎨 変更後：男女に響く、洗練されたニュアンス・グレージュデザイン（html-to-imageバグ対策済） */}
+            <div 
                 ref={cardRef}
-                className="bg-gradient-to-br from-stone-100 via-zinc-200 to-slate-200 p-6 rounded-[28px] text-zinc-800 shadow-2xl relative overflow-hidden text-left border border-white/60"
+                className="p-6 rounded-[28px] text-zinc-800 shadow-2xl relative overflow-hidden text-left border border-white/60"
+                style={{
+                  background: 'linear-gradient(135deg, #f5f5f4 0%, #e4e4e7 50%, #e2e8f0 100%)'
+                }}
               >
-                {/* 上品なエフェクト：オーロラのような淡いペールトーンのグラデーション光 */}
-                <div className="absolute -top-40 -right-40 w-[350px] h-[350px] bg-indigo-200/40 rounded-full blur-[60px] pointer-events-none"></div>
-                <div className="absolute -bottom-40 -left-40 w-[350px] h-[350px] bg-rose-200/30 rounded-full blur-[60px] pointer-events-none"></div>
+                {/* 上品なエフェクト：blurではなく安全なラジアルグラデーションでオーロラ光を再現 */}
+                <div 
+                  className="absolute -top-40 -right-40 w-[350px] h-[350px] pointer-events-none opacity-40"
+                  style={{ background: 'radial-gradient(circle, rgba(165,180,252,1) 0%, rgba(165,180,252,0) 70%)' }}
+                ></div>
+                <div 
+                  className="absolute -bottom-40 -left-40 w-[350px] h-[350px] pointer-events-none opacity-30"
+                  style={{ background: 'radial-gradient(circle, rgba(fda4af,1) 0%, rgba(fda4af,0) 70%)' }}
+                ></div>
                 
-                {/* 繊細なアクセント：高級感を出すマットな斜めストライプ（シンプルすぎない遊び心） */}
-                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[size:24px_24px] opacity-40 pointer-events-none"></div>
+                {/* 繊細なアクセント：標準的な標準CSSのbackgroundプロパティに分解してストライプを再現 */}
+                <div 
+                  className="absolute inset-0 opacity-25 pointer-events-none"
+                  style={{
+                    backgroundImage: 'linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent)',
+                    backgroundSize: '24px 24px'
+                  }}
+                ></div>
 
                 {/* 🎨 変更後：宣伝力をさらに強化した公式ヘッダー */}
                 <div className="flex items-center justify-between mb-4 border-b border-zinc-300/60 pb-3 relative z-10">
