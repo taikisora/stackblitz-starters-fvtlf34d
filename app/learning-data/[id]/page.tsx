@@ -155,49 +155,52 @@ export default function RouteDetailPage() {
     if (routeId) fetchRouteDetail();
   }, [routeId]);
 
-  // ✨ 確実な原点回帰：大成功する1回目を実行し、終わったら自動でページをクリーンにする関数
-  const handleShareImage = async (mode: 'save' | 'share') => {
+ 
+  // 💡 写真アプリに保存（旧：SNSに共有する）のための画像生成ロジックに一本化
+  const handleShareImageForSave = async () => {
     if (!cardRef.current) return;
-
     try {
-      // リロード直後なので、100%完璧に美しいグラデーションカードが生成されます
-      const dataUrl = await toPng(cardRef.current, { 
-        cacheBust: true, // 古いキャッシュを破棄
-        skipFonts: true,
-      });
+      const dataUrl = await toPng(cardRef.current, { cacheBust: true });
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
 
-      if (mode === 'save') {
+      // iPhone純正の共有メニューを開き、ユーザーに「画像を保存（Save Image）」を選ばせる
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
         const link = document.createElement('a');
         link.download = `route-${route?.title || 'study'}.png`;
         link.href = dataUrl;
         link.click();
-      } else {
-        const blob = await (await fetch(dataUrl)).blob();
-        const file = new File([blob], 'route.png', { type: 'image/png' });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: route?.title,
-            text: `${route?.profiles?.username || '名無し'}さんの参考書ルート！ #参考書ドットコム`,
-          });
-        } else {
-          const link = document.createElement('a');
-          link.download = `route-${route?.title || 'study'}.png`;
-          link.href = dataUrl;
-          link.click();
-        }
       }
 
-      // 🚀 【核心】太希さんの発見を自動化：保存が終わったら裏側でページをパッとリフレッシュ
-      // これによりブラウザのバグった画像メモリが完全に吹き飛び、次の保存も100%成功するようになります。
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000); // ダウンロード完了を待つために1秒だけ猶予を空けてリロードします
-
+      setTimeout(() => { window.location.reload(); }, 1000);
     } catch (error) {
       console.error('画像処理エラー:', error);
-      alert('画像の生成に失敗しました。時間を置いて再度お試しください。');
+      alert('画像の準備に失敗しました。');
+    }
+  };
+
+  // 💡 新設：画像は一切送らず、URLリンクとテキストだけを100%確実に美しくシェアするロジック
+  const handleShareLink = async () => {
+    const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！ #参考書ドットコム`;
+    const shareUrl = window.location.href; // 今開いているこのルートのURLをそのまま取得
+
+    try {
+      if (navigator.share) {
+        // iPhone純正のメニューでURLリンクをきれいに飛ばす
+        await navigator.share({
+          title: route?.title,
+          text: shareText,
+          url: shareUrl
+        });
+      } else {
+        // PCなどのブラウザ用フォールバック（クリップボードにコピー）
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        alert('リンクをクリップボードにコピーしました！SNSに貼り付けてシェアしてね。');
+      }
+    } catch (error) {
+      console.error('シェアエラー:', error);
     }
   };
 
