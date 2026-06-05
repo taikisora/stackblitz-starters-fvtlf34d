@@ -85,32 +85,40 @@ export default function MyPage() {
         setIsUniUndecided(isUndecided);
       }
 
-      // 🔔 2. ユーザーの通知データを取得
-      const { data: notifs } = await supabase
-        .from('notifications')
-        .select(`
-          *,
-          sender:profiles!left(username, avatar_color)
-        `)
+      // 🔔 2. ユーザーの通知データを取得（自分宛てに絞り込み！）
+      const { data: notifs, error: notifError } = await supabase
+        .from('notifications_with_sender')
+        .select('*')
+        .eq('user_id', session.user.id) // 💡 「宛先(user_id)が自分(session.user.id)のものだけ」というフィルターを追加！
         .order('created_at', { ascending: false })
         .limit(30);
 
-      if (notifs) setNotifications(notifs);
+      if (notifError) {
+        console.error("通知データの取得に失敗しました:", notifError);
+      } else if (notifs) {
+        // UIがエラーなく表示できるよう、データの形を整えてセットします
+        const formattedNotifs = notifs.map(n => ({
+          ...n,
+          sender: n.sender_username ? {
+            username: n.sender_username,
+            avatar_color: n.sender_avatar_color
+          } : null // 匿名いいねの場合はnullにする
+        }));
+        setNotifications(formattedNotifs);
+      }
+
       setLoading(false);
-    };
+    }; // 💡 fetchUserData 関数の閉じ波括弧
+
     fetchUserData();
   }, [router]);
 
   // 🔔 3. 通知を既読にしてページへジャンプする処理
   const handleNotificationClick = async (notif: any) => {
     if (!notif.is_read) {
-      // 既読フラグを立てる（裏側で非同期更新）
       await supabase.from('notifications').update({ is_read: true }).eq('id', notif.id);
-      
-      // 画面の見た目も既読に更新
       setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
     }
-    // 指定されたURLへジャンプ
     router.push(notif.link_url);
   };
 
@@ -211,12 +219,40 @@ export default function MyPage() {
   const currentProfileColor = COLOR_OPTIONS.find(c => c.id === profile.avatar_color) || COLOR_OPTIONS[0];
   const currentEditColor = COLOR_OPTIONS.find(c => c.id === editData.avatar_color) || COLOR_OPTIONS[0];
 
-  // 通知の仕分け
   const mainNotifications = notifications.filter(n => n.is_important);
   const subNotifications = notifications.filter(n => !n.is_important);
   const currentNotifications = activeTab === 'main' ? mainNotifications : subNotifications;
   const unreadMainCount = mainNotifications.filter(n => !n.is_read).length;
   const unreadSubCount = subNotifications.filter(n => !n.is_read).length;
+
+  // ⏳ 追加：時間を「何分前」に変換する関数
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return 'たった今';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}分前`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}時間前`;
+    const diffInDays = Math.floor(diffInSeconds / 86400);
+    if (diffInDays < 7) return `${diffInDays}日前`;
+    return date.toLocaleDateString('ja-JP'); // 1週間以上前は日付にする
+  };
+
+  // 🧹 追加：すべての通知を一気に既読にする処理
+  const handleMarkAllAsRead = async () => {
+    if (!user) return;
+    
+    // UIを即座に既読状態にする（サクサク感を出すため）
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+
+    // 裏側でデータベースを更新（ビューではなく大元のテーブルを更新します）
+    await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false); // 未読のものだけを狙い撃ち
+  };
 
   return (
     <div className="max-w-2xl mx-auto my-6 px-4 space-y-6 pb-20">
@@ -396,11 +432,20 @@ export default function MyPage() {
 
       {/* ── ✨ 2. 新着通知セクション ✨ ── */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-5">
+      <div className="flex justify-between items-center mb-5">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <Bell className="w-5 h-5 text-indigo-500 fill-current" />
             お知らせ・通知
           </h2>
+          {(unreadMainCount > 0 || unreadSubCount > 0) && (
+            <button
+              onClick={handleMarkAllAsRead}
+              className="text-xs font-bold text-slate-400 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1 active:scale-95"
+            >
+              <Check className="w-3.5 h-3.5" />
+              すべて既読
+            </button>
+          )}
         </div>
 
         {/* 🚨 アプリ誘導バナー */}
@@ -494,7 +539,7 @@ export default function MyPage() {
                       {notif.type === 'route_like' ? 'システム通知' : `${notif.sender?.username || '名無し'} さんより`}
                     </span>
                     <span>
-                      {new Date(notif.created_at).toLocaleDateString('ja-JP')}
+                    {formatTimeAgo(notif.created_at)}
                     </span>
                   </p>
                   <p className={`text-xs md:text-sm font-black leading-snug line-clamp-2 ${notif.is_read ? 'text-slate-600' : 'text-slate-900'}`}>
