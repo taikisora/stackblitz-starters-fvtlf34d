@@ -90,7 +90,7 @@ export default function MyPage() {
         .from('notifications')
         .select(`
           *,
-          sender:sender_id ( username, avatar_color )
+          sender:sender_id!left ( username, avatar_color )
         `)
         .order('created_at', { ascending: false })
         .limit(30);
