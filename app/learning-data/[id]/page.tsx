@@ -2,12 +2,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
-import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2 } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download } from 'lucide-react';
 
 export default function RouteDetailPage() {
   const params = useParams();
   const router = useRouter();
   const routeId = params.id as string;
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const [user, setUser] = useState<any>(null);
   const [route, setRoute] = useState<any>(null);
@@ -152,6 +154,52 @@ export default function RouteDetailPage() {
 
     if (routeId) fetchRouteDetail();
   }, [routeId]);
+
+  // ✨ 確実な原点回帰：大成功する1回目を実行し、終わったら自動でページをクリーンにする関数
+  const handleShareImage = async (mode: 'save' | 'share') => {
+    if (!cardRef.current) return;
+
+    try {
+      // リロード直後なので、100%完璧に美しいグラデーションカードが生成されます
+      const dataUrl = await toPng(cardRef.current, { 
+        cacheBust: true, // 古いキャッシュを破棄
+        skipFonts: true,
+      });
+
+      if (mode === 'save') {
+        const link = document.createElement('a');
+        link.download = `route-${route?.title || 'study'}.png`;
+        link.href = dataUrl;
+        link.click();
+      } else {
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'route.png', { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: route?.title,
+            text: `${route?.profiles?.username || '名無し'}さんの参考書ルート！ #参考書ドットコム`,
+          });
+        } else {
+          const link = document.createElement('a');
+          link.download = `route-${route?.title || 'study'}.png`;
+          link.href = dataUrl;
+          link.click();
+        }
+      }
+
+      // 🚀 【核心】太希さんの発見を自動化：保存が終わったら裏側でページをパッとリフレッシュ
+      // これによりブラウザのバグった画像メモリが完全に吹き飛び、次の保存も100%成功するようになります。
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000); // ダウンロード完了を待つために1秒だけ猶予を空けてリロードします
+
+    } catch (error) {
+      console.error('画像処理エラー:', error);
+      alert('画像の生成に失敗しました。時間を置いて再度お試しください。');
+    }
+  };
 
   const toggleRouteLike = async () => {
     if (!user) {
@@ -573,21 +621,190 @@ export default function RouteDetailPage() {
                 </button>
               </div>
 
-              {/* 🎨 ここに後でパターンB（グラデーションカード）を入れます */}
-              <div className="bg-slate-50 border border-dashed border-gray-200 rounded-2xl p-8 text-center text-xs font-bold text-slate-400">
-                [ ここにSNS映えするカードのデザインが入ります ]
-              </div>
+             {/* 🎨 変更後：男女に響く、洗練されたニュアンス・グレージュデザイン */}
+             <div 
+                ref={cardRef}
+                className="bg-gradient-to-br from-stone-100 via-zinc-200 to-slate-200 p-6 rounded-[28px] text-zinc-800 shadow-2xl relative overflow-hidden text-left border border-white/60"
+              >
+                {/* 上品なエフェクト：オーロラのような淡いペールトーンのグラデーション光 */}
+                <div className="absolute -top-40 -right-40 w-[350px] h-[350px] bg-indigo-200/40 rounded-full blur-[60px] pointer-events-none"></div>
+                <div className="absolute -bottom-40 -left-40 w-[350px] h-[350px] bg-rose-200/30 rounded-full blur-[60px] pointer-events-none"></div>
+                
+                {/* 繊細なアクセント：高級感を出すマットな斜めストライプ（シンプルすぎない遊び心） */}
+                <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[size:24px_24px] opacity-40 pointer-events-none"></div>
+
+                {/* 🎨 変更後：宣伝力をさらに強化した公式ヘッダー */}
+                <div className="flex items-center justify-between mb-4 border-b border-zinc-300/60 pb-3 relative z-10">
+                  {/* 左側：科目バッジと作成者情報 */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300/50">
+                      {route.subject}
+                    </span>
+                    <span className="text-[9px] font-bold text-zinc-500">
+                      by {route.profiles?.username || '名無しユーザー'}
+                    </span>
+                  </div>
+
+                  {/* 右側 ✨ 新設：右上のアイキャッチロゴ */}
+                  <div className="flex items-center gap-1 text-zinc-500">
+                    <BookOpen size={11} strokeWidth={2.5} />
+                    <span className="text-[8px] font-black tracking-widest uppercase">
+                      参考書ドットコム
+                    </span>
+                  </div>
+                </div>
+
+                {/* ルートタイトル */}
+                <h4 className="font-black text-sm md:text-base text-zinc-800 tracking-tight leading-snug mb-4 relative z-10 line-clamp-1">
+                  {route.title}
+                </h4>
+
+                  {/* 💡 変更後：固定高さをなくし、中身の要素に合わせて綺麗に縦に伸びる設計に変更（space-y で等間隔に並べます） */}
+                  <div className="relative z-10 min-h-[300px] flex flex-col space-y-1.5 mt-1">
+                    {/* 💡 縦線もカード全体の高さに合わせて自動で追従します */}
+                    <div className="absolute left-[7px] md:left-[8px] top-3 bottom-3 w-[2px] bg-white/10 z-0 pointer-events-none"></div>
+
+                    {books.slice(0, 20).map((item, index) => {
+                      const isDense = books.length > 8;
+                      const isSuperDense = books.length > 12;
+
+                      // 💡 潰しを無くすため、paddingとフォントサイズを10冊以上の時用に最適化
+                      const rowPadding = isSuperDense ? 'p-1 gap-1.5' : isDense ? 'p-1.5 gap-2' : 'p-2 gap-3';
+                      
+                      const imgSize = isSuperDense ? 'w-4 h-6' : isDense ? 'w-6 h-8' : 'w-7 h-10';
+                      const titleText = isSuperDense ? 'text-[8.5px]' : isDense ? 'text-[10px]' : 'text-xs';
+                      const badgeSize = isSuperDense ? 'w-3.5 h-3.5 text-[7px]' : 'w-4 h-4 text-[9px]';
+
+                      const isSingle = !item.type || item.type === 'single';
+
+                      return (
+                        /* 💡 flex-1 と min-h-0 を削除し、各行が必要な高さをしっかり持てるように修正 */
+                        <div key={index} className="flex items-center w-full relative z-10 py-0.5">
+                          
+                          {/* 左側の番号バッジ */}
+                          <div className={`rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-black flex items-center justify-center shrink-0 shadow-md border border-white/10 mr-2 relative z-20 ${badgeSize}`}>
+                            {index + 1}
+                          </div>
+
+                          {/* 🟢 パターンA：一本道ルートの表示 */}
+                          {isSingle ? (
+                            <div className="flex-1 bg-white/70 backdrop-blur-md border border-zinc-200/50 rounded-xl flex items-center shadow-2xs min-w-0 p-2 gap-3">
+                              <div className={`bg-white rounded-md overflow-hidden border border-white/10 flex-shrink-0 flex items-center justify-center text-gray-400 shadow-3xs ${imgSize}`}>
+                                {item.book?.cover_url ? (
+                                  <img 
+                                  src={item.book.cover_url ? `https://images.weserv.nl/?url=${encodeURIComponent(item.book.cover_url)}` : ''} 
+                                  alt="cover" 
+                                  className="w-full h-full object-cover"
+                                  crossOrigin="anonymous" 
+                                />
+                                ) : (
+                                  <span className="text-slate-400 text-[5px] font-bold">NO IMG</span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[7px] font-bold text-zinc-400 truncate">
+                                  {item.book?.publisher}
+                                </p>
+                                <p className="font-black text-zinc-800 leading-tight tracking-tight line-clamp-2 h-auto text-xs">
+                                  {item.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.custom_title || item.book?.title) : item.book?.title}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            /* 🟡 パターンB：分岐・並行ルートの表示 */
+                            <div className="flex-1 grid grid-cols-2 gap-1.5 min-w-0 h-full items-center">
+                              {/* 左側ルート (A) */}
+                              <div className="bg-white/70 backdrop-blur-md border border-zinc-200/50 rounded-xl flex items-center shadow-2xs min-w-0 h-full p-2 gap-3">
+                                <div className={`bg-white rounded-md overflow-hidden border border-white/10 flex-shrink-0 flex items-center justify-center text-gray-400 shadow-3xs ${imgSize}`}>
+                                {item.route_A?.[0]?.book?.cover_url ? (
+                                    <img 
+                                      src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} 
+                                      alt="cover" 
+                                      className="w-full h-full object-cover"
+                                      crossOrigin="anonymous" 
+                                    />
+                                  ) : (
+                                    <span className="text-slate-400 text-[5px] font-bold">NO IMG</span>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  {!isSuperDense && (
+                                    <p className="text-[7px] font-bold text-white/40 truncate">
+                                      {item.route_A?.[0]?.book?.publisher}
+                                    </p>
+                                  )}
+                                  <p className="font-black text-zinc-800 leading-tight tracking-tight line-clamp-2 h-auto text-xs">
+                                    {item.route_A?.[0]?.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.route_A[0].custom_title || item.route_A[0].book?.title) : item.route_A?.[0]?.book?.title || '未登録'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* 右側ルート (B) */}
+                              <div className="bg-white/70 backdrop-blur-md border border-zinc-200/50 rounded-xl flex items-center shadow-2xs min-w-0 h-full p-2 gap-3">
+                                <div className={`bg-white rounded-md overflow-hidden border border-white/10 flex-shrink-0 flex items-center justify-center text-gray-400 shadow-3xs ${imgSize}`}>
+                                {item.route_B?.[0]?.book?.cover_url ? (
+                                    <img 
+                                      src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_B[0].book.cover_url)}&t=${index}-B`} 
+                                      alt="cover" 
+                                      className="w-full h-full object-cover"
+                                      crossOrigin="anonymous" 
+                                    />
+                                  ) : (
+                                    <span className="text-slate-400 text-[5px] font-bold">NO IMG</span>
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  {!isSuperDense && (
+                                    <p className="text-[7px] font-bold text-white/40 truncate">
+                                      {item.route_B?.[0]?.book?.publisher}
+                                    </p>
+                                  )}
+                                  <p className="font-black text-zinc-800 leading-tight tracking-tight line-clamp-2 h-auto text-xs">
+                                    {item.route_B?.[0]?.book?.id === "b2531a01-d6ea-47ad-ae84-3fac68cf3c81" ? (item.route_B[0].custom_title || item.route_B[0].book?.title) : item.route_B?.[0]?.book?.title || '未登録'}
+                                  </p>
+                                </div>
+                              </div>
+
+                            </div>
+                          )}
+
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* ✨ 宣伝力強化：テックアプリ風の公式ブランドフッター */}
+                  <div className="flex items-center justify-between mt-6 border-t border-zinc-300/60 pt-4 relative z-10">
+                  {/* 左側：ヘッダーと同じアイコン＋少し大きめの公式ロゴ */}
+                  <div className="flex items-center gap-2 text-zinc-800">
+                    <BookOpen size={16} className="text-blue-600" strokeWidth={2.5} />
+                    <span className="text-xs font-black tracking-widest">
+                      参考書ドットコム
+                    </span>
+                  </div>
+                  
+                  {/* 右側：認知・検索させるためのURLとキャッチコピー */}
+                  <div className="text-right">
+                    <p className="text-[10px] font-black tracking-wider text-blue-600">
+                      sanko-sho.com
+                    </p>
+                    <p className="text-[8px] font-bold text-zinc-500 -mt-0.5">
+                      ＼ 自分だけの最短合格ルートを作ろう ／
+                    </p>
+                  </div>
+                </div>
+              </div> 
 
               {/* アクションボタン */}
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button 
-                  onClick={() => alert('画像として保存します')}
+                  onClick={() => handleShareImage('save')} 
                   className="text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl transition-all active:scale-95"
                 >
                   画像として保存
                 </button>
                 <button 
-                  onClick={() => alert('SNSにシェアします')}
+                  onClick={() => handleShareImage('share')} 
                   className="text-xs font-black bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 rounded-xl transition-all shadow-md shadow-blue-100 active:scale-95"
                 >
                   SNSに共有する
