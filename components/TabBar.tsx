@@ -18,15 +18,31 @@ export default function TabBar() {
 
     if (!isNative) return;
 
+    let ticking = false;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      // 下までスクロールしきった時のバウンス判定なども考慮しつつシンプルに
-      if (currentScrollY > lastScrollY.current) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // iOS特有のマイナススクロール（上への引っ張りすぎ）を0として扱う
+          const currentScrollY = Math.max(0, window.scrollY);
+
+          if (currentScrollY < 50) {
+            // 画面の一番上付近にいる時は絶対に表示
+            setIsVisible(true);
+          } else {
+            // 10px以上指を動かした時だけ「隠す/出す」を判定する（微小な揺れを無視）
+            if (currentScrollY - lastScrollY.current > 10) {
+              setIsVisible(false); // 下へスクロール ➔ 隠す
+              lastScrollY.current = currentScrollY;
+            } else if (lastScrollY.current - currentScrollY > 10) {
+              setIsVisible(true);  // 上へスクロール ➔ 出す
+              lastScrollY.current = currentScrollY;
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
-      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
