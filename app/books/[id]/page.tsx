@@ -351,71 +351,45 @@ export default function BookDetailPage() {
         </button>
   
         {/* メインセクション：スマホ横並び、PC2カラム */}
-      {/* 💡 items-start を items-center に変更して、画像と右側コンテンツを上下中央揃えに */}
-      <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100/80 mb-6 flex flex-row gap-4 md:gap-6 items-center">
-        
-        {/* 左側：カバー画像 */}
-        <div className="w-24 h-32 md:w-36 md:h-52 bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 shadow-sm flex items-center justify-center text-gray-400 text-xs md:text-sm">
-          {book.cover_url ? <img src={book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
-        </div>
-        
-        {/* 右側：コンテンツエリア */}
-        <div className="flex-1 flex flex-col justify-between self-stretch py-0.5">
-          <div>
-            {/* 出版社バッジと出版日 */}
-            {/* 💡 flex で横並びにし、出版日データがある場合のみ「〜頃」を表示 */}
-            <div className="mb-1.5 flex items-center gap-2">
-              <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] md:text-xs font-bold rounded-md tracking-wide">
-                {book.publisher}
-              </span>
-              
-            </div>
-            {/* タイトルと著者 */}
-            <h1 className="font-black text-base md:text-2xl text-slate-900 leading-snug mb-1 line-clamp-2 md:line-clamp-none">{book.title}</h1>
-            <p className="text-xs md:text-base text-slate-600 font-medium mb-2 md:mb-4">{book.author}</p>
+        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-gray-100/80 mb-6 flex flex-row gap-4 md:gap-6 items-center">
+          
+          {/* 左側：カバー画像 */}
+          <div className="w-24 h-32 md:w-36 md:h-52 bg-gray-50 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0 shadow-sm flex items-center justify-center text-gray-400 text-xs md:text-sm">
+            {book.cover_url ? <img src={book.cover_url} alt="cover" className="w-full h-full object-cover" /> : 'NO IMAGE'}
           </div>
+          
+          {/* 右側：コンテンツエリア */}
+          <div className="flex-1 flex flex-col justify-between self-stretch py-0.5">
+            <div>
+              {/* 出版社バッジ */}
+              <div className="mb-1">
+                <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] md:text-xs font-bold rounded-md tracking-wide">
+                  {book.publisher}
+                </span>
+              </div>
+              {/* タイトルと著者 */}
+              <h1 className="font-black text-base md:text-2xl text-slate-900 leading-snug mb-0.5 line-clamp-2 md:line-clamp-none">{book.title}</h1>
+              {/* 💡 mb-2 md:mb-4 から mb-1 に削って星評価との距離を接近 */}
+              <p className="text-xs md:text-base text-slate-600 font-medium mb-1">{book.author}</p>
+            </div>
             
             {/* 下部：評価とアクションボタン */}
-            <div className="mt-auto space-y-3">
-              {/* 星評価と楽天ボタンを横並びにする親コンテナ */}
-              <div className="flex items-center justify-between gap-2 w-full">
-                {/* 左側：星評価群 */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <div className="flex text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={15} className={i < Math.round(averageRating) ? 'fill-current' : 'text-gray-200'} />
-                    ))}
-                  </div>
-                  <span className="text-sm md:text-lg font-black text-slate-800 ml-0.5">{averageRating.toFixed(1)}</span>
-                  <span className="text-xs md:text-sm font-bold text-gray-400">({reviewCount})</span>
+            {/* 💡 space-y-3 から space-y-2 にして全体の縦幅を圧縮 */}
+            <div className="mt-auto space-y-2">
+              {/* 星評価 */}
+              <div className="flex items-center gap-1.5 leading-none">
+                <div className="flex text-amber-400">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={15} className={i < Math.round(averageRating) ? 'fill-current' : 'text-gray-200'} />
+                  ))}
                 </div>
-  
-                {/* 右側：コンパクトになった楽天ボタン */}
-                <div className="w-30 md:w-48 shrink-0">
-                  {book.rakuten_url ? (
-                    <a
-                      href={book.rakuten_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1 w-full py-1.5 rounded-xl text-[11px] md:text-xs font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-2xs border border-red-600"
-                    >
-                      <ShoppingCart size={13} />
-                      楽天で購入
-                    </a>
-                  ) : (
-                    <button
-                      disabled
-                      className="flex items-center justify-center gap-1 w-full py-1.5 rounded-xl text-[11px] md:text-xs font-black text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed select-none"
-                    >
-                      <ShoppingCart size={13} />
-                      楽天ブックスで購入
-                    </button>
-                  )}
-                </div>
+                <span className="text-sm md:text-lg font-black text-slate-800 ml-0.5">{averageRating.toFixed(1)}</span>
+                <span className="text-xs md:text-sm font-bold text-gray-400">({reviewCount})</span>
               </div>
   
               {/* ボタン：2列横並び・スマホ最適化版 */}
-              <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-gray-100">
+              {/* 💡 pt-2 から pt-1.5 に微調整 */}
+              <div className="grid grid-cols-2 gap-2 w-full pt-1.5 border-t border-gray-100">
                 <button
                   onClick={() => toggleStatus('saved')}
                   className={`flex items-center justify-center gap-1 w-full py-2 rounded-xl text-xs font-bold transition-all active:scale-95 border ${
@@ -441,6 +415,30 @@ export default function BookDetailPage() {
                   <span className="truncate">{status.is_used ? '使用中' : '使用する'}</span>
                   <span className="px-1 py-0.2 text-[9px] rounded bg-black/5 shrink-0">{book.used_count || 0}</span>
                 </button>
+              </div>
+  
+              {/* 下部にドーンと構えるフルサイズ楽天ボタン */}
+              {/* 💡 pt-1 から pt-0.5 にして、上のいいねボタンの列とギリギリまで密着 */}
+              <div className="w-full pt-0.5">
+                {book.rakuten_url ? (
+                  <a
+                    href={book.rakuten_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs md:text-sm font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-sm border border-red-600"
+                  >
+                    <ShoppingCart size={16} />
+                    楽天ブックスで購入する
+                  </a>
+                ) : (
+                  <button
+                    disabled
+                    className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs md:text-sm font-black text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed select-none"
+                  >
+                    <ShoppingCart size={16} />
+                    楽天ブックスで購入する
+                  </button>
+                )}
               </div>
               
             </div>
