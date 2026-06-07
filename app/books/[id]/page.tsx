@@ -391,7 +391,7 @@ export default function BookDetailPage() {
                 </div>
   
                 {/* 右側：コンパクトになった楽天ボタン */}
-                <div className="w-40 md:w-48 shrink-0">
+                <div className="w-30 md:w-48 shrink-0">
                   {book.rakuten_url ? (
                     <a
                       href={book.rakuten_url}
@@ -400,7 +400,7 @@ export default function BookDetailPage() {
                       className="flex items-center justify-center gap-1 w-full py-1.5 rounded-xl text-[11px] md:text-xs font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-2xs border border-red-600"
                     >
                       <ShoppingCart size={13} />
-                      楽天ブックスで購入
+                      楽天で購入
                     </a>
                   ) : (
                     <button
