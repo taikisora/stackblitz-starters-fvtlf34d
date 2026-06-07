@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link'; 
 import { supabase } from '../../../lib/supabase';
-import { ChevronLeft, Heart, BookOpen, Star, Trash2, ThumbsUp, MessageCircle, User, Layers } from 'lucide-react';
+import { ChevronLeft, Heart, BookOpen, Star, Trash2, ThumbsUp, MessageCircle, User, Layers, ShoppingCart } from 'lucide-react'; // 💡 ShoppingCartを追加
 
 const ADMIN_USER_ID = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
 
@@ -415,6 +415,32 @@ export default function BookDetailPage() {
               </button>
               
             </div>
+
+            {/* 💡 楽天ブックス購入ボタン（URLの有無で色と機能のみ切り替え） */}
+            <div className="w-full pt-2">
+              {book.rakuten_url ? (
+                // 🔴 URLがある時：通常の赤いボタン
+                <a
+                  href={book.rakuten_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs md:text-sm font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-sm border border-red-600"
+                >
+                  <ShoppingCart size={16} />
+                  楽天ブックスで購入する
+                </a>
+              ) : (
+                // ⚪ URLがない時：文字はそのままで、色だけグレー（押せない）
+                <button
+                  disabled
+                  className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl text-xs md:text-sm font-black text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed select-none"
+                >
+                  <ShoppingCart size={16} />
+                  楽天ブックスで購入する
+                </button>
+              )}
+            </div>
+            
           </div>
 
         </div>
@@ -424,24 +450,18 @@ export default function BookDetailPage() {
       <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm border border-gray-100/80 mb-6">
         <h2 className="font-black text-sm md:text-base text-slate-800 mb-2.5">参考書の説明</h2>
         
-        {/* 💡 著作権リスク回避のため、紹介文を一旦非表示にし、案内メッセージに差し替え */}
-        <p className="text-sm md:text-base text-gray-400 italic leading-relaxed">
-          ※現在、参考書の紹介文は一時的に非表示にしております。恐れ入りますが、詳細な内容は各公式サイトやECサイト等をご確認ください。
-        </p>
-
-        {/* 💡 元の表示処理は安全のために一旦コメントアウト（非表示化）しておきます
-        <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
+        <p className="text-sm md:text-base text-slate-700 leading-relaxed whitespace-pre-wrap font-medium">
           {isDescExpanded ? (book.description || 'この参考書の説明はまだ登録されていません。') : (shortDescription || 'この参考書の説明はまだ登録されていません。')}
         </p>
+        
         {book.description && book.description.length > 100 && (
           <button 
             onClick={() => setIsDescExpanded(!isDescExpanded)} 
-            className="text-blue-600 font-bold text-sm mt-3 hover:underline block"
+            className="text-blue-600 font-bold text-xs md:text-sm mt-3 hover:text-blue-800 transition-colors block cursor-pointer active:scale-95"
           >
-            {isDescExpanded ? "閉じる" : "もっと見る"}
+            {isDescExpanded ? "▲ 閉じる" : "もっと見る ▼"}
           </button>
         )}
-        */}
       </div>
 
       {/* 同じシリーズの参考書横スクロールUI */}
