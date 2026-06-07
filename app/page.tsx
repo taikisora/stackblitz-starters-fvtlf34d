@@ -421,14 +421,37 @@ export default function HomePage() {
       </div>
 
       {/* 💡 追加：未ログインでも必ず確認できる「利用規約フッター」 */}
-      <div className="pt-8 pb-2 border-t border-gray-200/60 text-center">
-        <Link 
-          href="/terms" 
-          className="text-xs text-gray-400 font-bold hover:text-blue-500 hover:underline transition-colors inline-flex items-center gap-1"
-        >
-          利用規約・プライバシーポリシーを確認する
-        </Link>
-        <p className="text-[10px] text-gray-300 font-medium mt-1.5">
+      <div className="pt-8 pb-2 border-t border-gray-200/60 text-center space-y-2">
+        <div>
+          <Link 
+            href="/terms" 
+            className="text-xs text-gray-400 font-bold hover:text-blue-500 hover:underline transition-colors inline-flex items-center gap-1"
+          >
+            利用規約・プライバシーポリシーを確認する
+          </Link>
+        </div>
+
+        {/* 🛡️ 楽天公式HTMLソース完全準拠（Sサイズバナー・青枠徹底消去版） */}
+        <div className="flex items-center justify-center pt-0.5 select-none">
+          <a 
+            href="https://webservice.rakuten.co.jp/" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block opacity-75 hover:opacity-100 transition-opacity"
+          >
+            <img 
+              src="https://webservice.rakuten.co.jp/img/credit/200709/credit_22121.gif" 
+              alt="Rakuten Web Service Center" 
+              title="Rakuten Web Service Center" 
+              width={221} 
+              height={21}
+              style={{ border: '0', outline: 'none' }} // 💡 これで青い枠線が100%完全に消え去ります！
+              className="object-contain"
+            />
+          </a>
+        </div>
+
+        <p className="text-[10px] text-gray-300 font-medium pt-0.5">
           © {new Date().getFullYear()} 参考書ドットコム. All rights reserved.
         </p>
       </div>
