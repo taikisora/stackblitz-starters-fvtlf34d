@@ -390,29 +390,29 @@ export default function BookDetailPage() {
                   <span className="text-xs md:text-sm font-bold text-gray-400">({reviewCount})</span>
                 </div>
   
-                {/* 右側：コンパクトになった楽天ボタン */}
-                <div className="w-40 md:w-48 shrink-0">
-                  {book.rakuten_url ? (
-                    <a
-                      href={book.rakuten_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1 w-full py-1.5 rounded-xl text-[11px] md:text-xs font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-2xs border border-red-600"
-                    >
-                      <ShoppingCart size={13} />
-                      楽天ブックスで購入
-                    </a>
-                  ) : (
-                    <button
-                      disabled
-                      className="flex items-center justify-center gap-1 w-full py-1.5 rounded-xl text-[11px] md:text-xs font-black text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed select-none"
-                    >
-                      <ShoppingCart size={13} />
-                      楽天ブックスで購入
-                    </button>
-                  )}
-                </div>
+                {/* 右側：コンパクトになった楽天ボタン（横幅をスリムに、高さをアップ） */}
+              <div className="w-[105px] md:w-44 shrink-0"> {/* 💡 スマホの横幅を105pxまでスリム化 */}
+                {book.rakuten_url ? (
+                  <a
+                    href={book.rakuten_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-0.5 w-full py-2 rounded-xl text-[9.5px] md:text-xs font-black text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-2xs border border-red-600 text-center"
+                  > {/* 💡 py-1.5 から py-2 にして上に大きく、文字を少しだけ縮小 */}
+                    <ShoppingCart size={11} className="shrink-0" />
+                    <span className="leading-none">楽天ブックスで購入</span>
+                  </a>
+                ) : (
+                  <button
+                    disabled
+                    className="flex items-center justify-center gap-0.5 w-full py-2 rounded-xl text-[9.5px] md:text-xs font-black text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed select-none text-center"
+                  >
+                    <ShoppingCart size={11} className="shrink-0" />
+                    <span className="leading-none">楽天ブックスで購入</span>
+                  </button>
+                )}
               </div>
+            </div>
   
               {/* ボタン：2列横並び・スマホ最適化版 */}
               <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-gray-100">
