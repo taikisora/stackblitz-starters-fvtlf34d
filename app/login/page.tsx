@@ -11,9 +11,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isResetMode, setIsResetMode] = useState(false); // パスワードリセット画面との切り替え用
+  const [isOtpMode, setIsOtpMode] = useState(false); // 💡 追加：OTP（6桁コード）入力画面との切り替え用
 
   // 💡 修正：パスワードの表示状態を管理するStateを追加（false = 非表示, true = 表示）
   const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState(''); // 💡 追加：入力された6桁コードを保存するState
 
   // 新規登録
   const handleSignUp = async (e: React.FormEvent) => {
@@ -31,15 +33,14 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: 'https://sanko-sho.com/mypage',
-      },
+      // 💡 変更：URLを踏ませないので options (emailRedirectTo) は丸ごと削除
     });
 
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage('確認メールを送信しました。メールボックスを確認してください。');
+      setMessage('確認メールに記載された6桁のコードを入力してください。');
+      setIsOtpMode(true); // 💡 追加：OTP入力画面に切り替える
     }
     setLoading(false);
   };
@@ -57,6 +58,39 @@ export default function LoginPage() {
 
     if (error) {
       setMessage('ログインに失敗しました。');
+      setLoading(false);
+      return;
+    }
+
+    if (data?.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('status')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profile && profile.status) {
+        window.location.href = '/';
+      } else {
+        window.location.href = '/onboarding';
+      }
+    }
+  };
+
+  // 💡 追加：6桁のコードを検証してログインを完了させる処理
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'signup',
+    });
+
+    if (error) {
+      setMessage('認証コードが間違っているか、有効期限が切れています。');
       setLoading(false);
       return;
     }
@@ -98,47 +132,75 @@ export default function LoginPage() {
     <div className="max-w-md mx-auto my-10 p-6 bg-white rounded-2xl shadow-sm border border-gray-100 light select-none text-slate-900" style={{ color: '#1e293b' }}>
       <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">参考書ドットコム</h1>
       
-      <form onSubmit={isResetMode ? handleResetPasswordEmail : handleLogin} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">メールアドレス</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-slate-800 font-bold"
-            required
-          />
-        </div>
-
-        {/* パスワードリセットモードの時は、パスワード入力欄を非表示にする */}
-        {!isResetMode && (
+      {/* 💡 修正：onSubmitの条件分岐に isOtpMode の場合を追加 */}
+      <form onSubmit={isOtpMode ? handleVerifyOtp : isResetMode ? handleResetPasswordEmail : handleLogin} className="space-y-4">
+        
+        {/* 💡 追加：OTPモードの時は、メール・パスワードを隠してコード入力欄だけを表示 */}
+        {isOtpMode ? (
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">パスワード</label>
-            {/* 💡 修正：右端に目のマークを綺麗に重ねるため、親要素に relative を配置 */}
-            <div className="relative flex items-center">
+            <label className="block text-sm font-medium text-gray-600 mb-1 text-center">8桁の認証コード</label>
+            <input
+              type="text"
+              maxLength={8} // 💡 8に変更
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="w-full bg-slate-50 border border-gray-200 rounded-xl p-4 focus:outline-none focus:border-blue-500 text-slate-800 font-bold tracking-widest text-center text-2xl"
+              required
+              placeholder="例：12345678" // 💡 8桁に変更
+            />
+          </div>
+        ) : (
+          /* 💡 ここから下は元のメール＆パスワード入力欄（フラグメント <> で囲む） */
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">メールアドレス</label>
               <input
-                type={showPassword ? "text" : "password"} // 💡 修正：目のマークの状態に合わせてタイプを動的に切り替え
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 pr-11 focus:outline-none focus:border-blue-500 text-slate-800 font-bold"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 focus:outline-none focus:border-blue-500 text-slate-800 font-bold"
                 required
               />
-              {/* 💡 修正：パスワード入力欄の右側にぴったり配置する切り替えアイコンボタン */}
-              <button
-                type="button" // フォーム送信の誤作動を防ぐために絶対に button タイプにする
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg cursor-pointer"
-                title={showPassword ? "パスワードを非表示" : "パスワードを表示"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
             </div>
-          </div>
+
+            {/* パスワードリセットモードの時は、パスワード入力欄を非表示にする */}
+            {!isResetMode && (
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">パスワード</label>
+                <div className="relative flex items-center">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-gray-200 rounded-xl p-3 pr-11 focus:outline-none focus:border-blue-500 text-slate-800 font-bold"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg cursor-pointer"
+                    title={showPassword ? "パスワードを非表示" : "パスワードを表示"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {message && <p className="text-sm text-center text-blue-600 font-semibold">{message}</p>}
 
-        {isResetMode ? (
+        {/* 💡 修正：ボタン群の出し分けに isOtpMode を追加 */}
+        {isOtpMode ? (
+          <button
+            type="submit"
+            disabled={loading || otp.length !== 8} // 💡 8に変更
+            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-blue-300"
+          >
+            認証して登録を完了する
+          </button>
+        ) : isResetMode ? (
           <button
             type="submit"
             disabled={loading}
