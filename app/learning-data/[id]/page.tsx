@@ -243,10 +243,15 @@ const handleSaveAsPngFile = async () => {
   // リロードによる強制リセットはバグが直れば不要ですが、念のため残す場合はここに setTimeout
 };
 
-// 🛠️ SNSにシェアするボタン
+// 🛠️ SNSにシェアするボタン（ブラウザ安全版）
 const handleShareToSNS = async () => {
+  setIsSharing(true); // ローディング開始
+
   const file = await generateImageFile();
-  if (!file) return alert('画像の生成に失敗しました。');
+  if (!file) {
+    setIsSharing(false);
+    return alert('画像の生成に失敗しました。');
+  }
   
   const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！\n#参考書ドットコム`;
   const shareUrl = window.location.href;
@@ -259,16 +264,13 @@ const handleShareToSNS = async () => {
         url: shareUrl
       });
     } else {
-      // PCブラウザ用フォールバック
-      const link = document.createElement('a');
-      link.download = file.name;
-      link.href = URL.createObjectURL(file);
-      link.click();
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      alert('画像をダウンロードし、リンクをコピーしました！Xなどに貼り付けてシェアしてください。');
+      // 💡 変更：PCなどの非対応ブラウザでは固まらせず、親切にアラートを出して誘導する
+      alert('お使いのブラウザはシェア機能に対応していません。「画像としてダウンロード」ボタンから保存してご利用ください。');
     }
   } catch (error) {
     console.log('シェアキャンセル、またはエラー:', error);
+  } finally {
+    setIsSharing(false); // ローディング終了
   }
 };
 
