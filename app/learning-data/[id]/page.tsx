@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { toPng } from 'html-to-image';
-import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download } from 'lucide-react';
+import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download, Loader2 } from 'lucide-react';
 
 export default function RouteDetailPage() {
   const params = useParams();
@@ -30,6 +30,9 @@ export default function RouteDetailPage() {
 
   // 🛠️ 修正追加1：Base64画像を保持するState
   const [base64Covers, setBase64Covers] = useState<Record<string, string>>({});
+
+  // 🛠️ 追加：SNSシェアローディング用のState
+  const [isSharing, setIsSharing] = useState(false);
 
   // 🛠️ 修正追加2：画像事前読み込みロジック（weserv経由で取得し文字データ化）
   const preloadImagesAsBase64 = async (booksList: any[]) => {
@@ -220,39 +223,34 @@ export default function RouteDetailPage() {
   }
 };
 
-// 💡 元のシンプルな挙動に完全復元：画像を自動生成し、文章とURLを乗せてシェアメニューを開く（処理後に自動リロード）
+// 🛠️ SNSにシェアするボタン（ブラウザ安全版）
 const handleShareToSNS = async () => {
-  if (!cardRef.current) return;
-  try {
-    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
-    
-    const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！ #参考書ドットコム`;
-    const shareUrl = window.location.href;
+  setIsSharing(true); // ローディング開始
 
+  const file = await generateImageFile();
+  if (!file) {
+    setIsSharing(false);
+    return alert('画像の生成に失敗しました。');
+  }
+  
+  const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！\n#参考書ドットコム`;
+  const shareUrl = window.location.href;
+
+  try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         files: [file],
-        title: route?.title,
         text: shareText,
         url: shareUrl
       });
     } else {
-      const link = document.createElement('a');
-      link.download = `route-${route?.title || 'study'}.png`;
-      link.href = dataUrl;
-      link.click();
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      alert('画像をダウンロードし、リンクをコピーしました！');
+      // 💡 変更：PCなどの非対応ブラウザでは固まらせず、親切にアラートを出して誘導する
+      alert('お使いのブラウザはシェア機能に対応していません。「画像としてダウンロード」ボタンから保存してご利用ください。');
     }
-
-    // 🚀 シェアメニューが開いた後（またはダウンロード後）に1秒猶予を空けて自動リロード
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
   } catch (error) {
-    console.error('共有エラー:', error);
+    console.log('シェアキャンセル、またはエラー:', error);
+  } finally {
+    setIsSharing(false); // ローディング終了
   }
 };
 
