@@ -39,7 +39,7 @@ export default function LoginPage() {
     if (error) {
       setMessage(error.message);
     } else {
-      setMessage('確認メールに記載された6桁のコードを入力してください。');
+      setMessage('確認メールに記載された8桁のコードを入力してください。');
       setIsOtpMode(true); // 💡 追加：OTP入力画面に切り替える
     }
     setLoading(false);
@@ -77,7 +77,7 @@ export default function LoginPage() {
     }
   };
 
-  // 💡 追加：6桁のコードを検証してログインを完了させる処理
+  // 💡 追加：8桁のコードを検証してログインを完了させる処理
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
