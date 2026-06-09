@@ -689,12 +689,12 @@ const handleShareToSNS = async () => {
           </div>
         )}
 
-            {/* ✨ 新設：共有モーダル本体 */}
+           {/* ✨ 新設：共有モーダル本体 */}
             {isShareModalOpen && (
-              // 💡 修正：z-50 から z-[9999] に変更し、絶対的に最前面へ。
-              // 💡 修正：fixed なので、親要素のスタッキングに影響されないよう z-index を非常に高く設定します。
-              <div className="fixed inset-0 bg-black/60 z-[9999] p-4 md:p-6 flex justify-center items-center overflow-y-auto animate-fade-in">
-                <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full shadow-2xl relative my-auto">
+              // 💡 修正：z-indexを最大化し、items-centerで画面中央に固定
+              <div className="fixed inset-0 bg-black/60 z-[9999] p-4 md:p-6 flex justify-center items-center animate-fade-in">
+                {/* 💡 修正：flex-col や items-stretch を外し、修正前の「シンプル構造」に戻すことでレイヤー競合を回避 */}
+                <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full max-h-[90vh] shadow-2xl relative overflow-y-auto">
             
             {/* ヘッダー部分（上に固定） */}
             <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-3 shrink-0">
