@@ -1,13 +1,15 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+// 🛠️ 変更：useSearchParams を追加インポート
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { toPng } from 'html-to-image';
-import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download } from 'lucide-react';
+import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download, Loader2 } from 'lucide-react';
 
 export default function RouteDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams(); // 🛠️ 追加：URLのクエリ（?share=trueなど）を読み取る設定
   const routeId = params.id as string;
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -27,6 +29,53 @@ export default function RouteDetailPage() {
 
   // ✨ 新設：共有モーダルの開閉状態を管理（初期値は非表示：false）
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  // 🛠️ 修正追加1：Base64画像を保持するState
+  const [base64Covers, setBase64Covers] = useState<Record<string, string>>({});
+
+  // 🛠️ 追加：SNSシェアローディング用のState
+  const [isSharing, setIsSharing] = useState(false);
+
+  // 🛠️ 修正追加2：画像事前読み込みロジック（weserv経由で取得し文字データ化）
+  const preloadImagesAsBase64 = async (booksList: any[]) => {
+    const newBase64Covers: Record<string, string> = {};
+    
+    const fetchBase64 = async (url: string, key: string) => {
+      if (!url) return;
+      try {
+        const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        const blob = await response.blob();
+        return new Promise<void>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            newBase64Covers[key] = reader.result as string;
+            resolve();
+          };
+          reader.readAsDataURL(blob);
+        });
+      } catch (error) {
+        console.error('画像読み込みエラー:', error);
+      }
+    };
+
+    const promises: Promise<void>[] = [];
+    booksList.forEach((item, index) => {
+      if ((!item.type || item.type === 'single') && item.book?.cover_url) {
+        promises.push(fetchBase64(item.book.cover_url, `${item.book.id}-${index}`));
+      } else {
+        if (item.route_A?.[0]?.book?.cover_url) {
+          promises.push(fetchBase64(item.route_A[0].book.cover_url, `${item.route_A[0].book.id}-A-${index}`));
+        }
+        if (item.route_B?.[0]?.book?.cover_url) {
+          promises.push(fetchBase64(item.route_B[0].book.cover_url, `${item.route_B[0].book.id}-B-${index}`));
+        }
+      }
+    });
+
+    await Promise.all(promises);
+    setBase64Covers(newBase64Covers);
+  };
 
   useEffect(() => {
     const fetchRouteDetail = async () => {
@@ -94,6 +143,7 @@ export default function RouteDetailPage() {
                 }
               });
               setBooks(hydraStructure);
+              preloadImagesAsBase64(orderedBooks); // 🛠️ ここを追加
             }
           } else {
             setBooks([]);
@@ -120,6 +170,7 @@ export default function RouteDetailPage() {
             }).filter(Boolean);
 
             setBooks(orderedBooks);
+            preloadImagesAsBase64(orderedBooks); // 🛠️ ここを追加
           } else {
             setBooks([]);
           }
@@ -152,93 +203,86 @@ export default function RouteDetailPage() {
       }
     };
 
-    if (routeId) fetchRouteDetail();
-  }, [routeId]);
+    if (routeId) {
+      fetchRouteDetail();
+      // 🛠️ 追加：もしURLに share=true が入っていたら、自動で共有モーダルを開く
+      if (searchParams?.get('share') === 'true') {
+        setIsShareModalOpen(true);
+      }
+    }
+  // 🛠️ 変更：searchParams を依存配列に追加
+  }, [routeId, searchParams]);
 
  
- // 💡 元のシンプルな挙動に完全復元：ルートをpngとしてブラウザにファイルダウンロードさせる（処理後に自動リロード）
- const handleSaveAsPngFile = async () => {
-  if (!cardRef.current) return;
+ // 🛠️ 修正追加：画像生成を共通化
+ const generateImageFile = async (): Promise<File | null> => {
+  if (!cardRef.current) return null;
   try {
-    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
-    const link = document.createElement('a');
-    link.download = `route-${route?.title || 'study'}.png`;
-    link.href = dataUrl;
-    link.click();
-
-    // 🚀 画像生成が終わったら1秒後にページを自動でパッとリフレッシュ
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    // pixelRatioを2にして画質を保ちつつ、キャッシュのコンフリクトを防ぐ
+    const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
+    const blob = await (await fetch(dataUrl)).blob();
+    return new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
   } catch (error) {
-    console.error('画像処理エラー:', error);
-    alert('画像の生成に失敗しました。');
+    console.error('画像生成エラー:', error);
+    return null;
   }
 };
 
-// 💡 元のシンプルな挙動に完全復元：画像を自動生成し、文章とURLを乗せてシェアメニューを開く（処理後に自動リロード）
-const handleShareToSNS = async () => {
-  if (!cardRef.current) return;
-  try {
-    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
-    
-    const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！ #参考書ドットコム`;
-    const shareUrl = window.location.href;
+// 🛠️ 保存するボタン（ネイティブ共有メニューを利用）
+const handleSaveAsPngFile = async () => {
+  const file = await generateImageFile();
+  if (!file) return alert('画像の生成に失敗しました。');
 
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: '画像を保存',
+      });
+    } catch (error) {
+      console.log('保存キャンセル、またはエラー:', error);
+    }
+  } else {
+    // PCブラウザ用フォールバック
+    const link = document.createElement('a');
+    link.download = file.name;
+    link.href = URL.createObjectURL(file);
+    link.click();
+  }
+  
+  // リロードによる強制リセットはバグが直れば不要ですが、念のため残す場合はここに setTimeout
+};
+
+// 🛠️ SNSにシェアするボタン（ブラウザ安全版）
+const handleShareToSNS = async () => {
+  setIsSharing(true); // ローディング開始
+
+  const file = await generateImageFile();
+  if (!file) {
+    setIsSharing(false);
+    return alert('画像の生成に失敗しました。');
+  }
+  
+  const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！\n#参考書ドットコム`;
+  const shareUrl = window.location.href;
+
+  try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         files: [file],
-        title: route?.title,
         text: shareText,
         url: shareUrl
       });
     } else {
-      const link = document.createElement('a');
-      link.download = `route-${route?.title || 'study'}.png`;
-      link.href = dataUrl;
-      link.click();
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      alert('画像をダウンロードし、リンクをコピーしました！');
+      // 💡 変更：PCなどの非対応ブラウザでは固まらせず、親切にアラートを出して誘導する
+      alert('お使いのブラウザはシェア機能に対応していません。「画像としてダウンロード」ボタンから保存してご利用ください。');
     }
-
-    // 🚀 シェアメニューが開いた後（またはダウンロード後）に1秒猶予を空けて自動リロード
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
   } catch (error) {
-    console.error('共有エラー:', error);
+    console.log('シェアキャンセル、またはエラー:', error);
+  } finally {
+    setIsSharing(false); // ローディング終了
   }
 };
-
-  const toggleRouteLike = async () => {
-    if (!user) {
-      alert('いいね機能を使うにはログインが必要です！\nマイページからログインしてください。');
-      router.push('/login');
-      return;
-    }
-
-    const nextStatus = !isLiked;
-    const nextCount = nextStatus ? likesCount + 1 : Math.max(0, likesCount - 1);
-
-    setIsLiked(nextStatus);
-    setLikesCount(nextCount);
-
-    try {
-      if (nextStatus) {
-        await supabase.from('route_likes').insert({
-          user_id: user.id,
-          route_id: routeId
-        });
-      } else {
-        await supabase.from('route_likes').delete().eq('user_id', user.id).eq('route_id', routeId);
-      }
-      await supabase.from('study_routes').update({ likes_count: nextCount }).eq('id', routeId);
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,6 +324,36 @@ const handleShareToSNS = async () => {
       setRoute((prev: any) => ({ ...prev, comments_count: nextCommentCount }));
     }
   };
+
+  // ⚠️ ここから下を復活させます！（間違えて消えてしまった部分）
+  const toggleRouteLike = async () => {
+    if (!user) {
+      alert('いいね機能を使うにはログインが必要です！\nマイページからログインしてください。');
+      router.push('/login');
+      return;
+    }
+
+    const nextStatus = !isLiked;
+    const nextCount = nextStatus ? likesCount + 1 : Math.max(0, likesCount - 1);
+
+    setIsLiked(nextStatus);
+    setLikesCount(nextCount);
+
+    try {
+      if (nextStatus) {
+        await supabase.from('route_likes').insert({
+          user_id: user.id,
+          route_id: routeId
+        });
+      } else {
+        await supabase.from('route_likes').delete().eq('user_id', user.id).eq('route_id', routeId);
+      }
+      await supabase.from('study_routes').update({ likes_count: nextCount }).eq('id', routeId);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
 
   if (loading) return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">ルートを読み込み中...</div>;
   if (!route) return <div className="p-10 text-center text-gray-500 font-bold">参考書ルートが見つかりませんでした。</div>;
@@ -617,9 +691,8 @@ const handleShareToSNS = async () => {
 
             {/* ✨ 新設：共有モーダル本体 */}
             {isShareModalOpen && (
-              /* 💡 構造の変更：外枠自体に overflow-y-auto を持たせ、中身の白箱は flex-col をやめて自然な縦伸びにします */
-              <div className="fixed inset-0 bg-black/60 overflow-y-auto z-50 p-4 md:p-6 flex justify-center items-start animate-fade-in">
-                <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full shadow-2xl relative my-auto">
+              <div className="fixed inset-0 bg-black/60 z-[100] p-4 md:p-6 pb-24 flex justify-center items-center animate-fade-in">
+                <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full max-h-[75vh] shadow-2xl relative flex flex-col items-stretch">
             
             {/* ヘッダー部分（上に固定） */}
             <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-3 shrink-0">
@@ -685,7 +758,7 @@ const handleShareToSNS = async () => {
                           <div className="flex-1 bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-3">
                             <div className="w-8 h-11 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
                               {item.book?.cover_url ? (
-                                <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.book.cover_url)}`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                               <img src={base64Covers[`${item.book.id}-${index}`] || `https://images.weserv.nl/?url=${encodeURIComponent(item.book.cover_url)}`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
                               ) : (
                                 <span className="text-[5px] font-bold">NO IMG</span>
                               )}
@@ -706,7 +779,7 @@ const handleShareToSNS = async () => {
                             <div className="bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-2">
                               <div className="w-7 h-10 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
                                 {item.route_A?.[0]?.book?.cover_url ? (
-                                  <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                  <img src={base64Covers[`${item.route_A[0].book.id}-A-${index}`] || `https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                 ) : (
                                   <span className="text-[5px] font-bold">NO IMG</span>
                                 )}
@@ -722,7 +795,7 @@ const handleShareToSNS = async () => {
                             <div className="bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-2">
                               <div className="w-7 h-10 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
                                 {item.route_B?.[0]?.book?.cover_url ? (
-                                  <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_B[0].book.cover_url)}&t=${index}-B`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                  <img src={base64Covers[`${item.route_B[0].book.id}-B-${index}`] || `https://images.weserv.nl/?url=${encodeURIComponent(item.route_B[0].book.cover_url)}&t=${index}-B`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                 ) : (
                                   <span className="text-[5px] font-bold">NO IMG</span>
                                 )}
@@ -754,23 +827,39 @@ const handleShareToSNS = async () => {
               </div> 
             </div> {/* <-- スクロール領域 終了 */}
 
-            {/* 元の仕様に復元：保存する（pngファイル化）と、SNSにシェアする（画像＋文章自動生成） */}
-            <div className="grid grid-cols-2 gap-3 pt-4 mt-1 border-t border-gray-100 shrink-0">
-              <button 
-                onClick={handleSaveAsPngFile} 
-                className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95"
-              >
-                保存する
-              </button>
-              <button 
-                onClick={handleShareToSNS} 
-                className="text-xs font-black bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-all shadow-md active:scale-95"
-              >
-                SNSにシェアする
-              </button>
+            {/* 💡 修正：文言をわかりやすくし、スマホでの保存方法の迷子を防ぐ案内テキストを追加 */}
+            <div className="pt-3 border-t border-gray-100 shrink-0 space-y-2.5">
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={handleSaveAsPngFile} 
+                  className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <Download size={14} />
+                  画像としてダウンロード
+                </button>
+                <button 
+                  onClick={handleShareToSNS} 
+                  disabled={isSharing}
+                  className="text-xs font-black bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-3 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                  SNSにシェアする
+                </button>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 text-center leading-normal tracking-tight">
+                ※スマホの「写真」アプリに直接保存したい場合は、<br />「SNSにシェアする」を押して表示されるメニューから「画像を保存」を選んでください。
+              </p>
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* 🛠️ 追加：SNSシェア処理中の全画面ローディングオーバレイ */}
+      {isSharing && (
+        <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-[200] gap-4">
+          <Loader2 className="w-10 h-10 text-white animate-spin" />
+          <p className="text-white text-sm font-black">シェア準備中...</p>
         </div>
       )}
 

@@ -290,8 +290,9 @@ export default function NewRoutePage() {
       // これによりNext.jsからbooksテーブルへの直接のUPDATE干渉は完全にゼロになります。
     }
 
-    alert('参考書ルートを保存しました！');
-    router.push('/learning-data');
+    // 🛠️ 変更：アラートを無くし、詳細画面へ移動してそのまま共有モーダルを開く（share=trueを付与）
+    // 💡 修正：push ではなく replace を使うことで、ブラウザの履歴から「作成画面」を消し去る
+    router.replace(`/learning-data/${routeData.id}?share=true`);
   };
 
   if (loading && !user) return <div className="p-10 text-center text-gray-500 font-bold animate-pulse">読み込み中...</div>;
