@@ -11,11 +11,11 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isResetMode, setIsResetMode] = useState(false); // パスワードリセット画面との切り替え用
-  const [isOtpMode, setIsOtpMode] = useState(false); // 💡 追加：OTP（6桁コード）入力画面との切り替え用
+  const [isOtpMode, setIsOtpMode] = useState(false); // 💡 追加：OTP（8桁コード）入力画面との切り替え用
 
   // 💡 修正：パスワードの表示状態を管理するStateを追加（false = 非表示, true = 表示）
   const [showPassword, setShowPassword] = useState(false);
-  const [otp, setOtp] = useState(''); // 💡 追加：入力された6桁コードを保存するState
+  const [otp, setOtp] = useState(''); // 💡 追加：入力された8桁コードを保存するState
 
   // 新規登録
   const handleSignUp = async (e: React.FormEvent) => {
@@ -108,6 +108,24 @@ export default function LoginPage() {
         window.location.href = '/onboarding';
       }
     }
+  };
+
+  // 💡 追加：認証コードを再送信する処理
+  const handleResendOtp = async () => {
+    setLoading(true);
+    setMessage('');
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+
+    if (error) {
+      setMessage('再送信に失敗しました: ' + error.message);
+    } else {
+      setMessage('認証コードを再送信しました。メールをご確認ください。');
+    }
+    setLoading(false);
   };
 
   // パスワードリセットメールの送信
@@ -230,14 +248,34 @@ export default function LoginPage() {
       </form>
 
       {/* モード切り替えボタン */}
-      <div className="text-center mt-4">
-        <button
-          type="button"
-          onClick={() => { setIsResetMode(!isResetMode); setMessage(''); }}
-          className="text-xs text-slate-500 hover:text-blue-600 font-bold hover:underline transition-colors"
-        >
-          {isResetMode ? "ログイン画面に戻る" : "パスワードを忘れた方はこちら"}
-        </button>
+      <div className="text-center mt-4 flex flex-col space-y-4">
+        {isOtpMode ? (
+          <>
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={loading}
+              className="text-xs text-slate-500 hover:text-blue-600 font-bold hover:underline transition-colors disabled:text-slate-300"
+            >
+              コードを再送信する
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsOtpMode(false); setMessage(''); }}
+              className="text-xs text-slate-400 hover:text-slate-600 font-bold hover:underline transition-colors"
+            >
+              メールアドレスを入力し直す（戻る）
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setIsResetMode(!isResetMode); setMessage(''); }}
+            className="text-xs text-slate-500 hover:text-blue-600 font-bold hover:underline transition-colors"
+          >
+            {isResetMode ? "ログイン画面に戻る" : "パスワードを忘れた方はこちら"}
+          </button>
+        )}
       </div>
     </div>
   );
