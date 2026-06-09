@@ -763,7 +763,7 @@ const handleShareToSNS = async () => {
                             <div className="bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-2">
                               <div className="w-7 h-10 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
                                 {item.route_A?.[0]?.book?.cover_url ? (
-                                  <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                  <img src={base64Covers[`${item.route_A[0].book.id}-A-${index}`] || `https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                 ) : (
                                   <span className="text-[5px] font-bold">NO IMG</span>
                                 )}
@@ -779,7 +779,7 @@ const handleShareToSNS = async () => {
                             <div className="bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-2">
                               <div className="w-7 h-10 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
                                 {item.route_B?.[0]?.book?.cover_url ? (
-                                  <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.route_B[0].book.cover_url)}&t=${index}-B`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                  <img src={base64Covers[`${item.route_A[0].book.id}-A-${index}`] || `https://images.weserv.nl/?url=${encodeURIComponent(item.route_A[0].book.cover_url)}&t=${index}-A`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                 ) : (
                                   <span className="text-[5px] font-bold">NO IMG</span>
                                 )}
