@@ -679,9 +679,7 @@ const handleShareToSNS = async () => {
 
             {/* ✨ 新設：共有モーダル本体 */}
             {isShareModalOpen && (
-              /* 💡 修正：pb-24で下部に安全マージンを作り、items-centerで中央に配置する */
               <div className="fixed inset-0 bg-black/60 z-[100] p-4 md:p-6 pb-24 flex justify-center items-center animate-fade-in">
-                /* 💡 修正：max-h-[75vh]で高さを抑え、flex-colで内部スクロールを完全に保証する */
                 <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full max-h-[75vh] shadow-2xl relative flex flex-col items-stretch">
             
             {/* ヘッダー部分（上に固定） */}
@@ -817,28 +815,20 @@ const handleShareToSNS = async () => {
               </div> 
             </div> {/* <-- スクロール領域 終了 */}
 
-            {/* 💡 修正：文言をわかりやすくし、スマホでの保存方法の迷子を防ぐ案内テキストを追加 */}
-            <div className="pt-3 border-t border-gray-100 shrink-0 space-y-2.5">
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-                  onClick={handleSaveAsPngFile} 
-                  className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                >
-                  <Download size={14} />
-                  画像としてダウンロード
-                </button>
-                <button 
-                  onClick={handleShareToSNS} 
-                  disabled={isSharing}
-                  className="text-xs font-black bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-3 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
-                >
-                  {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
-                  SNSにシェアする
-                </button>
-              </div>
-              <p className="text-[10px] font-bold text-slate-400 text-center leading-normal tracking-tight">
-                ※スマホの「写真」アプリに直接保存したい場合は、<br />「SNSにシェアする」を押して表示されるメニューから「画像を保存」を選んでください。
-              </p>
+            {/* 元の仕様に復元：保存する（pngファイル化）と、SNSにシェアする（画像＋文章自動生成） */}
+            <div className="grid grid-cols-2 gap-3 pt-4 mt-1 border-t border-gray-100 shrink-0">
+              <button 
+                onClick={handleSaveAsPngFile} 
+                className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95"
+              >
+                保存する
+              </button>
+              <button 
+                onClick={handleShareToSNS} 
+                className="text-xs font-black bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-all shadow-md active:scale-95"
+              >
+                SNSにシェアする
+              </button>
             </div>
 
           </div>
