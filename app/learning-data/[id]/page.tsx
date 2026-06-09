@@ -243,15 +243,10 @@ const handleSaveAsPngFile = async () => {
   // リロードによる強制リセットはバグが直れば不要ですが、念のため残す場合はここに setTimeout
 };
 
-// 🛠️ SNSにシェアするボタン（ブラウザ安全版）
+// 🛠️ SNSにシェアするボタン
 const handleShareToSNS = async () => {
-  setIsSharing(true); // ローディング開始
-
   const file = await generateImageFile();
-  if (!file) {
-    setIsSharing(false);
-    return alert('画像の生成に失敗しました。');
-  }
+  if (!file) return alert('画像の生成に失敗しました。');
   
   const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！\n#参考書ドットコム`;
   const shareUrl = window.location.href;
@@ -264,13 +259,16 @@ const handleShareToSNS = async () => {
         url: shareUrl
       });
     } else {
-      // 💡 変更：PCなどの非対応ブラウザでは固まらせず、親切にアラートを出して誘導する
-      alert('お使いのブラウザはシェア機能に対応していません。「画像としてダウンロード」ボタンから保存してご利用ください。');
+      // PCブラウザ用フォールバック
+      const link = document.createElement('a');
+      link.download = file.name;
+      link.href = URL.createObjectURL(file);
+      link.click();
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      alert('画像をダウンロードし、リンクをコピーしました！Xなどに貼り付けてシェアしてください。');
     }
   } catch (error) {
     console.log('シェアキャンセル、またはエラー:', error);
-  } finally {
-    setIsSharing(false); // ローディング終了
   }
 };
 
@@ -679,8 +677,9 @@ const handleShareToSNS = async () => {
 
             {/* ✨ 新設：共有モーダル本体 */}
             {isShareModalOpen && (
-              <div className="fixed inset-0 bg-black/60 z-[100] p-4 md:p-6 pb-24 flex justify-center items-center animate-fade-in">
-                <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full max-h-[75vh] shadow-2xl relative flex flex-col items-stretch">
+              /* 💡 構造の変更：外枠自体に overflow-y-auto を持たせ、中身の白箱は flex-col をやめて自然な縦伸びにします */
+              <div className="fixed inset-0 bg-black/60 overflow-y-auto z-50 p-4 md:p-6 flex justify-center items-start animate-fade-in">
+                <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full shadow-2xl relative my-auto">
             
             {/* ヘッダー部分（上に固定） */}
             <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-3 shrink-0">
