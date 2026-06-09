@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation'; // 🛠️ useSearchParams を追加
 import { supabase } from '../../../lib/supabase';
 import { toPng } from 'html-to-image';
 import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download, Loader2 } from 'lucide-react';
@@ -8,6 +8,7 @@ import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, H
 export default function RouteDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams(); // 🛠️ URLパラメータ取得用
   const routeId = params.id as string;
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -141,6 +142,7 @@ export default function RouteDetailPage() {
                 }
               });
               setBooks(hydraStructure);
+              preloadImagesAsBase64(hydraStructure); // 🛠️ 追加：ここでも画像を事前読み込み
             }
           } else {
             setBooks([]);
@@ -200,8 +202,14 @@ export default function RouteDetailPage() {
       }
     };
 
-    if (routeId) fetchRouteDetail();
-  }, [routeId]);
+    if (routeId) {
+      fetchRouteDetail();
+      // 🛠️ 追加：URLに share=true があれば自動でモーダルを開く
+      if (searchParams?.get('share') === 'true') {
+        setIsShareModalOpen(true);
+      }
+    }
+  }, [routeId, searchParams]); // 🛠️ 依存配列に searchParams を追加
 
  
  // 🛠️ 修正追加：画像生成を共通化
@@ -243,10 +251,15 @@ const handleSaveAsPngFile = async () => {
   // リロードによる強制リセットはバグが直れば不要ですが、念のため残す場合はここに setTimeout
 };
 
-// 🛠️ SNSにシェアするボタン
+// 🛠️ SNSにシェアするボタン（ブラウザ安全版）
 const handleShareToSNS = async () => {
+  setIsSharing(true); // 🛠️ ローディング開始
+
   const file = await generateImageFile();
-  if (!file) return alert('画像の生成に失敗しました。');
+  if (!file) {
+    setIsSharing(false);
+    return alert('画像の生成に失敗しました。');
+  }
   
   const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！\n#参考書ドットコム`;
   const shareUrl = window.location.href;
@@ -259,16 +272,13 @@ const handleShareToSNS = async () => {
         url: shareUrl
       });
     } else {
-      // PCブラウザ用フォールバック
-      const link = document.createElement('a');
-      link.download = file.name;
-      link.href = URL.createObjectURL(file);
-      link.click();
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      alert('画像をダウンロードし、リンクをコピーしました！Xなどに貼り付けてシェアしてください。');
+      // 💡 変更：非対応ブラウザでは固まらせず、アラートを出して保存ボタンに誘導する
+      alert('お使いのブラウザはシェア機能に対応していません。「画像としてダウンロード」ボタンから保存してご利用ください。');
     }
   } catch (error) {
     console.log('シェアキャンセル、またはエラー:', error);
+  } finally {
+    setIsSharing(false); // 🛠️ ローディング終了
   }
 };
 
@@ -353,7 +363,17 @@ const handleShareToSNS = async () => {
         {/* ナビヘッダー */}
         {!isScreenshotMode && (
           <div className="flex items-center justify-between pb-4 mb-4 relative z-10">
-            <button onClick={() => router.back()} className="text-sm text-blue-600 flex items-center font-black">
+            <button 
+              onClick={() => {
+                // 🛠️ 新規作成から来た場合は、一覧ページへ強制移動
+                if (searchParams?.get('share') === 'true') {
+                  router.push('/learning-data');
+                } else {
+                  router.back();
+                }
+              }} 
+              className="text-sm text-blue-600 flex items-center font-black"
+            >
               <ChevronLeft size={18} strokeWidth={2.5} /> 戻る
             </button>
             {isMyRoute && (
@@ -814,23 +834,39 @@ const handleShareToSNS = async () => {
               </div> 
             </div> {/* <-- スクロール領域 終了 */}
 
-            {/* 元の仕様に復元：保存する（pngファイル化）と、SNSにシェアする（画像＋文章自動生成） */}
-            <div className="grid grid-cols-2 gap-3 pt-4 mt-1 border-t border-gray-100 shrink-0">
-              <button 
-                onClick={handleSaveAsPngFile} 
-                className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95"
-              >
-                保存する
-              </button>
-              <button 
-                onClick={handleShareToSNS} 
-                className="text-xs font-black bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-all shadow-md active:scale-95"
-              >
-                SNSにシェアする
-              </button>
+            {/* 💡 修正：文言をわかりやすくし、スマホでの保存方法の迷子を防ぐ案内テキストを追加 */}
+            <div className="pt-4 mt-1 border-t border-gray-100 shrink-0 space-y-2.5">
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={handleSaveAsPngFile} 
+                  className="text-xs font-black bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <Download size={14} />
+                  画像としてダウンロード
+                </button>
+                <button 
+                  onClick={handleShareToSNS} 
+                  disabled={isSharing}
+                  className="text-xs font-black bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white py-3 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  {isSharing ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                  SNSにシェアする
+                </button>
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 text-center leading-normal tracking-tight">
+                ※スマホの「写真」アプリに直接保存したい場合は、<br />「SNSにシェアする」を押して表示されるメニューから「画像を保存」を選んでください。
+              </p>
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* 🛠️ 追加：SNSシェア処理中の全画面ローディングオーバレイ */}
+      {isSharing && (
+        <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-[200] gap-4">
+          <Loader2 className="w-10 h-10 text-white animate-spin" />
+          <p className="text-white text-sm font-black">シェア準備中...</p>
         </div>
       )}
 
