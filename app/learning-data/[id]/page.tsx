@@ -28,6 +28,50 @@ export default function RouteDetailPage() {
   // ✨ 新設：共有モーダルの開閉状態を管理（初期値は非表示：false）
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+  // 🛠️ 修正追加1：Base64画像を保持するState
+  const [base64Covers, setBase64Covers] = useState<Record<string, string>>({});
+
+  // 🛠️ 修正追加2：画像事前読み込みロジック（weserv経由で取得し文字データ化）
+  const preloadImagesAsBase64 = async (booksList: any[]) => {
+    const newBase64Covers: Record<string, string> = {};
+    
+    const fetchBase64 = async (url: string, key: string) => {
+      if (!url) return;
+      try {
+        const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        const blob = await response.blob();
+        return new Promise<void>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            newBase64Covers[key] = reader.result as string;
+            resolve();
+          };
+          reader.readAsDataURL(blob);
+        });
+      } catch (error) {
+        console.error('画像読み込みエラー:', error);
+      }
+    };
+
+    const promises: Promise<void>[] = [];
+    booksList.forEach((item, index) => {
+      if ((!item.type || item.type === 'single') && item.book?.cover_url) {
+        promises.push(fetchBase64(item.book.cover_url, `${item.book.id}-${index}`));
+      } else {
+        if (item.route_A?.[0]?.book?.cover_url) {
+          promises.push(fetchBase64(item.route_A[0].book.cover_url, `${item.route_A[0].book.id}-A-${index}`));
+        }
+        if (item.route_B?.[0]?.book?.cover_url) {
+          promises.push(fetchBase64(item.route_B[0].book.cover_url, `${item.route_B[0].book.id}-B-${index}`));
+        }
+      }
+    });
+
+    await Promise.all(promises);
+    setBase64Covers(newBase64Covers);
+  };
+
   useEffect(() => {
     const fetchRouteDetail = async () => {
       setLoading(true);
