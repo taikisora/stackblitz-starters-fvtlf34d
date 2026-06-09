@@ -679,7 +679,9 @@ const handleShareToSNS = async () => {
 
             {/* ✨ 新設：共有モーダル本体 */}
             {isShareModalOpen && (
+              /* 💡 修正：pb-24で下部に安全マージンを作り、items-centerで中央に配置する */
               <div className="fixed inset-0 bg-black/60 z-[100] p-4 md:p-6 pb-24 flex justify-center items-center animate-fade-in">
+                /* 💡 修正：max-h-[75vh]で高さを抑え、flex-colで内部スクロールを完全に保証する */
                 <div className="bg-white rounded-[24px] p-4 md:p-5 max-w-md w-full max-h-[75vh] shadow-2xl relative flex flex-col items-stretch">
             
             {/* ヘッダー部分（上に固定） */}
