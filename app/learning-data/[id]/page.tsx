@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { toPng } from 'html-to-image';
-import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download } from 'lucide-react';
+import { ChevronLeft, Edit2, BookOpen, Globe, Lock, ArrowDown, Calendar, User, Heart, MessageCircle, Send, Trash2, CameraOff, Share2, Download, Loader2 } from 'lucide-react';
 
 export default function RouteDetailPage() {
   const params = useParams();
@@ -30,6 +30,9 @@ export default function RouteDetailPage() {
 
   // 🛠️ 修正追加1：Base64画像を保持するState
   const [base64Covers, setBase64Covers] = useState<Record<string, string>>({});
+
+  // 🛠️ 追加：SNSシェアローディング用のState
+  const [isSharing, setIsSharing] = useState(false);
 
   // 🛠️ 修正追加2：画像事前読み込みロジック（weserv経由で取得し文字データ化）
   const preloadImagesAsBase64 = async (booksList: any[]) => {
