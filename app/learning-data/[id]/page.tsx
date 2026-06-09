@@ -143,7 +143,7 @@ export default function RouteDetailPage() {
                 }
               });
               setBooks(hydraStructure);
-              preloadImagesAsBase64(orderedBooks); // 🛠️ ここを追加
+              preloadImagesAsBase64(hydraStructure); // 🛠️ ここを追加
             }
           } else {
             setBooks([]);
