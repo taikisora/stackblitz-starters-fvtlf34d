@@ -164,6 +164,7 @@ export default function RouteDetailPage() {
             }).filter(Boolean);
 
             setBooks(orderedBooks);
+            preloadImagesAsBase64(orderedBooks); // 🛠️ ここを追加
           } else {
             setBooks([]);
           }
@@ -200,59 +201,71 @@ export default function RouteDetailPage() {
   }, [routeId]);
 
  
- // 💡 元のシンプルな挙動に完全復元：ルートをpngとしてブラウザにファイルダウンロードさせる（処理後に自動リロード）
- const handleSaveAsPngFile = async () => {
-  if (!cardRef.current) return;
+ // 🛠️ 修正追加：画像生成を共通化
+ const generateImageFile = async (): Promise<File | null> => {
+  if (!cardRef.current) return null;
   try {
-    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
-    const link = document.createElement('a');
-    link.download = `route-${route?.title || 'study'}.png`;
-    link.href = dataUrl;
-    link.click();
-
-    // 🚀 画像生成が終わったら1秒後にページを自動でパッとリフレッシュ
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    // pixelRatioを2にして画質を保ちつつ、キャッシュのコンフリクトを防ぐ
+    const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
+    const blob = await (await fetch(dataUrl)).blob();
+    return new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
   } catch (error) {
-    console.error('画像処理エラー:', error);
-    alert('画像の生成に失敗しました。');
+    console.error('画像生成エラー:', error);
+    return null;
   }
 };
 
-// 💡 元のシンプルな挙動に完全復元：画像を自動生成し、文章とURLを乗せてシェアメニューを開く（処理後に自動リロード）
-const handleShareToSNS = async () => {
-  if (!cardRef.current) return;
-  try {
-    const dataUrl = await toPng(cardRef.current, { cacheBust: true });
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], `route-${route?.title || 'study'}.png`, { type: 'image/png' });
-    
-    const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！ #参考書ドットコム`;
-    const shareUrl = window.location.href;
+// 🛠️ 保存するボタン（ネイティブ共有メニューを利用）
+const handleSaveAsPngFile = async () => {
+  const file = await generateImageFile();
+  if (!file) return alert('画像の生成に失敗しました。');
 
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: '画像を保存',
+      });
+    } catch (error) {
+      console.log('保存キャンセル、またはエラー:', error);
+    }
+  } else {
+    // PCブラウザ用フォールバック
+    const link = document.createElement('a');
+    link.download = file.name;
+    link.href = URL.createObjectURL(file);
+    link.click();
+  }
+  
+  // リロードによる強制リセットはバグが直れば不要ですが、念のため残す場合はここに setTimeout
+};
+
+// 🛠️ SNSにシェアするボタン
+const handleShareToSNS = async () => {
+  const file = await generateImageFile();
+  if (!file) return alert('画像の生成に失敗しました。');
+  
+  const shareText = `${route?.profiles?.username || '名無し'}さんの参考書ルート「${route?.title}」！\n#参考書ドットコム`;
+  const shareUrl = window.location.href;
+
+  try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         files: [file],
-        title: route?.title,
         text: shareText,
         url: shareUrl
       });
     } else {
+      // PCブラウザ用フォールバック
       const link = document.createElement('a');
-      link.download = `route-${route?.title || 'study'}.png`;
-      link.href = dataUrl;
+      link.download = file.name;
+      link.href = URL.createObjectURL(file);
       link.click();
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-      alert('画像をダウンロードし、リンクをコピーしました！');
+      alert('画像をダウンロードし、リンクをコピーしました！Xなどに貼り付けてシェアしてください。');
     }
-
-    // 🚀 シェアメニューが開いた後（またはダウンロード後）に1秒猶予を空けて自動リロード
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
   } catch (error) {
-    console.error('共有エラー:', error);
+    console.log('シェアキャンセル、またはエラー:', error);
   }
 };
 
@@ -729,7 +742,7 @@ const handleShareToSNS = async () => {
                           <div className="flex-1 bg-white border border-gray-200 rounded-xl flex items-center shadow-sm min-w-0 p-2 gap-3">
                             <div className="w-8 h-11 bg-gray-50 rounded flex-shrink-0 flex items-center justify-center text-gray-400 overflow-hidden border border-gray-100">
                               {item.book?.cover_url ? (
-                                <img src={`https://images.weserv.nl/?url=${encodeURIComponent(item.book.cover_url)}`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                <img src={base64Covers[`${item.book.id}-${index}`] || `https://images.weserv.nl/?url=${encodeURIComponent(item.book.cover_url)}`} alt="cover" className="w-full h-full object-cover" crossOrigin="anonymous" />
                               ) : (
                                 <span className="text-[5px] font-bold">NO IMG</span>
                               )}
