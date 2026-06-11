@@ -71,9 +71,13 @@ export default function LoginPage() {
     setMessage('');
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'x', // 💡 修正：最新のOAuth 2.0を呼び出すために 'x' に変更
+      provider: 'x',
       options: {
         redirectTo: `${window.location.origin}/`,
+        // 💡 追加：Xの認証画面で毎回ログイン（アカウント入力）を強制する
+        queryParams: {
+          prompt: 'login',
+        },
       },
     });
 
