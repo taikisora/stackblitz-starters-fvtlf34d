@@ -264,7 +264,7 @@ function RankingContent() {
           </h1>
           <p className="text-xs text-slate-400 font-bold flex items-center gap-1.5 pt-0.5">
             <Users size={15} className="text-blue-400" />
-            志望者・使用者データプール: 計 <span className="text-blue-400 font-black text-sm">{targetUserCount}</span> 名の統計
+            志望者・受験者データプール: 計 <span className="text-blue-400 font-black text-sm">{targetUserCount}</span> 名の統計
           </p>
         </div>
 
