@@ -119,7 +119,21 @@ export default function MyPage() {
       await supabase.from('notifications').update({ is_read: true }).eq('id', notif.id);
       setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
     }
-    router.push(notif.link_url);
+    
+    // DBのlink_urlが空の場合は安全のため '/' にフォールバック
+    let url = notif.link_url || '/';
+    
+    // 修正意図①: アプリ向けのURL（/xxx/detail?id=UUID）をWebの動的ルート（/xxx/UUID）に変換する
+    if (url.includes('/detail?id=')) {
+      url = url.replace('/detail?id=', '/');
+    }
+    
+    // 修正意図②: 過去のアナウンスでURLが「/」になっているものを、お知らせ一覧に誘導する
+    if (notif.type === 'announcement' && url === '/') {
+      url = '/announcements';
+    }
+    
+    router.push(url);
   };
 
   const handleUniversityChange = (field: string, value: string) => {
